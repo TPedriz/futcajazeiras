@@ -1,0 +1,54 @@
+import { createFileRoute, Outlet, Link, redirect } from "@tanstack/react-router";
+import { perfilAtualQuery } from "@/lib/babaQueries";
+import { CalendarPlus, Wallet, Shuffle, ChevronLeft } from "lucide-react";
+
+export const Route = createFileRoute("/_authenticated/admin")({
+  head: () => ({
+    meta: [
+      { title: "Painel Admin — Fut Cajazeiras" },
+      { name: "description", content: "Painel de gestão do Fut Cajazeiras." },
+    ],
+  }),
+  beforeLoad: async ({ context }) => {
+    const data = await context.queryClient.ensureQueryData(perfilAtualQuery());
+    if (!data?.isAdmin) throw redirect({ to: "/inicio" });
+  },
+  component: AdminLayout,
+});
+
+function AdminLayout() {
+  return (
+    <div className="space-y-5">
+      <Link to="/inicio" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ChevronLeft className="size-4" /> Voltar
+      </Link>
+      <div>
+        <p className="text-xs uppercase tracking-widest text-gold">Diretoria</p>
+        <h1 className="font-display text-4xl">Painel Admin</h1>
+      </div>
+      <nav className="grid grid-cols-3 gap-2">
+        <AdminTab to="/admin" label="Sessões" Icon={CalendarPlus} />
+        <AdminTab to="/admin/financeiro" label="Financeiro" Icon={Wallet} />
+        <AdminTab to="/admin/sorteio" label="Sorteio" Icon={Shuffle} />
+      </nav>
+      <Outlet />
+    </div>
+  );
+}
+
+function AdminTab({ to, label, Icon }: { to: string; label: string; Icon: typeof CalendarPlus }) {
+  return (
+    <Link
+      to={to}
+      activeOptions={{ exact: true }}
+      className="flex flex-col items-center gap-1 rounded-lg border border-border bg-surface p-3 text-xs text-muted-foreground transition-colors data-[status=active]:border-gold/60 data-[status=active]:bg-gold/10 data-[status=active]:text-gold"
+    >
+      {({ isActive }) => (
+        <>
+          <Icon className={`size-5 ${isActive ? "text-gold" : ""}`} />
+          <span className="font-semibold uppercase tracking-widest">{label}</span>
+        </>
+      )}
+    </Link>
+  );
+}
