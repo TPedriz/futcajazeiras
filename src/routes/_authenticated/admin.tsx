@@ -6,9 +6,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Painel Admin — Fut Cajazeiras" },
-      { name: "description", content: "Painel de gestão do Fut Cajazeiras." },
+      { name: "description", content: "Ferramentas administrativas do Fut Cajazeiras: agendar sessões do baba, controlar mensalidades e sortear os times." },
+      { property: "og:title", content: "Painel Admin — Fut Cajazeiras" },
+      { property: "og:description", content: "Diretoria do Fut Cajazeiras: gestão de sessões, financeiro e sorteio de times." },
     ],
   }),
+
   beforeLoad: async ({ context }) => {
     const data = await context.queryClient.ensureQueryData(perfilAtualQuery());
     if (!data?.isAdmin) throw redirect({ to: "/inicio" });

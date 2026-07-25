@@ -21,17 +21,39 @@ import { Calendar, MapPin, Users, UserPlus, Clock, Check, Shield, HandMetal, X }
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/baba")({
-  head: () => ({
-    meta: [
-      { title: "Próximo Baba — Fut Cajazeiras" },
-      { name: "description", content: "Confirme sua presença e leve seu convidado para o próximo baba do Fut Cajazeiras." },
-    ],
-  }),
-  loader: ({ context }) => {
-    context.queryClient.ensureQueryData(proximaSessaoQuery());
+  head: ({ loaderData }) => {
+    const sessao = loaderData as { id: string; data_horario: string; local: string } | null | undefined;
+    const scripts = sessao
+      ? [{
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SportsEvent",
+            name: `Baba Fut Cajazeiras — ${new Date(sessao.data_horario).toLocaleDateString("pt-BR")}`,
+            startDate: sessao.data_horario,
+            sport: "Soccer",
+            location: { "@type": "Place", name: sessao.local },
+            organizer: { "@type": "SportsOrganization", name: "Fut Cajazeiras" },
+          }),
+        }]
+      : undefined;
+    return {
+      meta: [
+        { title: "Próximo Baba — Fut Cajazeiras" },
+        { name: "description", content: "Confirme sua presença, leve seu convidado e veja a lista de chamada do próximo baba do Fut Cajazeiras." },
+        { property: "og:title", content: "Próximo Baba — Fut Cajazeiras" },
+        { property: "og:description", content: "Data, horário, local e lista de chamada do próximo baba do Fut Cajazeiras." },
+        { property: "og:type", content: "event" },
+      ],
+      ...(scripts ? { scripts } : {}),
+    };
+  },
+  loader: async ({ context }) => {
+    return await context.queryClient.ensureQueryData(proximaSessaoQuery());
   },
   component: BabaPage,
 });
+
 
 function BabaPage() {
   const { data: perfilData } = useSuspenseQuery(perfilAtualQuery());
@@ -218,9 +240,10 @@ function BabaPage() {
                     <p className="text-sm font-semibold">{meuConvidado.nome_convidado}</p>
                     <StatusConvidadoBadge status={meuConvidado.status_convidado!} />
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => removerPresenca.mutate(meuConvidado.id)}>
+                  <Button variant="ghost" size="icon" aria-label="Remover meu convidado" onClick={() => removerPresenca.mutate(meuConvidado.id)}>
                     <X className="size-4" />
                   </Button>
+
                 </div>
               ) : (
                 <Dialog open={convidadoOpen} onOpenChange={setConvidadoOpen}>
@@ -378,19 +401,20 @@ function PresencaCard({ numero, nome, posicao, tipo, statusConvidado, onApprove,
       </div>
       {pendente && onApprove && (
         <>
-          <Button variant="success" size="icon" className="size-9" onClick={onApprove}>
+          <Button variant="success" size="icon" className="size-9" onClick={onApprove} aria-label="Aprovar convidado">
             <Check className="size-4" />
           </Button>
-          <Button variant="destructive" size="icon" className="size-9" onClick={onReject}>
+          <Button variant="destructive" size="icon" className="size-9" onClick={onReject} aria-label="Rejeitar convidado">
             <X className="size-4" />
           </Button>
         </>
       )}
       {!pendente && onRemove && (
-        <Button variant="ghost" size="icon" className="size-9 text-muted-foreground" onClick={onRemove}>
+        <Button variant="ghost" size="icon" className="size-9 text-muted-foreground" onClick={onRemove} aria-label="Remover da lista">
           <X className="size-4" />
         </Button>
       )}
+
     </li>
   );
 }

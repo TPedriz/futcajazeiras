@@ -1,0 +1,10 @@
+# Fut Cajazeiras
+
+> Plataforma oficial do Fut Cajazeiras: gestão do baba com check-in, convidados, mensalidades e sorteio de times Fut 7.
+
+O Fut Cajazeiras é um clube de futebol amador que organiza sessões semanais de baba. A plataforma centraliza a lista de presença, moderação de convidados, controle financeiro dos associados e o sorteio automático de times.
+
+## Pages
+
+- [Início](/): Landing page com visão geral do clube e acesso à área do associado.
+- [Entrar](/auth): Login e cadastro de associados usando WhatsApp e senha.
