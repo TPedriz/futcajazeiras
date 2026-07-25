@@ -44,6 +44,7 @@ export type Database = {
           nome: string
           posicao: Database["public"]["Enums"]["posicao_jogador"]
           status_pagamento: Database["public"]["Enums"]["status_pagamento"]
+          telefone: string
         }
         Insert: {
           atualizado_em?: string
@@ -53,6 +54,7 @@ export type Database = {
           nome: string
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
           status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
+          telefone?: string
         }
         Update: {
           atualizado_em?: string
@@ -62,6 +64,7 @@ export type Database = {
           nome?: string
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
           status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
+          telefone?: string
         }
         Relationships: []
       }
