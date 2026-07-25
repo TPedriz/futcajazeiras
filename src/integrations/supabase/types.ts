@@ -141,7 +141,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      perfis_publicos: {
+        Row: {
+          id: string | null
+          nome: string | null
+          posicao: Database["public"]["Enums"]["posicao_jogador"] | null
+        }
+        Insert: {
+          id?: string | null
+          nome?: string | null
+          posicao?: Database["public"]["Enums"]["posicao_jogador"] | null
+        }
+        Update: {
+          id?: string | null
+          nome?: string | null
+          posicao?: Database["public"]["Enums"]["posicao_jogador"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       tem_papel: {
