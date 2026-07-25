@@ -56,11 +56,14 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       ) as string[];
       const mapa = new Map<string, { id: string; nome: string; posicao: "linha" | "goleiro" }>();
       if (ids.length > 0) {
-        const { data: perfis } = await supabase
-          .from("perfis_publicos" as never)
-          .select("id, nome, posicao")
-          .in("id", ids);
-        for (const p of perfis ?? []) mapa.set(p.id, p as { id: string; nome: string; posicao: "linha" | "goleiro" });
+        const { data: perfis } = await (supabase as unknown as {
+          from: (t: string) => {
+            select: (c: string) => {
+              in: (col: string, vals: string[]) => Promise<{ data: { id: string; nome: string; posicao: "linha" | "goleiro" }[] | null }>;
+            };
+          };
+        }).from("perfis_publicos").select("id, nome, posicao").in("id", ids);
+        for (const p of perfis ?? []) mapa.set(p.id, p);
       }
 
       return (presencas ?? []).map((p) => ({
