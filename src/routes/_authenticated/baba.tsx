@@ -400,19 +400,20 @@ function PresencaCard({ numero, nome, posicao, tipo, statusConvidado, onApprove,
       </div>
       {pendente && onApprove && (
         <>
-          <Button variant="success" size="icon" className="size-9" onClick={onApprove}>
+          <Button variant="success" size="icon" className="size-9" onClick={onApprove} aria-label="Aprovar convidado">
             <Check className="size-4" />
           </Button>
-          <Button variant="destructive" size="icon" className="size-9" onClick={onReject}>
+          <Button variant="destructive" size="icon" className="size-9" onClick={onReject} aria-label="Rejeitar convidado">
             <X className="size-4" />
           </Button>
         </>
       )}
       {!pendente && onRemove && (
-        <Button variant="ghost" size="icon" className="size-9 text-muted-foreground" onClick={onRemove}>
+        <Button variant="ghost" size="icon" className="size-9 text-muted-foreground" onClick={onRemove} aria-label="Remover da lista">
           <X className="size-4" />
         </Button>
       )}
+
     </li>
   );
 }
