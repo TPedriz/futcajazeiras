@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
-import { sortearTimes, formatarParaWhatsApp, type JogadorSorteavel, type Time } from "@/lib/sorteio";
+import { sortearTimes, formatarTimesParaWhatsApp, type JogadorSorteio, type TimeSorteado } from "@/lib/sorteio";
 import { useState, useMemo } from "react";
 import { Shuffle, Copy, HandMetal, User } from "lucide-react";
 import { toast } from "sonner";
@@ -17,32 +17,34 @@ export const Route = createFileRoute("/_authenticated/admin/sorteio")({
 function SorteioPage() {
   const { data: sessao } = useSuspenseQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
-  const [times, setTimes] = useState<Time[] | null>(null);
+  const [resultado, setResultado] = useState<{ times: TimeSorteado[]; sobras: JogadorSorteio[] } | null>(null);
 
-  const jogadores: JogadorSorteavel[] = useMemo(() => {
+  const jogadores: JogadorSorteio[] = useMemo(() => {
     if (!presencas) return [];
     return presencas
       .filter((p) => !p.nome_convidado || p.status_convidado === "aprovado")
       .map((p) => ({
         id: p.id,
         nome: p.nome_convidado ?? p.perfis?.nome ?? "Jogador",
-        posicao: p.nome_convidado ? "linha" : (p.perfis?.posicao ?? "linha"),
+        posicao: (p.nome_convidado ? "linha" : (p.perfis?.posicao ?? "linha")) as "goleiro" | "linha",
+        isConvidado: !!p.nome_convidado,
       }));
   }, [presencas]);
 
   const sortear = () => {
-    if (jogadores.length < 4) {
-      toast.error("Poucos jogadores", { description: "Precisa de pelo menos 4 confirmados." });
+    if (jogadores.length < 7) {
+      toast.error("Poucos jogadores", { description: "Precisa de pelo menos 7 confirmados." });
       return;
     }
-    setTimes(sortearTimes(jogadores));
+    setResultado(sortearTimes(jogadores));
     toast.success("Times sorteados!");
   };
 
   const copiar = async () => {
-    if (!times || !sessao) return;
-    const txt = formatarParaWhatsApp(
-      times,
+    if (!resultado || !sessao) return;
+    const txt = formatarTimesParaWhatsApp(
+      resultado.times,
+      resultado.sobras,
       format(new Date(sessao.data_horario), "dd/MM 'às' HH:mm", { locale: ptBR }),
     );
     await navigator.clipboard.writeText(txt);
@@ -69,36 +71,50 @@ function SorteioPage() {
         <Button variant="hero" size="lg" onClick={sortear}>
           <Shuffle className="size-4" /> Sortear
         </Button>
-        <Button variant="goldOutline" size="lg" onClick={copiar} disabled={!times}>
+        <Button variant="goldOutline" size="lg" onClick={copiar} disabled={!resultado}>
           <Copy className="size-4" /> WhatsApp
         </Button>
       </div>
 
-      {times && (
+      {resultado && (
         <div className="space-y-3">
-          {times.map((t) => (
+          {resultado.times.map((t) => (
             <div key={t.numero} className="card-premium p-4">
               <div className="mb-2 flex items-center justify-between">
-                <p className="font-display text-xl">Time {t.numero}</p>
+                <p className="font-display text-xl">{t.nome}</p>
                 <span className="text-xs uppercase tracking-widest text-gold">
-                  {t.jogadores.length} jogadores
+                  {(t.goleiro ? 1 : 0) + t.linha.length} jogadores
                 </span>
               </div>
               <ul className="space-y-1.5">
-                {t.jogadores.map((j, idx) => (
+                {t.goleiro && (
+                  <li className="flex items-center gap-2 text-sm">
+                    <HandMetal className="size-3.5 text-primary" />
+                    <span className="text-foreground">{t.goleiro.nome}</span>
+                    {t.goleiro.isConvidado && <span className="text-[10px] text-muted-foreground">(convidado)</span>}
+                  </li>
+                )}
+                {t.linha.map((j, idx) => (
                   <li key={j.id} className="flex items-center gap-2 text-sm">
                     <span className="w-5 font-display text-gold">{idx + 1}</span>
-                    {j.posicao === "goleiro" ? (
-                      <HandMetal className="size-3.5 text-primary" />
-                    ) : (
-                      <User className="size-3.5 text-muted-foreground" />
-                    )}
+                    <User className="size-3.5 text-muted-foreground" />
                     <span className="text-foreground">{j.nome}</span>
+                    {j.isConvidado && <span className="text-[10px] text-muted-foreground">(convidado)</span>}
                   </li>
                 ))}
               </ul>
             </div>
           ))}
+          {resultado.sobras.length > 0 && (
+            <div className="card-premium p-4">
+              <p className="mb-2 font-display text-lg text-muted-foreground">Reservas</p>
+              <ul className="space-y-1 text-sm">
+                {resultado.sobras.map((j) => (
+                  <li key={j.id}>• {j.nome}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>
