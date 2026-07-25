@@ -11,9 +11,12 @@ export const Route = createFileRoute("/_authenticated/inicio")({
   head: () => ({
     meta: [
       { title: "Início — Fut Cajazeiras" },
-      { name: "description", content: "Painel do associado do Fut Cajazeiras: status financeiro e próximo baba." },
+      { name: "description", content: "Painel do associado: veja seu status de mensalidade, o próximo baba e faça check-in direto pelo celular." },
+      { property: "og:title", content: "Painel do Associado — Fut Cajazeiras" },
+      { property: "og:description", content: "Seu status financeiro e o próximo baba do Fut Cajazeiras em um só lugar." },
     ],
   }),
+
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(proximaSessaoQuery());
   },
