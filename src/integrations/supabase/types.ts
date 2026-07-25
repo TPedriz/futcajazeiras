@@ -14,16 +14,146 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      papeis_usuario: {
+        Row: {
+          criado_em: string
+          id: string
+          papel: Database["public"]["Enums"]["papel_usuario"]
+          user_id: string
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          papel: Database["public"]["Enums"]["papel_usuario"]
+          user_id: string
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          papel?: Database["public"]["Enums"]["papel_usuario"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      perfis: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          email: string
+          id: string
+          nome: string
+          posicao: Database["public"]["Enums"]["posicao_jogador"]
+          status_pagamento: Database["public"]["Enums"]["status_pagamento"]
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          email: string
+          id: string
+          nome: string
+          posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          email?: string
+          id?: string
+          nome?: string
+          posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
+        }
+        Relationships: []
+      }
+      presencas: {
+        Row: {
+          baba_id: string
+          confirmado_em: string
+          id: string
+          nome_convidado: string | null
+          status_convidado:
+            | Database["public"]["Enums"]["status_convidado"]
+            | null
+          usuario_id: string
+        }
+        Insert: {
+          baba_id: string
+          confirmado_em?: string
+          id?: string
+          nome_convidado?: string | null
+          status_convidado?:
+            | Database["public"]["Enums"]["status_convidado"]
+            | null
+          usuario_id: string
+        }
+        Update: {
+          baba_id?: string
+          confirmado_em?: string
+          id?: string
+          nome_convidado?: string | null
+          status_convidado?:
+            | Database["public"]["Enums"]["status_convidado"]
+            | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presencas_baba_id_fkey"
+            columns: ["baba_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_baba"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessoes_baba: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          data_horario: string
+          esta_fechado: boolean
+          fechamento_lista: string
+          id: string
+          local: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          data_horario: string
+          esta_fechado?: boolean
+          fechamento_lista: string
+          id?: string
+          local: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          data_horario?: string
+          esta_fechado?: boolean
+          fechamento_lista?: string
+          id?: string
+          local?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      tem_papel: {
+        Args: {
+          _papel: Database["public"]["Enums"]["papel_usuario"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      papel_usuario: "administrador" | "associado"
+      posicao_jogador: "goleiro" | "linha"
+      status_convidado: "pendente" | "aprovado" | "rejeitado"
+      status_pagamento: "pago" | "pendente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +280,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      papel_usuario: ["administrador", "associado"],
+      posicao_jogador: ["goleiro", "linha"],
+      status_convidado: ["pendente", "aprovado", "rejeitado"],
+      status_pagamento: ["pago", "pendente"],
+    },
   },
 } as const
