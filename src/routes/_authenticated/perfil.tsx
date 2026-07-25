@@ -3,9 +3,13 @@ import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { perfilAtualQuery } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { LogOut, HandMetal, Shield, Mail, User } from "lucide-react";
+import { LogOut, HandMetal, Shield, Phone, User } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { useState } from "react";
+import { formataTelefone } from "@/lib/telefone";
 
 export const Route = createFileRoute("/_authenticated/perfil")({
   head: () => ({
@@ -24,6 +28,23 @@ function PerfilPage() {
 
   const perfil = data?.perfil;
   const emDia = perfil?.status_pagamento === "pago";
+  const [salvando, setSalvando] = useState(false);
+
+  const alterarPosicao = async (nova: "linha" | "goleiro") => {
+    if (!perfil || nova === perfil.posicao) return;
+    setSalvando(true);
+    const { error } = await supabase
+      .from("perfis")
+      .update({ posicao: nova })
+      .eq("id", perfil.id);
+    setSalvando(false);
+    if (error) {
+      toast.error("Não foi possível atualizar a posição.");
+      return;
+    }
+    toast.success("Posição atualizada!");
+    qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+  };
 
   const sair = async () => {
     await qc.cancelQueries();
@@ -44,11 +65,10 @@ function PerfilPage() {
       </div>
 
       <div className="card-premium divide-y divide-border">
-        <InfoRow Icon={Mail} label="E-mail" value={perfil?.email ?? "—"} />
         <InfoRow
-          Icon={perfil?.posicao === "goleiro" ? HandMetal : User}
-          label="Posição"
-          value={perfil?.posicao === "goleiro" ? "Goleiro" : "Jogador de linha"}
+          Icon={Phone}
+          label="WhatsApp"
+          value={perfil?.telefone ? formataTelefone(perfil.telefone) : "—"}
         />
         <InfoRow
           Icon={Shield}
@@ -58,6 +78,26 @@ function PerfilPage() {
         />
       </div>
 
+      <div className="card-premium p-4 space-y-3">
+        <Label htmlFor="posicao-perfil" className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+          {perfil?.posicao === "goleiro" ? <HandMetal className="size-4" /> : <User className="size-4" />}
+          Posição preferida
+        </Label>
+        <Select
+          value={perfil?.posicao ?? "linha"}
+          onValueChange={(v) => alterarPosicao(v as "linha" | "goleiro")}
+          disabled={salvando}
+        >
+          <SelectTrigger id="posicao-perfil" className="h-12">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="linha">Jogador de linha</SelectItem>
+            <SelectItem value="goleiro">Goleiro</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Button variant="outline" size="lg" className="w-full" onClick={sair}>
         <LogOut className="size-4" /> Sair
       </Button>
@@ -65,7 +105,7 @@ function PerfilPage() {
   );
 }
 
-function InfoRow({ Icon, label, value, highlight }: { Icon: typeof Mail; label: string; value: string; highlight?: "gold" | "destructive" }) {
+function InfoRow({ Icon, label, value, highlight }: { Icon: typeof Phone; label: string; value: string; highlight?: "gold" | "destructive" }) {
   return (
     <div className="flex items-center gap-3 p-4">
       <Icon className="size-4 text-muted-foreground" />

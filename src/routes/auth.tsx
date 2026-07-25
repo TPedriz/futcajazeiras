@@ -11,6 +11,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import {
+  formataTelefone,
+  normalizaTelefone,
+  telefoneParaEmail,
+  telefoneValido,
+} from "@/lib/telefone";
 
 const searchSchema = z.object({
   modo: z.enum(["login", "cadastro"]).optional(),
@@ -40,25 +46,29 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   // Login state
-  const [emailLogin, setEmailLogin] = useState("");
+  const [telefoneLogin, setTelefoneLogin] = useState("");
   const [senhaLogin, setSenhaLogin] = useState("");
 
   // Cadastro state
   const [nome, setNome] = useState("");
-  const [emailCadastro, setEmailCadastro] = useState("");
+  const [telefoneCadastro, setTelefoneCadastro] = useState("");
   const [senhaCadastro, setSenhaCadastro] = useState("");
   const [posicao, setPosicao] = useState<"linha" | "goleiro">("linha");
 
   const onLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!telefoneValido(telefoneLogin)) {
+      toast.error("Informe um número de WhatsApp válido (com DDD).");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email: emailLogin,
+      email: telefoneParaEmail(telefoneLogin),
       password: senhaLogin,
     });
     setLoading(false);
     if (error) {
-      toast.error("Falha no login", { description: error.message });
+      toast.error("Falha no login", { description: "Verifique o número e a senha." });
       return;
     }
     toast.success("Bem-vindo de volta!");
@@ -67,27 +77,46 @@ function AuthPage() {
 
   const onCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!nome.trim()) {
+      toast.error("Informe seu nome completo.");
+      return;
+    }
+    if (!telefoneValido(telefoneCadastro)) {
+      toast.error("Informe um número de WhatsApp válido (com DDD).");
+      return;
+    }
     if (senhaCadastro.length < 6) {
       toast.error("A senha precisa ter pelo menos 6 caracteres.");
       return;
     }
     setLoading(true);
+    const telefone = normalizaTelefone(telefoneCadastro);
     const { error } = await supabase.auth.signUp({
-      email: emailCadastro,
+      email: telefoneParaEmail(telefoneCadastro),
       password: senhaCadastro,
       options: {
         emailRedirectTo: `${window.location.origin}/inicio`,
-        data: { nome, posicao },
+        data: { nome: nome.trim(), telefone, posicao },
       },
     });
     setLoading(false);
     if (error) {
-      toast.error("Não foi possível cadastrar", { description: error.message });
+      const msg = /already/i.test(error.message)
+        ? "Este número já está cadastrado."
+        : error.message;
+      toast.error("Não foi possível cadastrar", { description: msg });
       return;
     }
-    toast.success("Conta criada!", {
-      description: "Sua entrada foi solicitada. Faça login para continuar.",
+    // Auto-confirm está ligado: já faz login direto
+    const { error: loginErr } = await supabase.auth.signInWithPassword({
+      email: telefoneParaEmail(telefoneCadastro),
+      password: senhaCadastro,
     });
+    if (loginErr) {
+      toast.success("Conta criada!", { description: "Faça login para continuar." });
+      return;
+    }
+    toast.success("Conta criada!", { description: "Bem-vindo ao Fut Cajazeiras." });
     navigate({ to: "/inicio" });
   };
 
@@ -114,14 +143,16 @@ function AuthPage() {
             <TabsContent value="login">
               <form onSubmit={onLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email-login">E-mail</Label>
+                  <Label htmlFor="tel-login">WhatsApp</Label>
                   <Input
-                    id="email-login"
-                    type="email"
-                    autoComplete="email"
+                    id="tel-login"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="(00) 00000-0000"
                     required
-                    value={emailLogin}
-                    onChange={(e) => setEmailLogin(e.target.value)}
+                    value={telefoneLogin}
+                    onChange={(e) => setTelefoneLogin(formataTelefone(e.target.value))}
                     className="h-12"
                   />
                 </div>
@@ -156,16 +187,19 @@ function AuthPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email-cad">E-mail</Label>
+                  <Label htmlFor="tel-cad">WhatsApp</Label>
                   <Input
-                    id="email-cad"
-                    type="email"
-                    autoComplete="email"
+                    id="tel-cad"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="(00) 00000-0000"
                     required
-                    value={emailCadastro}
-                    onChange={(e) => setEmailCadastro(e.target.value)}
+                    value={telefoneCadastro}
+                    onChange={(e) => setTelefoneCadastro(formataTelefone(e.target.value))}
                     className="h-12"
                   />
+                  <p className="text-xs text-muted-foreground">Use o número com DDD. Ele será seu login.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="senha-cad">Senha</Label>
@@ -192,6 +226,7 @@ function AuthPage() {
                       <SelectItem value="goleiro">Goleiro</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">Você pode alterar no seu perfil quando quiser.</p>
                 </div>
                 <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
                   {loading ? "Cadastrando..." : "Solicitar entrada"}
