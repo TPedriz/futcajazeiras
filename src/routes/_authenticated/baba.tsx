@@ -21,17 +21,39 @@ import { Calendar, MapPin, Users, UserPlus, Clock, Check, Shield, HandMetal, X }
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/baba")({
-  head: () => ({
-    meta: [
-      { title: "Próximo Baba — Fut Cajazeiras" },
-      { name: "description", content: "Confirme sua presença e leve seu convidado para o próximo baba do Fut Cajazeiras." },
-    ],
-  }),
-  loader: ({ context }) => {
-    context.queryClient.ensureQueryData(proximaSessaoQuery());
+  head: ({ loaderData }) => {
+    const sessao = loaderData as { id: string; data_horario: string; local: string } | null | undefined;
+    const scripts = sessao
+      ? [{
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SportsEvent",
+            name: `Baba Fut Cajazeiras — ${new Date(sessao.data_horario).toLocaleDateString("pt-BR")}`,
+            startDate: sessao.data_horario,
+            sport: "Soccer",
+            location: { "@type": "Place", name: sessao.local },
+            organizer: { "@type": "SportsOrganization", name: "Fut Cajazeiras" },
+          }),
+        }]
+      : undefined;
+    return {
+      meta: [
+        { title: "Próximo Baba — Fut Cajazeiras" },
+        { name: "description", content: "Confirme sua presença, leve seu convidado e veja a lista de chamada do próximo baba do Fut Cajazeiras." },
+        { property: "og:title", content: "Próximo Baba — Fut Cajazeiras" },
+        { property: "og:description", content: "Data, horário, local e lista de chamada do próximo baba do Fut Cajazeiras." },
+        { property: "og:type", content: "event" },
+      ],
+      ...(scripts ? { scripts } : {}),
+    };
+  },
+  loader: async ({ context }) => {
+    return await context.queryClient.ensureQueryData(proximaSessaoQuery());
   },
   component: BabaPage,
 });
+
 
 function BabaPage() {
   const { data: perfilData } = useSuspenseQuery(perfilAtualQuery());
