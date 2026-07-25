@@ -15,9 +15,12 @@ export const Route = createFileRoute("/_authenticated/perfil")({
   head: () => ({
     meta: [
       { title: "Perfil — Fut Cajazeiras" },
-      { name: "description", content: "Seu perfil no Fut Cajazeiras." },
+      { name: "description", content: "Gerencie seu perfil no Fut Cajazeiras: WhatsApp cadastrado, posição preferida (linha ou goleiro) e status da mensalidade." },
+      { property: "og:title", content: "Seu Perfil — Fut Cajazeiras" },
+      { property: "og:description", content: "Atualize sua posição preferida e acompanhe sua mensalidade no Fut Cajazeiras." },
     ],
   }),
+
   component: PerfilPage,
 });
 
