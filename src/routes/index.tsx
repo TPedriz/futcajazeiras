@@ -11,8 +11,34 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "O baba do Fut Cajazeiras na palma da mão: check-in, convidados, pagamentos e sorteio de times direto pelo celular." },
       { property: "og:title", content: "Fut Cajazeiras — Baba com organização de time premium" },
       { property: "og:description", content: "Confirme presença, leve seu convidado e acompanhe o baba direto pelo celular." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://futcajazeiras.lovable.app/" },
+    ],
+    links: [{ rel: "canonical", href: "https://futcajazeiras.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "SportsOrganization",
+              name: "Fut Cajazeiras",
+              url: "https://futcajazeiras.lovable.app/",
+              sport: "Soccer",
+            },
+            {
+              "@type": "WebSite",
+              name: "Fut Cajazeiras",
+              url: "https://futcajazeiras.lovable.app/",
+              description: "Plataforma de gestão do baba do Fut Cajazeiras: presenças, convidados, mensalidades e sorteio de times.",
+            },
+          ],
+        }),
+      },
     ],
   }),
+
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
