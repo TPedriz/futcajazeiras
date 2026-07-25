@@ -240,9 +240,10 @@ function BabaPage() {
                     <p className="text-sm font-semibold">{meuConvidado.nome_convidado}</p>
                     <StatusConvidadoBadge status={meuConvidado.status_convidado!} />
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => removerPresenca.mutate(meuConvidado.id)}>
+                  <Button variant="ghost" size="icon" aria-label="Remover meu convidado" onClick={() => removerPresenca.mutate(meuConvidado.id)}>
                     <X className="size-4" />
                   </Button>
+
                 </div>
               ) : (
                 <Dialog open={convidadoOpen} onOpenChange={setConvidadoOpen}>
