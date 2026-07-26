@@ -4,6 +4,8 @@ import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery } from "@/
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle, Calendar, MapPin, Users, ArrowRight, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
+import { RankingMensal } from "@/components/RankingMensal";
+import { tempoDeAssociado } from "@/lib/associado";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -31,12 +33,19 @@ function InicioPage() {
   const nome = perfilData?.perfil?.nome ?? "Atleta";
   const emDia = perfilData?.perfil?.status_pagamento === "pago";
   const totalConfirmados = presencas?.filter((p) => !p.nome_convidado).length ?? 0;
+  const tempo = tempoDeAssociado(perfilData?.perfil?.criado_em);
 
   return (
     <div className="space-y-5">
       <div>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Boa!</p>
         <h1 className="font-display text-4xl leading-tight text-foreground">{nome.split(" ")[0]}</h1>
+        {tempo && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            <span className="text-gold">{tempo.apelido}</span> — no baba há{" "}
+            <strong className="text-foreground">{tempo.texto}</strong>.
+          </p>
+        )}
       </div>
 
       {/* Status financeiro */}
@@ -108,6 +117,8 @@ function InicioPage() {
           </Button>
         </Link>
       </div>
+
+      <RankingMensal />
     </div>
   );
 }

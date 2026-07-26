@@ -14,12 +14,15 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
+import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
 import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/baba'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminSorteioRouteImport } from './routes/_authenticated/admin/sorteio'
+import { Route as AuthenticatedAdminResultadosRouteImport } from './routes/_authenticated/admin/resultados'
 import { Route as AuthenticatedAdminFinanceiroRouteImport } from './routes/_authenticated/admin/financeiro'
+import { Route as AuthenticatedAdminCargosRouteImport } from './routes/_authenticated/admin/cargos'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -43,6 +46,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
+  id: '/pagamentos',
+  path: '/pagamentos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
@@ -71,10 +79,22 @@ const AuthenticatedAdminSorteioRoute =
     path: '/sorteio',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminResultadosRoute =
+  AuthenticatedAdminResultadosRouteImport.update({
+    id: '/resultados',
+    path: '/resultados',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminFinanceiroRoute =
   AuthenticatedAdminFinanceiroRouteImport.update({
     id: '/financeiro',
     path: '/financeiro',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminCargosRoute =
+  AuthenticatedAdminCargosRouteImport.update({
+    id: '/cargos',
+    path: '/cargos',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 
@@ -85,8 +105,11 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/baba': typeof AuthenticatedBabaRoute
   '/inicio': typeof AuthenticatedInicioRoute
+  '/pagamentos': typeof AuthenticatedPagamentosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
+  '/admin/cargos': typeof AuthenticatedAdminCargosRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
+  '/admin/resultados': typeof AuthenticatedAdminResultadosRoute
   '/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -96,8 +119,11 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/baba': typeof AuthenticatedBabaRoute
   '/inicio': typeof AuthenticatedInicioRoute
+  '/pagamentos': typeof AuthenticatedPagamentosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
+  '/admin/cargos': typeof AuthenticatedAdminCargosRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
+  '/admin/resultados': typeof AuthenticatedAdminResultadosRoute
   '/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
@@ -110,8 +136,11 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/baba': typeof AuthenticatedBabaRoute
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
+  '/_authenticated/pagamentos': typeof AuthenticatedPagamentosRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
+  '/_authenticated/admin/cargos': typeof AuthenticatedAdminCargosRoute
   '/_authenticated/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
+  '/_authenticated/admin/resultados': typeof AuthenticatedAdminResultadosRoute
   '/_authenticated/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -124,8 +153,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/baba'
     | '/inicio'
+    | '/pagamentos'
     | '/perfil'
+    | '/admin/cargos'
     | '/admin/financeiro'
+    | '/admin/resultados'
     | '/admin/sorteio'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -135,8 +167,11 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/baba'
     | '/inicio'
+    | '/pagamentos'
     | '/perfil'
+    | '/admin/cargos'
     | '/admin/financeiro'
+    | '/admin/resultados'
     | '/admin/sorteio'
     | '/admin'
   id:
@@ -148,8 +183,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/baba'
     | '/_authenticated/inicio'
+    | '/_authenticated/pagamentos'
     | '/_authenticated/perfil'
+    | '/_authenticated/admin/cargos'
     | '/_authenticated/admin/financeiro'
+    | '/_authenticated/admin/resultados'
     | '/_authenticated/admin/sorteio'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
@@ -198,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPerfilRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pagamentos': {
+      id: '/_authenticated/pagamentos'
+      path: '/pagamentos'
+      fullPath: '/pagamentos'
+      preLoaderRoute: typeof AuthenticatedPagamentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/inicio': {
       id: '/_authenticated/inicio'
       path: '/inicio'
@@ -233,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSorteioRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/resultados': {
+      id: '/_authenticated/admin/resultados'
+      path: '/resultados'
+      fullPath: '/admin/resultados'
+      preLoaderRoute: typeof AuthenticatedAdminResultadosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/financeiro': {
       id: '/_authenticated/admin/financeiro'
       path: '/financeiro'
@@ -240,17 +292,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFinanceiroRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/cargos': {
+      id: '/_authenticated/admin/cargos'
+      path: '/cargos'
+      fullPath: '/admin/cargos'
+      preLoaderRoute: typeof AuthenticatedAdminCargosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminCargosRoute: typeof AuthenticatedAdminCargosRoute
   AuthenticatedAdminFinanceiroRoute: typeof AuthenticatedAdminFinanceiroRoute
+  AuthenticatedAdminResultadosRoute: typeof AuthenticatedAdminResultadosRoute
   AuthenticatedAdminSorteioRoute: typeof AuthenticatedAdminSorteioRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminCargosRoute: AuthenticatedAdminCargosRoute,
   AuthenticatedAdminFinanceiroRoute: AuthenticatedAdminFinanceiroRoute,
+  AuthenticatedAdminResultadosRoute: AuthenticatedAdminResultadosRoute,
   AuthenticatedAdminSorteioRoute: AuthenticatedAdminSorteioRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
@@ -262,6 +325,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedBabaRoute: typeof AuthenticatedBabaRoute
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
+  AuthenticatedPagamentosRoute: typeof AuthenticatedPagamentosRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
 }
 
@@ -269,6 +333,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedBabaRoute: AuthenticatedBabaRoute,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
+  AuthenticatedPagamentosRoute: AuthenticatedPagamentosRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
 }
 

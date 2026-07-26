@@ -14,6 +14,115 @@ export type Database = {
   }
   public: {
     Tables: {
+      estatisticas_baba: {
+        Row: {
+          atualizado_em: string
+          baba_id: string
+          cartoes_amarelos: number
+          cartoes_azuis: number
+          cartoes_vermelhos: number
+          criado_em: string
+          gols: number
+          id: string
+          usuario_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          baba_id: string
+          cartoes_amarelos?: number
+          cartoes_azuis?: number
+          cartoes_vermelhos?: number
+          criado_em?: string
+          gols?: number
+          id?: string
+          usuario_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          baba_id?: string
+          cartoes_amarelos?: number
+          cartoes_azuis?: number
+          cartoes_vermelhos?: number
+          criado_em?: string
+          gols?: number
+          id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estatisticas_baba_baba_id_fkey"
+            columns: ["baba_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_baba"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estatisticas_baba_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estatisticas_baba_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "perfis_publicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mensalidades: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          id: string
+          pago_em: string | null
+          referencia: string
+          status: Database["public"]["Enums"]["status_pagamento"]
+          usuario_id: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          pago_em?: string | null
+          referencia: string
+          status?: Database["public"]["Enums"]["status_pagamento"]
+          usuario_id: string
+          valor?: number
+          vencimento: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          pago_em?: string | null
+          referencia?: string
+          status?: Database["public"]["Enums"]["status_pagamento"]
+          usuario_id?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensalidades_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensalidades_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "perfis_publicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       papeis_usuario: {
         Row: {
           criado_em: string
@@ -139,6 +248,90 @@ export type Database = {
         }
         Relationships: []
       }
+      times_baba: {
+        Row: {
+          atualizado_em: string
+          baba_id: string
+          criado_em: string
+          id: string
+          nome: string
+          resultado: Database["public"]["Enums"]["resultado_time"] | null
+        }
+        Insert: {
+          atualizado_em?: string
+          baba_id: string
+          criado_em?: string
+          id?: string
+          nome: string
+          resultado?: Database["public"]["Enums"]["resultado_time"] | null
+        }
+        Update: {
+          atualizado_em?: string
+          baba_id?: string
+          criado_em?: string
+          id?: string
+          nome?: string
+          resultado?: Database["public"]["Enums"]["resultado_time"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "times_baba_baba_id_fkey"
+            columns: ["baba_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_baba"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      times_jogadores: {
+        Row: {
+          criado_em: string
+          id: string
+          nome_convidado: string | null
+          posicao: Database["public"]["Enums"]["posicao_jogador"]
+          time_id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          nome_convidado?: string | null
+          posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          time_id: string
+          usuario_id?: string | null
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          nome_convidado?: string | null
+          posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          time_id?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "times_jogadores_time_id_fkey"
+            columns: ["time_id"]
+            isOneToOne: false
+            referencedRelation: "times_baba"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "times_jogadores_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "times_jogadores_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "perfis_publicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       perfis_publicos: {
@@ -159,8 +352,25 @@ export type Database = {
         }
         Relationships: []
       }
+      ranking_mensal: {
+        Row: {
+          cartoes_amarelos: number | null
+          cartoes_azuis: number | null
+          cartoes_vermelhos: number | null
+          derrotas: number | null
+          empates: number | null
+          gols: number | null
+          mes: string | null
+          nome: string | null
+          posicao: Database["public"]["Enums"]["posicao_jogador"] | null
+          usuario_id: string | null
+          vitorias: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      garante_mensalidades_mes: { Args: never; Returns: undefined }
       tem_papel: {
         Args: {
           _papel: Database["public"]["Enums"]["papel_usuario"]
@@ -172,6 +382,7 @@ export type Database = {
     Enums: {
       papel_usuario: "administrador" | "associado"
       posicao_jogador: "goleiro" | "linha"
+      resultado_time: "vitoria" | "derrota" | "empate"
       status_convidado: "pendente" | "aprovado" | "rejeitado"
       status_pagamento: "pago" | "pendente"
     }
@@ -303,6 +514,7 @@ export const Constants = {
     Enums: {
       papel_usuario: ["administrador", "associado"],
       posicao_jogador: ["goleiro", "linha"],
+      resultado_time: ["vitoria", "derrota", "empate"],
       status_convidado: ["pendente", "aprovado", "rejeitado"],
       status_pagamento: ["pago", "pendente"],
     },

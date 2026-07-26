@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { LogOut, HandMetal, Shield, Phone, User } from "lucide-react";
+import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { tempoDeAssociado } from "@/lib/associado";
 import { BrandLogo } from "@/components/BrandLogo";
 import { useState } from "react";
 import { formataTelefone } from "@/lib/telefone";
@@ -31,6 +33,7 @@ function PerfilPage() {
 
   const perfil = data?.perfil;
   const emDia = perfil?.status_pagamento === "pago";
+  const tempo = tempoDeAssociado(perfil?.criado_em);
   const [salvando, setSalvando] = useState(false);
 
   const alterarPosicao = async (nova: "linha" | "goleiro") => {
@@ -65,6 +68,19 @@ function PerfilPage() {
         <p className="mt-1 text-xs uppercase tracking-widest text-gold">
           {data?.isAdmin ? "Diretoria" : "Associado"}
         </p>
+        {tempo && (
+          <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-3">
+            <p className="flex items-center justify-center gap-2 font-display text-lg text-gold">
+              <Heart className="size-4" /> {tempo.apelido}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Você faz parte do Fut Cajazeiras há <strong className="text-foreground">{tempo.texto}</strong>
+            </p>
+            <p className="mt-0.5 text-[11px] capitalize text-muted-foreground">
+              desde {tempo.desdeFormatado} • {tempo.dias} dias de camisa
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="card-premium divide-y divide-border">
@@ -100,6 +116,12 @@ function PerfilPage() {
           </SelectContent>
         </Select>
       </div>
+
+      <Link to="/pagamentos">
+        <Button variant="goldOutline" size="lg" className="w-full">
+          <Wallet className="size-4" /> Histórico de pagamentos
+        </Button>
+      </Link>
 
       <Button variant="outline" size="lg" className="w-full" onClick={sair}>
         <LogOut className="size-4" /> Sair

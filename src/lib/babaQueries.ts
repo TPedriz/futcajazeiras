@@ -99,3 +99,104 @@ export const todosAssociadosQuery = () =>
       return data ?? [];
     },
   });
+
+export const mesReferencia = (d: Date = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+
+export const minhasMensalidadesQuery = (userId: string | undefined) =>
+  queryOptions({
+    queryKey: ["mensalidades-minhas", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) return [];
+      await supabase.rpc("garante_mensalidades_mes");
+      const { data, error } = await supabase
+        .from("mensalidades")
+        .select("*")
+        .eq("usuario_id", userId)
+        .order("referencia", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const mensalidadesDoMesQuery = (referencia: string) =>
+  queryOptions({
+    queryKey: ["mensalidades-mes", referencia],
+    queryFn: async () => {
+      await supabase.rpc("garante_mensalidades_mes");
+      const { data, error } = await supabase
+        .from("mensalidades")
+        .select("*")
+        .eq("referencia", referencia);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const rankingDoMesQuery = (referencia: string) =>
+  queryOptions({
+    queryKey: ["ranking-mes", referencia],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ranking_mensal")
+        .select("*")
+        .eq("mes", referencia);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const papeisTodosQuery = () =>
+  queryOptions({
+    queryKey: ["papeis-todos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("papeis_usuario").select("*");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const timesDoBabaQuery = (babaId: string | undefined) =>
+  queryOptions({
+    queryKey: ["times-baba", babaId],
+    enabled: !!babaId,
+    queryFn: async () => {
+      if (!babaId) return [];
+      const { data, error } = await supabase
+        .from("times_baba")
+        .select("id, baba_id, nome, resultado, times_jogadores(id, usuario_id, nome_convidado, posicao)")
+        .eq("baba_id", babaId)
+        .order("nome", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const estatisticasDoBabaQuery = (babaId: string | undefined) =>
+  queryOptions({
+    queryKey: ["estatisticas-baba", babaId],
+    enabled: !!babaId,
+    queryFn: async () => {
+      if (!babaId) return [];
+      const { data, error } = await supabase
+        .from("estatisticas_baba")
+        .select("*")
+        .eq("baba_id", babaId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const perfisPublicosQuery = () =>
+  queryOptions({
+    queryKey: ["perfis-publicos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("perfis_publicos")
+        .select("id, nome, posicao")
+        .order("nome", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
