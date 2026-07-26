@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
 import { sortearTimes, formatarTimesParaWhatsApp, type JogadorSorteio, type TimeSorteado } from "@/lib/sorteio";
 import { useState, useMemo } from "react";
-import { Shuffle, Copy, HandMetal, User } from "lucide-react";
+import { Shuffle, Copy, HandMetal, User, Save } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -18,6 +19,44 @@ function SorteioPage() {
   const { data: sessao } = useSuspenseQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
   const [resultado, setResultado] = useState<{ times: TimeSorteado[]; sobras: JogadorSorteio[] } | null>(null);
+  const qc = useQueryClient();
+
+  const usuarioPorPresenca = useMemo(() => {
+    const m = new Map<string, string | null>();
+    for (const p of presencas ?? []) m.set(p.id, p.nome_convidado ? null : p.usuario_id);
+    return m;
+  }, [presencas]);
+
+  const salvarTimes = useMutation({
+    mutationFn: async () => {
+      if (!resultado || !sessao) throw new Error("Sorteie os times primeiro");
+      await supabase.from("times_baba").delete().eq("baba_id", sessao.id);
+      for (const t of resultado.times) {
+        const { data: time, error } = await supabase
+          .from("times_baba")
+          .insert({ baba_id: sessao.id, nome: t.nome })
+          .select("id")
+          .single();
+        if (error) throw error;
+        const jogadoresTime = [...(t.goleiro ? [t.goleiro] : []), ...t.linha];
+        const linhas = jogadoresTime.map((j) => ({
+          time_id: time.id,
+          usuario_id: usuarioPorPresenca.get(j.id) ?? null,
+          nome_convidado: j.isConvidado ? j.nome : null,
+          posicao: j.posicao,
+        }));
+        if (linhas.length > 0) {
+          const { error: e2 } = await supabase.from("times_jogadores").insert(linhas);
+          if (e2) throw e2;
+        }
+      }
+    },
+    onSuccess: () => {
+      toast.success("Times salvos!", { description: "Agora lance os resultados na aba Resultados." });
+      qc.invalidateQueries({ queryKey: ["times-baba", sessao?.id] });
+    },
+    onError: (e: Error) => toast.error("Erro ao salvar", { description: e.message }),
+  });
 
   const jogadores: JogadorSorteio[] = useMemo(() => {
     if (!presencas) return [];
@@ -73,6 +112,15 @@ function SorteioPage() {
         </Button>
         <Button variant="goldOutline" size="lg" onClick={copiar} disabled={!resultado}>
           <Copy className="size-4" /> WhatsApp
+        </Button>
+        <Button
+          variant="gold"
+          size="lg"
+          className="col-span-2"
+          disabled={!resultado || salvarTimes.isPending}
+          onClick={() => salvarTimes.mutate()}
+        >
+          <Save className="size-4" /> Salvar times para resultados
         </Button>
       </div>
 
