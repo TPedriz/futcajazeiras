@@ -187,3 +187,16 @@ export const estatisticasDoBabaQuery = (babaId: string | undefined) =>
       return data ?? [];
     },
   });
+
+export const perfisPublicosQuery = () =>
+  queryOptions({
+    queryKey: ["perfis-publicos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("perfis_publicos")
+        .select("id, nome, posicao")
+        .order("nome", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
