@@ -34,7 +34,10 @@ function AdminLayout() {
         <AdminTab to="/admin" label="Sessões" Icon={CalendarPlus} />
         <AdminTab to="/admin/financeiro" label="Financeiro" Icon={Wallet} />
         <AdminTab to="/admin/sorteio" label="Sorteio" Icon={Shuffle} />
+        <AdminTab to="/admin/resultados" label="Resultados" Icon={Trophy} />
+        <AdminTab to="/admin/cargos" label="Cargos" Icon={UserCog} />
       </nav>
+
       <Outlet />
     </div>
   );
