@@ -20,6 +20,7 @@ import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/b
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminSorteioRouteImport } from './routes/_authenticated/admin/sorteio'
+import { Route as AuthenticatedAdminResultadosRouteImport } from './routes/_authenticated/admin/resultados'
 import { Route as AuthenticatedAdminFinanceiroRouteImport } from './routes/_authenticated/admin/financeiro'
 import { Route as AuthenticatedAdminCargosRouteImport } from './routes/_authenticated/admin/cargos'
 
@@ -78,6 +79,12 @@ const AuthenticatedAdminSorteioRoute =
     path: '/sorteio',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminResultadosRoute =
+  AuthenticatedAdminResultadosRouteImport.update({
+    id: '/resultados',
+    path: '/resultados',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminFinanceiroRoute =
   AuthenticatedAdminFinanceiroRouteImport.update({
     id: '/financeiro',
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/admin/cargos': typeof AuthenticatedAdminCargosRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
+  '/admin/resultados': typeof AuthenticatedAdminResultadosRoute
   '/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -115,6 +123,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/admin/cargos': typeof AuthenticatedAdminCargosRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
+  '/admin/resultados': typeof AuthenticatedAdminResultadosRoute
   '/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
@@ -131,6 +140,7 @@ export interface FileRoutesById {
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/admin/cargos': typeof AuthenticatedAdminCargosRoute
   '/_authenticated/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
+  '/_authenticated/admin/resultados': typeof AuthenticatedAdminResultadosRoute
   '/_authenticated/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/admin/cargos'
     | '/admin/financeiro'
+    | '/admin/resultados'
     | '/admin/sorteio'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/admin/cargos'
     | '/admin/financeiro'
+    | '/admin/resultados'
     | '/admin/sorteio'
     | '/admin'
   id:
@@ -175,6 +187,7 @@ export interface FileRouteTypes {
     | '/_authenticated/perfil'
     | '/_authenticated/admin/cargos'
     | '/_authenticated/admin/financeiro'
+    | '/_authenticated/admin/resultados'
     | '/_authenticated/admin/sorteio'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSorteioRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/resultados': {
+      id: '/_authenticated/admin/resultados'
+      path: '/resultados'
+      fullPath: '/admin/resultados'
+      preLoaderRoute: typeof AuthenticatedAdminResultadosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/financeiro': {
       id: '/_authenticated/admin/financeiro'
       path: '/financeiro'
@@ -285,6 +305,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCargosRoute: typeof AuthenticatedAdminCargosRoute
   AuthenticatedAdminFinanceiroRoute: typeof AuthenticatedAdminFinanceiroRoute
+  AuthenticatedAdminResultadosRoute: typeof AuthenticatedAdminResultadosRoute
   AuthenticatedAdminSorteioRoute: typeof AuthenticatedAdminSorteioRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -292,6 +313,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCargosRoute: AuthenticatedAdminCargosRoute,
   AuthenticatedAdminFinanceiroRoute: AuthenticatedAdminFinanceiroRoute,
+  AuthenticatedAdminResultadosRoute: AuthenticatedAdminResultadosRoute,
   AuthenticatedAdminSorteioRoute: AuthenticatedAdminSorteioRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
