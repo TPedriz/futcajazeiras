@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
+import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
 import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/baba'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -43,6 +44,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
+  id: '/pagamentos',
+  path: '/pagamentos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/baba': typeof AuthenticatedBabaRoute
   '/inicio': typeof AuthenticatedInicioRoute
+  '/pagamentos': typeof AuthenticatedPagamentosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/baba': typeof AuthenticatedBabaRoute
   '/inicio': typeof AuthenticatedInicioRoute
+  '/pagamentos': typeof AuthenticatedPagamentosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/baba': typeof AuthenticatedBabaRoute
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
+  '/_authenticated/pagamentos': typeof AuthenticatedPagamentosRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/_authenticated/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/baba'
     | '/inicio'
+    | '/pagamentos'
     | '/perfil'
     | '/admin/financeiro'
     | '/admin/sorteio'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/baba'
     | '/inicio'
+    | '/pagamentos'
     | '/perfil'
     | '/admin/financeiro'
     | '/admin/sorteio'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/baba'
     | '/_authenticated/inicio'
+    | '/_authenticated/pagamentos'
     | '/_authenticated/perfil'
     | '/_authenticated/admin/financeiro'
     | '/_authenticated/admin/sorteio'
@@ -196,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/perfil'
       fullPath: '/perfil'
       preLoaderRoute: typeof AuthenticatedPerfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pagamentos': {
+      id: '/_authenticated/pagamentos'
+      path: '/pagamentos'
+      fullPath: '/pagamentos'
+      preLoaderRoute: typeof AuthenticatedPagamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inicio': {
@@ -262,6 +281,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedBabaRoute: typeof AuthenticatedBabaRoute
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
+  AuthenticatedPagamentosRoute: typeof AuthenticatedPagamentosRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
 }
 
@@ -269,6 +289,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedBabaRoute: AuthenticatedBabaRoute,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
+  AuthenticatedPagamentosRoute: AuthenticatedPagamentosRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
 }
 
