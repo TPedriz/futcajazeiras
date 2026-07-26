@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, Link, redirect } from "@tanstack/react-router";
 import { perfilAtualQuery } from "@/lib/babaQueries";
-import { CalendarPlus, Wallet, Shuffle, ChevronLeft } from "lucide-react";
+import { CalendarPlus, Wallet, Shuffle, ChevronLeft, Trophy, UserCog } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
