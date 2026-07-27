@@ -3,10 +3,12 @@ import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { perfilAtualQuery } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart } from "lucide-react";
+import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save } from "lucide-react";
+
 import { Link } from "@tanstack/react-router";
 import { tempoDeAssociado } from "@/lib/associado";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -35,6 +37,27 @@ function PerfilPage() {
   const emDia = perfil?.status_pagamento === "pago";
   const tempo = tempoDeAssociado(perfil?.criado_em);
   const [salvando, setSalvando] = useState(false);
+  const [editandoNome, setEditandoNome] = useState(false);
+  const [nome, setNome] = useState("");
+
+  const salvarNome = async () => {
+    if (!perfil) return;
+    if (nome.trim().length < 2) {
+      toast.error("Informe seu nome completo.");
+      return;
+    }
+    setSalvando(true);
+    const { error } = await supabase.from("perfis").update({ nome: nome.trim() }).eq("id", perfil.id);
+    setSalvando(false);
+    if (error) {
+      toast.error("Não foi possível salvar o nome.");
+      return;
+    }
+    toast.success("Nome atualizado!");
+    setEditandoNome(false);
+    qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+    qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+  };
 
   const alterarPosicao = async (nova: "linha" | "goleiro") => {
     if (!perfil || nova === perfil.posicao) return;
@@ -52,6 +75,7 @@ function PerfilPage() {
     qc.invalidateQueries({ queryKey: ["perfil-atual"] });
   };
 
+
   const sair = async () => {
     await qc.cancelQueries();
     qc.clear();
@@ -64,10 +88,39 @@ function PerfilPage() {
     <div className="space-y-5">
       <div className="card-premium p-6 text-center">
         <BrandLogo size="md" className="mx-auto" />
-        <h1 className="mt-3 font-display text-2xl text-foreground">{perfil?.nome}</h1>
+        {editandoNome ? (
+          <div className="mt-3 space-y-2 text-left">
+            <Label htmlFor="nome-perfil" className="text-xs uppercase tracking-widest text-muted-foreground">
+              Nome completo
+            </Label>
+            <Input id="nome-perfil" value={nome} onChange={(e) => setNome(e.target.value)} className="h-12" />
+            <div className="flex gap-2">
+              <Button variant="gold" size="sm" className="flex-1" disabled={salvando} onClick={salvarNome}>
+                <Save className="size-4" /> Salvar
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEditandoNome(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="mt-3 inline-flex items-center gap-2 font-display text-2xl text-foreground"
+            aria-label="Editar meu nome"
+            onClick={() => {
+              setNome(perfil?.nome ?? "");
+              setEditandoNome(true);
+            }}
+          >
+            {perfil?.nome}
+            <Pencil className="size-4 text-muted-foreground" />
+          </button>
+        )}
         <p className="mt-1 text-xs uppercase tracking-widest text-gold">
-          {data?.isAdmin ? "Diretoria" : "Associado"}
+          {data?.isAdmin ? "Diretoria" : data?.isConvidado ? "Convidado" : "Associado"}
         </p>
+
         {tempo && (
           <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-3">
             <p className="flex items-center justify-center gap-2 font-display text-lg text-gold">

@@ -3,7 +3,7 @@ import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import { supabase } from "@/integrations/supabase/client";
 import { proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
-import { sortearTimes, formatarTimesParaWhatsApp, type JogadorSorteio, type TimeSorteado } from "@/lib/sorteio";
+import { sortearTimes, formatarTimesParaWhatsApp, TAMANHOS_TIME, type JogadorSorteio, type TimeSorteado } from "@/lib/sorteio";
 import { useState, useMemo } from "react";
 import { Shuffle, Copy, HandMetal, User, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ function SorteioPage() {
   const { data: sessao } = useSuspenseQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
   const [resultado, setResultado] = useState<{ times: TimeSorteado[]; sobras: JogadorSorteio[] } | null>(null);
+  const [tamanho, setTamanho] = useState<number>(7);
+
   const qc = useQueryClient();
 
   const usuarioPorPresenca = useMemo(() => {
@@ -70,14 +72,20 @@ function SorteioPage() {
       }));
   }, [presencas]);
 
+  const previa = useMemo(() => {
+    const t = Math.floor(jogadores.length / tamanho);
+    return { times: t, reservas: jogadores.length - t * tamanho };
+  }, [jogadores.length, tamanho]);
+
   const sortear = () => {
-    if (jogadores.length < 7) {
-      toast.error("Poucos jogadores", { description: "Precisa de pelo menos 7 confirmados." });
+    if (jogadores.length < tamanho) {
+      toast.error("Poucos jogadores", { description: `Precisa de pelo menos ${tamanho} confirmados.` });
       return;
     }
-    setResultado(sortearTimes(jogadores));
-    toast.success("Times sorteados!");
+    setResultado(sortearTimes(jogadores, tamanho));
+    toast.success(`${previa.times} times sorteados!`);
   };
+
 
   const copiar = async () => {
     if (!resultado || !sessao) return;
@@ -105,6 +113,37 @@ function SorteioPage() {
           {jogadores.length} jogadores elegíveis ({jogadores.filter((j) => j.posicao === "goleiro").length} goleiros)
         </p>
       </div>
+
+      <div className="card-premium p-5">
+        <p className="text-xs uppercase tracking-widest text-gold">Jogadores por time</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {TAMANHOS_TIME.map((t) => (
+            <Button
+              key={t}
+              variant={tamanho === t ? "gold" : "outline"}
+              size="lg"
+              onClick={() => {
+                setTamanho(t);
+                setResultado(null);
+              }}
+            >
+              {t} por time
+            </Button>
+          ))}
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Dá para formar <strong className="text-foreground">{previa.times}</strong>{" "}
+          {previa.times === 1 ? "time" : "times"} de {tamanho}
+          {previa.reservas > 0 && (
+            <>
+              {" "}— <strong className="text-foreground">{previa.reservas}</strong>{" "}
+              {previa.reservas === 1 ? "sobra vira reserva" : "sobras viram reservas"}
+            </>
+          )}
+          .
+        </p>
+      </div>
+
 
       <div className="grid grid-cols-2 gap-2">
         <Button variant="hero" size="lg" onClick={sortear}>

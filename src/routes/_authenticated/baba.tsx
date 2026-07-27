@@ -4,6 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
 import { criarPixConvidado, consultarPixConvidado } from "@/lib/pagamentos.functions";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
+import { ConviteConvidado } from "@/components/ConviteConvidado";
+import { SolicitacoesRecebidas } from "@/components/SolicitacoesRecebidas";
+
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +78,8 @@ function BabaPage() {
 
   const userId = perfilData?.user.id;
   const isAdmin = perfilData?.isAdmin ?? false;
+  const isConvidado = perfilData?.isConvidado ?? false;
+
 
   const minhaPresenca = presencas?.find((p) => p.usuario_id === userId && !p.nome_convidado);
   const meuConvidado = presencas?.find((p) => p.usuario_id === userId && p.nome_convidado);
@@ -228,6 +233,8 @@ function BabaPage() {
             As inscrições fecham 3 horas antes do horário do jogo.
           </p>
         </div>
+      ) : isConvidado ? (
+        <ConviteConvidado babaId={sessao.id} userId={userId!} />
       ) : minhaPresenca ? (
         <div className="card-vip p-5">
           <div className="flex items-center gap-3">
@@ -261,8 +268,13 @@ function BabaPage() {
         </Button>
       )}
 
+      {!listaFechada && !isConvidado && userId && (
+        <SolicitacoesRecebidas babaId={sessao.id} userId={userId} />
+      )}
+
       {/* Convidado */}
-      {!listaFechada && (
+      {!listaFechada && !isConvidado && (
+
         <div className="card-premium p-5">
           <div className="flex items-start gap-3">
             <UserPlus className="mt-1 size-5 shrink-0 text-gold" />

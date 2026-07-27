@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, redirect } from "@tanstack/react-router";
 import { perfilAtualQuery } from "@/lib/babaQueries";
-import { CalendarPlus, Wallet, Shuffle, ChevronLeft, Trophy, UserCog } from "lucide-react";
+import { CalendarPlus, Wallet, Shuffle, ChevronLeft, Trophy, UserCog, Users } from "lucide-react";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -36,6 +36,8 @@ function AdminLayout() {
         <AdminTab to="/admin/sorteio" label="Sorteio" Icon={Shuffle} />
         <AdminTab to="/admin/resultados" label="Resultados" Icon={Trophy} />
         <AdminTab to="/admin/cargos" label="Cargos" Icon={UserCog} />
+        <AdminTab to="/admin/usuarios" label="Usuários" Icon={Users} />
+
       </nav>
 
       <Outlet />
