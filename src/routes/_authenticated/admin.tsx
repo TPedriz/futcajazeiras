@@ -36,6 +36,8 @@ function AdminLayout() {
         <AdminTab to="/admin/sorteio" label="Sorteio" Icon={Shuffle} />
         <AdminTab to="/admin/resultados" label="Resultados" Icon={Trophy} />
         <AdminTab to="/admin/cargos" label="Cargos" Icon={UserCog} />
+        <AdminTab to="/admin/usuarios" label="Usuários" Icon={Users} />
+
       </nav>
 
       <Outlet />
