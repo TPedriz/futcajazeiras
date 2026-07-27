@@ -85,6 +85,27 @@ function BabaPage() {
     queryClient.invalidateQueries({ queryKey: ["presencas", sessao?.id] });
   };
 
+  // Confere o PIX do convidado enquanto o modal estiver aberto
+  useEffect(() => {
+    if (!pixAberto || pagoPix || !presencaAtiva) return;
+    const id = setInterval(async () => {
+      try {
+        const r = await conferirPixConvidado({ data: { presencaId: presencaAtiva } });
+        if (r.pago) {
+          setPagoPix(true);
+          invalidar();
+          toast.success("Convidado confirmado!", { description: "Já entrou na lista oficial." });
+        }
+      } catch {
+        /* silencioso */
+      }
+    }, 5000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pixAberto, pagoPix, presencaAtiva]);
+
+
+
   const confirmarPresenca = useMutation({
     mutationFn: async () => {
       if (!sessao || !userId) throw new Error("Sessão indisponível");
