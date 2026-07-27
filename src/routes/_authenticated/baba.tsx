@@ -435,14 +435,17 @@ interface PresencaCardProps {
   posicao?: "linha" | "goleiro";
   tipo: "membro" | "convidado";
   statusConvidado?: string;
+  mpStatus?: string | null;
   onApprove?: () => void;
   onReject?: () => void;
   onRemove?: () => void;
 }
 
-function PresencaCard({ numero, nome, posicao, tipo, statusConvidado, onApprove, onReject, onRemove }: PresencaCardProps) {
+function PresencaCard({ numero, nome, posicao, tipo, statusConvidado, mpStatus, onApprove, onReject, onRemove }: PresencaCardProps) {
   const isConvidado = tipo === "convidado";
   const pendente = isConvidado && statusConvidado === "pendente";
+  const aguardandoPix = pendente && mpStatus !== "approved";
+
 
   return (
     <li className={`flex items-center gap-3 rounded-lg border p-3 ${
