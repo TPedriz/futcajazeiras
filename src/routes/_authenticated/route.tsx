@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/BottomNav";
 import { perfilAtualQuery } from "@/lib/babaQueries";
 import { BrandLogo } from "@/components/BrandLogo";
+import { SinoNotificacoes } from "@/components/SinoNotificacoes";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,

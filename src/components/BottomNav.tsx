@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Calendar, Shield, User, Wallet } from "lucide-react";
+import { Home, Calendar, Shield, User, Wallet, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -17,7 +17,8 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
   const items: NavItem[] = [
     { to: "/inicio", label: "Início", Icon: Home },
     { to: "/baba", label: "Baba", Icon: Calendar },
-    { to: "/pagamentos", label: "Pagamentos", Icon: Wallet },
+    { to: "/pagamentos", label: "PIX", Icon: Wallet },
+    { to: "/ajuda", label: "Ajuda", Icon: LifeBuoy },
     ...(isAdmin ? [{ to: "/admin", label: "Admin", Icon: Shield }] : []),
     { to: "/perfil", label: "Perfil", Icon: User },
   ];
