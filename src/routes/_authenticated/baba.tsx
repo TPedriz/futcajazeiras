@@ -424,6 +424,8 @@ function BabaPage() {
         )}
       </div>
 
+      <MuralPunicoes />
+
       <PixDialog
         open={pixAberto}
         onOpenChange={setPixAberto}
