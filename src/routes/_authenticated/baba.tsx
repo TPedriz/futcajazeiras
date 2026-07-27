@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
+import {
+  perfilAtualQuery,
+  proximaSessaoQuery,
+  presencasDaSessaoQuery,
+  situacaoCheckinQuery,
+  DIA_VENCIMENTO,
+} from "@/lib/babaQueries";
+import { Link } from "@tanstack/react-router";
+import { MuralPunicoes } from "@/components/MuralPunicoes";
 import { criarPixConvidado, consultarPixConvidado } from "@/lib/pagamentos.functions";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
 import { ConviteConvidado } from "@/components/ConviteConvidado";
@@ -66,6 +74,9 @@ function BabaPage() {
   const { data: perfilData } = useSuspenseQuery(perfilAtualQuery());
   const { data: sessao } = useSuspenseQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
+  const { data: situacao } = useQuery(
+    situacaoCheckinQuery(perfilData?.user.id, sessao?.id),
+  );
   const queryClient = useQueryClient();
   const [convidadoOpen, setConvidadoOpen] = useState(false);
   const [nomeConvidado, setNomeConvidado] = useState("");
@@ -232,6 +243,24 @@ function BabaPage() {
           <p className="mt-1 text-xs text-muted-foreground">
             As inscrições fecham 3 horas antes do horário do jogo.
           </p>
+        </div>
+      ) : situacao?.suspenso ? (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center">
+          <p className="font-semibold text-destructive">Você está suspenso neste baba</p>
+          <p className="mt-1 text-xs text-muted-foreground">{situacao.motivoSuspensao}</p>
+        </div>
+      ) : situacao?.inadimplente ? (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center">
+          <p className="font-semibold text-destructive">Mensalidade em aberto</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            O vencimento é todo dia {DIA_VENCIMENTO}. Pague o PIX para liberar o check-in e os convidados
+            — a liberação é automática.
+          </p>
+          <Link to="/pagamentos">
+            <Button variant="gold" size="sm" className="mt-3">
+              Pagar mensalidade
+            </Button>
+          </Link>
         </div>
       ) : isConvidado ? (
         <ConviteConvidado babaId={sessao.id} userId={userId!} />
