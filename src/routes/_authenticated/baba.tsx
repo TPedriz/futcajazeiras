@@ -269,19 +269,42 @@ function BabaPage() {
             <div className="flex-1">
               <p className="font-display text-lg">Levar convidado</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Você pode levar apenas 1 convidado por baba. Aguarde a aprovação da diretoria.
+                Você pode levar apenas 1 convidado por baba. A taxa é de <strong className="text-gold">R$ 5,00</strong> via PIX — assim que o pagamento cair, ele entra na lista automaticamente.
               </p>
               {meuConvidado ? (
-                <div className="mt-3 flex items-center justify-between rounded-lg border border-border bg-surface p-3">
-                  <div>
-                    <p className="text-sm font-semibold">{meuConvidado.nome_convidado}</p>
-                    <StatusConvidadoBadge status={meuConvidado.status_convidado!} />
+                <div className="mt-3 space-y-3 rounded-lg border border-border bg-surface p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">{meuConvidado.nome_convidado}</p>
+                      <StatusConvidadoBadge status={meuConvidado.status_convidado!} mpStatus={meuConvidado.mp_status} />
+                    </div>
+                    <Button variant="ghost" size="icon" aria-label="Remover meu convidado" onClick={() => removerPresenca.mutate(meuConvidado.id)}>
+                      <X className="size-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon" aria-label="Remover meu convidado" onClick={() => removerPresenca.mutate(meuConvidado.id)}>
-                    <X className="size-4" />
-                  </Button>
-
+                  {meuConvidado.status_convidado !== "aprovado" && (
+                    <Button
+                      variant="gold"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        setPresencaAtiva(meuConvidado.id);
+                        setPagoPix(false);
+                        setDadosPix(null);
+                        setPixAberto(true);
+                        void (async () => {
+                          try {
+                            const r = await conferirPixConvidado({ data: { presencaId: meuConvidado.id } });
+                            if (r.pago) setPagoPix(true);
+                          } catch { /* segue no polling */ }
+                        })();
+                      }}
+                    >
+                      Ver pagamento
+                    </Button>
+                  )}
                 </div>
+
               ) : (
                 <Dialog open={convidadoOpen} onOpenChange={setConvidadoOpen}>
                   <DialogTrigger asChild>
