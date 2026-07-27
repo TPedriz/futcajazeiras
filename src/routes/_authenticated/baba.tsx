@@ -296,6 +296,7 @@ function BabaPage() {
                           try {
                             const r = await conferirPixConvidado({ data: { presencaId: meuConvidado.id } });
                             if (r.pago) setPagoPix(true);
+                            else setDadosPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
                           } catch { /* segue no polling */ }
                         })();
                       }}
