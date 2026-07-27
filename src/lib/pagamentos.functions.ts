@@ -1,0 +1,208 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+export interface PixResposta {
+  status: string;
+  pago: boolean;
+  qrCode: string | null;
+  qrBase64: string | null;
+  expiraEm: string | null;
+  valor: number;
+}
+
+export const criarPixMensalidade = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ mensalidadeId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<PixResposta> => {
+    const { supabase, userId } = context;
+    const { data: mensalidade, error } = await supabase
+      .from("mensalidades")
+      .select("*")
+      .eq("id", data.mensalidadeId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!mensalidade || mensalidade.usuario_id !== userId) throw new Error("Mensalidade não encontrada");
+
+    const valor = Number(mensalidade.valor) > 0 ? Number(mensalidade.valor) : 15;
+
+    if (mensalidade.status === "pago") {
+      return { status: "approved", pago: true, qrCode: null, qrBase64: null, expiraEm: null, valor };
+    }
+
+    const aindaValido =
+      mensalidade.pix_qr_code &&
+      mensalidade.mp_status === "pending" &&
+      (!mensalidade.pix_expira_em || new Date(mensalidade.pix_expira_em) > new Date());
+
+    if (aindaValido) {
+      return {
+        status: "pending",
+        pago: false,
+        qrCode: mensalidade.pix_qr_code,
+        qrBase64: mensalidade.pix_qr_base64,
+        expiraEm: mensalidade.pix_expira_em,
+        valor,
+      };
+    }
+
+    const { data: perfil } = await supabase
+      .from("perfis")
+      .select("nome, telefone")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const { criarPagamentoPix, emailPagador } = await import("@/lib/mercadopago.server");
+    const pix = await criarPagamentoPix({
+      valor,
+      descricao: `Mensalidade Fut Cajazeiras — ${mensalidade.referencia}`,
+      email: emailPagador(perfil?.telefone, userId),
+      nome: perfil?.nome ?? "Associado",
+      externalReference: `mensalidade:${mensalidade.id}`,
+      idempotencyKey: `mensalidade-${mensalidade.id}-${Date.now()}`,
+    });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
+      .from("mensalidades")
+      .update({
+        mp_payment_id: pix.paymentId,
+        mp_status: pix.status,
+        pix_qr_code: pix.qrCode,
+        pix_qr_base64: pix.qrBase64,
+        pix_expira_em: pix.expiraEm,
+        valor,
+      })
+      .eq("id", mensalidade.id);
+
+    return {
+      status: pix.status,
+      pago: pix.status === "approved",
+      qrCode: pix.qrCode,
+      qrBase64: pix.qrBase64,
+      expiraEm: pix.expiraEm,
+      valor,
+    };
+  });
+
+export const consultarPixMensalidade = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ mensalidadeId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: mensalidade } = await supabase
+      .from("mensalidades")
+      .select("id, usuario_id, status, mp_payment_id")
+      .eq("id", data.mensalidadeId)
+      .maybeSingle();
+    if (!mensalidade || mensalidade.usuario_id !== userId) throw new Error("Mensalidade não encontrada");
+    if (mensalidade.status === "pago") return { pago: true, status: "approved" };
+    if (!mensalidade.mp_payment_id) return { pago: false, status: "sem_cobranca" };
+
+    const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
+    const pagamento = await consultarPagamentoMp(mensalidade.mp_payment_id);
+
+    const { aplicarPagamento } = await import("@/lib/pagamentos.server");
+    await aplicarPagamento(`mensalidade:${mensalidade.id}`, pagamento.status);
+
+    return { pago: pagamento.status === "approved", status: pagamento.status };
+  });
+
+export const criarPixConvidado = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ babaId: z.string().uuid(), nome: z.string().trim().min(2).max(80) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<PixResposta & { presencaId: string }> => {
+    const { supabase, userId } = context;
+
+    const { data: existente } = await supabase
+      .from("presencas")
+      .select("id")
+      .eq("baba_id", data.babaId)
+      .eq("usuario_id", userId)
+      .not("nome_convidado", "is", null)
+      .maybeSingle();
+    if (existente) throw new Error("Você já tem um convidado nesse baba");
+
+    const { data: presenca, error } = await supabase
+      .from("presencas")
+      .insert({
+        baba_id: data.babaId,
+        usuario_id: userId,
+        nome_convidado: data.nome,
+        status_convidado: "pendente",
+        valor: 5,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+
+    const { data: perfil } = await supabase
+      .from("perfis")
+      .select("nome, telefone")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } = await import("@/lib/mercadopago.server");
+    const pix = await criarPagamentoPix({
+      valor: VALOR_CONVIDADO,
+      descricao: `Taxa de convidado — ${data.nome}`,
+      email: emailPagador(perfil?.telefone, userId),
+      nome: perfil?.nome ?? "Associado",
+      externalReference: `convidado:${presenca.id}`,
+      idempotencyKey: `convidado-${presenca.id}`,
+    });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
+      .from("presencas")
+      .update({
+        mp_payment_id: pix.paymentId,
+        mp_status: pix.status,
+        pix_qr_code: pix.qrCode,
+        pix_qr_base64: pix.qrBase64,
+        pix_expira_em: pix.expiraEm,
+      })
+      .eq("id", presenca.id);
+
+    return {
+      presencaId: presenca.id,
+      status: pix.status,
+      pago: pix.status === "approved",
+      qrCode: pix.qrCode,
+      qrBase64: pix.qrBase64,
+      expiraEm: pix.expiraEm,
+      valor: VALOR_CONVIDADO,
+    };
+  });
+
+export const consultarPixConvidado = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ presencaId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: presenca } = await supabase
+      .from("presencas")
+      .select("id, usuario_id, status_convidado, mp_payment_id, pix_qr_code, pix_qr_base64, valor")
+      .eq("id", data.presencaId)
+      .maybeSingle();
+    if (!presenca || presenca.usuario_id !== userId) throw new Error("Convidado não encontrado");
+
+    const pix = {
+      qrCode: presenca.pix_qr_code as string | null,
+      qrBase64: presenca.pix_qr_base64 as string | null,
+      valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : 5,
+    };
+
+    if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...pix };
+    if (!presenca.mp_payment_id) return { pago: false, status: "sem_cobranca", ...pix };
+
+    const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
+    const pagamento = await consultarPagamentoMp(presenca.mp_payment_id);
+
+    const { aplicarPagamento } = await import("@/lib/pagamentos.server");
+    await aplicarPagamento(`convidado:${presenca.id}`, pagamento.status);
+
+    return { pago: pagamento.status === "approved", status: pagamento.status, ...pix };
+  });

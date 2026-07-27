@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
+import { criarPixConvidado, consultarPixConvidado } from "@/lib/pagamentos.functions";
+import { PixDialog, type DadosPix } from "@/components/PixDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +20,9 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, MapPin, Users, UserPlus, Clock, Check, Shield, HandMetal, X } from "lucide-react";
+import { Calendar, MapPin, UserPlus, Clock, Check, Shield, HandMetal, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
 
 export const Route = createFileRoute("/_authenticated/baba")({
   head: ({ loaderData }) => {
@@ -62,6 +66,12 @@ function BabaPage() {
   const queryClient = useQueryClient();
   const [convidadoOpen, setConvidadoOpen] = useState(false);
   const [nomeConvidado, setNomeConvidado] = useState("");
+  const [pixAberto, setPixAberto] = useState(false);
+  const [pagoPix, setPagoPix] = useState(false);
+  const [dadosPix, setDadosPix] = useState<DadosPix | null>(null);
+  const [presencaAtiva, setPresencaAtiva] = useState<string | null>(null);
+  const gerarPixConvidado = useServerFn(criarPixConvidado);
+  const conferirPixConvidado = useServerFn(consultarPixConvidado);
 
   const userId = perfilData?.user.id;
   const isAdmin = perfilData?.isAdmin ?? false;
@@ -74,6 +84,27 @@ function BabaPage() {
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ["presencas", sessao?.id] });
   };
+
+  // Confere o PIX do convidado enquanto o modal estiver aberto
+  useEffect(() => {
+    if (!pixAberto || pagoPix || !presencaAtiva) return;
+    const id = setInterval(async () => {
+      try {
+        const r = await conferirPixConvidado({ data: { presencaId: presencaAtiva } });
+        if (r.pago) {
+          setPagoPix(true);
+          invalidar();
+          toast.success("Convidado confirmado!", { description: "Já entrou na lista oficial." });
+        }
+      } catch {
+        /* silencioso */
+      }
+    }, 5000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pixAberto, pagoPix, presencaAtiva]);
+
+
 
   const confirmarPresenca = useMutation({
     mutationFn: async () => {
@@ -108,22 +139,28 @@ function BabaPage() {
     mutationFn: async () => {
       if (!sessao || !userId) throw new Error("Sessão indisponível");
       if (!nomeConvidado.trim()) throw new Error("Informe o nome do convidado");
-      const { error } = await supabase.from("presencas").insert({
-        baba_id: sessao.id,
-        usuario_id: userId,
-        nome_convidado: nomeConvidado.trim(),
-        status_convidado: "pendente",
-      });
-      if (error) throw error;
+      setDadosPix(null);
+      setPagoPix(false);
+      setPixAberto(true);
+      return await gerarPixConvidado({ data: { babaId: sessao.id, nome: nomeConvidado.trim() } });
     },
-    onSuccess: () => {
-      toast.success("Convidado enviado", { description: "Aguardando aprovação da diretoria." });
+    onSuccess: (res) => {
       setNomeConvidado("");
       setConvidadoOpen(false);
+      setPresencaAtiva(res.presencaId);
       invalidar();
+      if (res.pago) {
+        setPagoPix(true);
+        return;
+      }
+      setDadosPix({ qrCode: res.qrCode, qrBase64: res.qrBase64, valor: res.valor });
     },
-    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+    onError: (e: Error) => {
+      setPixAberto(false);
+      toast.error("Erro", { description: e.message });
+    },
   });
+
 
   const removerPresenca = useMutation({
     mutationFn: async (id: string) => {
@@ -232,19 +269,43 @@ function BabaPage() {
             <div className="flex-1">
               <p className="font-display text-lg">Levar convidado</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Você pode levar apenas 1 convidado por baba. Aguarde a aprovação da diretoria.
+                Você pode levar apenas 1 convidado por baba. A taxa é de <strong className="text-gold">R$ 5,00</strong> via PIX — assim que o pagamento cair, ele entra na lista automaticamente.
               </p>
               {meuConvidado ? (
-                <div className="mt-3 flex items-center justify-between rounded-lg border border-border bg-surface p-3">
-                  <div>
-                    <p className="text-sm font-semibold">{meuConvidado.nome_convidado}</p>
-                    <StatusConvidadoBadge status={meuConvidado.status_convidado!} />
+                <div className="mt-3 space-y-3 rounded-lg border border-border bg-surface p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">{meuConvidado.nome_convidado}</p>
+                      <StatusConvidadoBadge status={meuConvidado.status_convidado!} mpStatus={meuConvidado.mp_status} />
+                    </div>
+                    <Button variant="ghost" size="icon" aria-label="Remover meu convidado" onClick={() => removerPresenca.mutate(meuConvidado.id)}>
+                      <X className="size-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon" aria-label="Remover meu convidado" onClick={() => removerPresenca.mutate(meuConvidado.id)}>
-                    <X className="size-4" />
-                  </Button>
-
+                  {meuConvidado.status_convidado !== "aprovado" && (
+                    <Button
+                      variant="gold"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        setPresencaAtiva(meuConvidado.id);
+                        setPagoPix(false);
+                        setDadosPix(null);
+                        setPixAberto(true);
+                        void (async () => {
+                          try {
+                            const r = await conferirPixConvidado({ data: { presencaId: meuConvidado.id } });
+                            if (r.pago) setPagoPix(true);
+                            else setDadosPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
+                          } catch { /* segue no polling */ }
+                        })();
+                      }}
+                    >
+                      Ver pagamento
+                    </Button>
+                  )}
                 </div>
+
               ) : (
                 <Dialog open={convidadoOpen} onOpenChange={setConvidadoOpen}>
                   <DialogTrigger asChild>
@@ -256,7 +317,7 @@ function BabaPage() {
                     <DialogHeader>
                       <DialogTitle>Adicionar convidado</DialogTitle>
                       <DialogDescription>
-                        Digite o nome. A diretoria irá aprovar antes do jogo.
+                        Digite o nome. Vamos gerar um PIX de R$ 5,00 e, assim que o pagamento cair, o convidado entra na lista.
                       </DialogDescription>
                     </DialogHeader>
                     <Input
@@ -272,7 +333,7 @@ function BabaPage() {
                         onClick={() => adicionarConvidado.mutate()}
                         disabled={adicionarConvidado.isPending}
                       >
-                        Enviar
+                        Gerar PIX
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -312,6 +373,7 @@ function BabaPage() {
                 nome={p.nome_convidado!}
                 tipo="convidado"
                 statusConvidado={p.status_convidado ?? undefined}
+                mpStatus={p.mp_status}
                 onApprove={isAdmin && p.status_convidado === "pendente" ? () => moderarConvidado.mutate({ id: p.id, status: "aprovado" }) : undefined}
                 onReject={isAdmin && p.status_convidado === "pendente" ? () => moderarConvidado.mutate({ id: p.id, status: "rejeitado" }) : undefined}
                 onRemove={isAdmin ? () => removerPresenca.mutate(p.id) : undefined}
@@ -320,6 +382,16 @@ function BabaPage() {
           </ul>
         )}
       </div>
+
+      <PixDialog
+        open={pixAberto}
+        onOpenChange={setPixAberto}
+        titulo="Taxa do convidado"
+        descricao="Escaneie o QR Code ou copie o código no app do seu banco. A confirmação é automática."
+        dados={dadosPix}
+        carregando={adicionarConvidado.isPending}
+        pago={pagoPix}
+      />
     </div>
   );
 }
@@ -349,10 +421,12 @@ function ContadorFechamento({ fechamento, fechado }: { fechamento: string; fecha
   );
 }
 
-function StatusConvidadoBadge({ status }: { status: string }) {
-  if (status === "aprovado") return <Badge className="mt-1 bg-success text-success-foreground">Aprovado</Badge>;
+function StatusConvidadoBadge({ status, mpStatus }: { status: string; mpStatus?: string | null }) {
+  if (status === "aprovado") return <Badge className="mt-1 bg-success text-success-foreground">Confirmado</Badge>;
   if (status === "rejeitado") return <Badge variant="destructive" className="mt-1">Rejeitado</Badge>;
-  return <Badge variant="outline" className="mt-1 border-gold/40 text-gold">Aguardando aprovação</Badge>;
+  if (mpStatus === "rejected" || mpStatus === "cancelled")
+    return <Badge variant="destructive" className="mt-1">Pagamento não concluído</Badge>;
+  return <Badge variant="outline" className="mt-1 border-gold/40 text-gold">Aguardando pagamento</Badge>;
 }
 
 interface PresencaCardProps {
@@ -361,14 +435,17 @@ interface PresencaCardProps {
   posicao?: "linha" | "goleiro";
   tipo: "membro" | "convidado";
   statusConvidado?: string;
+  mpStatus?: string | null;
   onApprove?: () => void;
   onReject?: () => void;
   onRemove?: () => void;
 }
 
-function PresencaCard({ numero, nome, posicao, tipo, statusConvidado, onApprove, onReject, onRemove }: PresencaCardProps) {
+function PresencaCard({ numero, nome, posicao, tipo, statusConvidado, mpStatus, onApprove, onReject, onRemove }: PresencaCardProps) {
   const isConvidado = tipo === "convidado";
   const pendente = isConvidado && statusConvidado === "pendente";
+  const aguardandoPix = pendente && mpStatus !== "approved";
+
 
   return (
     <li className={`flex items-center gap-3 rounded-lg border p-3 ${
@@ -385,7 +462,7 @@ function PresencaCard({ numero, nome, posicao, tipo, statusConvidado, onApprove,
           {isConvidado ? (
             <>
               <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Convidado</span>
-              {statusConvidado === "pendente" && <span className="text-[10px] text-gold">• pendente</span>}
+              {aguardandoPix && <span className="text-[10px] text-gold">• aguardando pagamento</span>}
               {statusConvidado === "rejeitado" && <span className="text-[10px] text-destructive">• rejeitado</span>}
             </>
           ) : posicao === "goleiro" ? (

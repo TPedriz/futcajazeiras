@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.garante_mensalidades_mes() FROM PUBLIC, anon;

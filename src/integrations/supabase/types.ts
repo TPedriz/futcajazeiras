@@ -63,13 +63,6 @@ export type Database = {
             referencedRelation: "perfis"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "estatisticas_baba_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "perfis_publicos"
-            referencedColumns: ["id"]
-          },
         ]
       }
       mensalidades: {
@@ -77,7 +70,12 @@ export type Database = {
           atualizado_em: string
           criado_em: string
           id: string
+          mp_payment_id: string | null
+          mp_status: string | null
           pago_em: string | null
+          pix_expira_em: string | null
+          pix_qr_base64: string | null
+          pix_qr_code: string | null
           referencia: string
           status: Database["public"]["Enums"]["status_pagamento"]
           usuario_id: string
@@ -88,7 +86,12 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           id?: string
+          mp_payment_id?: string | null
+          mp_status?: string | null
           pago_em?: string | null
+          pix_expira_em?: string | null
+          pix_qr_base64?: string | null
+          pix_qr_code?: string | null
           referencia: string
           status?: Database["public"]["Enums"]["status_pagamento"]
           usuario_id: string
@@ -99,7 +102,12 @@ export type Database = {
           atualizado_em?: string
           criado_em?: string
           id?: string
+          mp_payment_id?: string | null
+          mp_status?: string | null
           pago_em?: string | null
+          pix_expira_em?: string | null
+          pix_qr_base64?: string | null
+          pix_qr_code?: string | null
           referencia?: string
           status?: Database["public"]["Enums"]["status_pagamento"]
           usuario_id?: string
@@ -112,13 +120,6 @@ export type Database = {
             columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mensalidades_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "perfis_publicos"
             referencedColumns: ["id"]
           },
         ]
@@ -177,36 +178,80 @@ export type Database = {
         }
         Relationships: []
       }
+      perfis_publicos: {
+        Row: {
+          id: string
+          nome: string
+          posicao: Database["public"]["Enums"]["posicao_jogador"]
+        }
+        Insert: {
+          id: string
+          nome: string
+          posicao?: Database["public"]["Enums"]["posicao_jogador"]
+        }
+        Update: {
+          id?: string
+          nome?: string
+          posicao?: Database["public"]["Enums"]["posicao_jogador"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perfis_publicos_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presencas: {
         Row: {
           baba_id: string
           confirmado_em: string
           id: string
+          mp_payment_id: string | null
+          mp_status: string | null
           nome_convidado: string | null
+          pix_expira_em: string | null
+          pix_qr_base64: string | null
+          pix_qr_code: string | null
           status_convidado:
             | Database["public"]["Enums"]["status_convidado"]
             | null
           usuario_id: string
+          valor: number
         }
         Insert: {
           baba_id: string
           confirmado_em?: string
           id?: string
+          mp_payment_id?: string | null
+          mp_status?: string | null
           nome_convidado?: string | null
+          pix_expira_em?: string | null
+          pix_qr_base64?: string | null
+          pix_qr_code?: string | null
           status_convidado?:
             | Database["public"]["Enums"]["status_convidado"]
             | null
           usuario_id: string
+          valor?: number
         }
         Update: {
           baba_id?: string
           confirmado_em?: string
           id?: string
+          mp_payment_id?: string | null
+          mp_status?: string | null
           nome_convidado?: string | null
+          pix_expira_em?: string | null
+          pix_qr_base64?: string | null
+          pix_qr_code?: string | null
           status_convidado?:
             | Database["public"]["Enums"]["status_convidado"]
             | null
           usuario_id?: string
+          valor?: number
         }
         Relationships: [
           {
@@ -323,35 +368,10 @@ export type Database = {
             referencedRelation: "perfis"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "times_jogadores_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "perfis_publicos"
-            referencedColumns: ["id"]
-          },
         ]
       }
     }
     Views: {
-      perfis_publicos: {
-        Row: {
-          id: string | null
-          nome: string | null
-          posicao: Database["public"]["Enums"]["posicao_jogador"] | null
-        }
-        Insert: {
-          id?: string | null
-          nome?: string | null
-          posicao?: Database["public"]["Enums"]["posicao_jogador"] | null
-        }
-        Update: {
-          id?: string | null
-          nome?: string | null
-          posicao?: Database["public"]["Enums"]["posicao_jogador"] | null
-        }
-        Relationships: []
-      }
       ranking_mensal: {
         Row: {
           cartoes_amarelos: number | null
