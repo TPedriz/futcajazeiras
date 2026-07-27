@@ -228,6 +228,8 @@ function BabaPage() {
             As inscrições fecham 3 horas antes do horário do jogo.
           </p>
         </div>
+      ) : isConvidado ? (
+        <ConviteConvidado babaId={sessao.id} userId={userId!} />
       ) : minhaPresenca ? (
         <div className="card-vip p-5">
           <div className="flex items-center gap-3">
@@ -261,8 +263,13 @@ function BabaPage() {
         </Button>
       )}
 
+      {!listaFechada && !isConvidado && userId && (
+        <SolicitacoesRecebidas babaId={sessao.id} userId={userId} />
+      )}
+
       {/* Convidado */}
-      {!listaFechada && (
+      {!listaFechada && !isConvidado && (
+
         <div className="card-premium p-5">
           <div className="flex items-start gap-3">
             <UserPlus className="mt-1 size-5 shrink-0 text-gold" />
