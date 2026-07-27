@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Trophy, Minus, ShieldX, Goal, Plus } from "lucide-react";
+import { Trophy, Minus, ShieldX, Goal, Plus, RotateCcw, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/resultados")({
   loader: ({ context }) => context.queryClient.ensureQueryData(todasSessoesQuery()),
@@ -42,6 +42,56 @@ function ResultadosPage() {
       toast.success("Resultado salvo");
       qc.invalidateQueries({ queryKey: ["times-baba", babaId] });
       qc.invalidateQueries({ queryKey: ["ranking-mes"] });
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  const invalidarTudo = () => {
+    qc.invalidateQueries({ queryKey: ["estatisticas-baba"] });
+    qc.invalidateQueries({ queryKey: ["times-baba"] });
+    qc.invalidateQueries({ queryKey: ["ranking-mes"] });
+  };
+
+  const idsDoMes = () => {
+    const agora = new Date();
+    const ini = new Date(agora.getFullYear(), agora.getMonth(), 1).getTime();
+    const fim = new Date(agora.getFullYear(), agora.getMonth() + 1, 1).getTime();
+    return sessoes
+      .filter((s) => {
+        const t = new Date(s.data_horario).getTime();
+        return t >= ini && t < fim;
+      })
+      .map((s) => s.id);
+  };
+
+  const zerarMes = useMutation({
+    mutationFn: async () => {
+      const ids = idsDoMes();
+      if (ids.length === 0) return;
+      const { error: e1 } = await supabase.from("estatisticas_baba").delete().in("baba_id", ids);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("times_baba").update({ resultado: null }).in("baba_id", ids);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      toast.success("Ranking do mês zerado");
+      invalidarTudo();
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  const zerarTudo = useMutation({
+    mutationFn: async () => {
+      const ids = sessoes.map((s) => s.id);
+      if (ids.length === 0) return;
+      const { error: e1 } = await supabase.from("estatisticas_baba").delete().in("baba_id", ids);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("times_baba").update({ resultado: null }).in("baba_id", ids);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      toast.success("Estatísticas gerais resetadas");
+      invalidarTudo();
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
