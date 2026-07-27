@@ -86,10 +86,39 @@ function PerfilPage() {
     <div className="space-y-5">
       <div className="card-premium p-6 text-center">
         <BrandLogo size="md" className="mx-auto" />
-        <h1 className="mt-3 font-display text-2xl text-foreground">{perfil?.nome}</h1>
+        {editandoNome ? (
+          <div className="mt-3 space-y-2 text-left">
+            <Label htmlFor="nome-perfil" className="text-xs uppercase tracking-widest text-muted-foreground">
+              Nome completo
+            </Label>
+            <Input id="nome-perfil" value={nome} onChange={(e) => setNome(e.target.value)} className="h-12" />
+            <div className="flex gap-2">
+              <Button variant="gold" size="sm" className="flex-1" disabled={salvando} onClick={salvarNome}>
+                <Save className="size-4" /> Salvar
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEditandoNome(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="mt-3 inline-flex items-center gap-2 font-display text-2xl text-foreground"
+            aria-label="Editar meu nome"
+            onClick={() => {
+              setNome(perfil?.nome ?? "");
+              setEditandoNome(true);
+            }}
+          >
+            {perfil?.nome}
+            <Pencil className="size-4 text-muted-foreground" />
+          </button>
+        )}
         <p className="mt-1 text-xs uppercase tracking-widest text-gold">
-          {data?.isAdmin ? "Diretoria" : "Associado"}
+          {data?.isAdmin ? "Diretoria" : data?.isConvidado ? "Convidado" : "Associado"}
         </p>
+
         {tempo && (
           <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-3">
             <p className="flex items-center justify-center gap-2 font-display text-lg text-gold">
