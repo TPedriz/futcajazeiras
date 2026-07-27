@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { perfilAtualQuery } from "@/lib/babaQueries";
+import { perfilAtualQuery, presencasComoConvidadoQuery } from "@/lib/babaQueries";
+import { useQuery } from "@tanstack/react-query";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save } from "lucide-react";
+import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save, LifeBuoy, Trophy } from "lucide-react";
 
 import { Link } from "@tanstack/react-router";
 import { tempoDeAssociado } from "@/lib/associado";
@@ -36,6 +38,10 @@ function PerfilPage() {
   const perfil = data?.perfil;
   const emDia = perfil?.status_pagamento === "pago";
   const tempo = tempoDeAssociado(perfil?.criado_em);
+  const isConvidado = data?.isConvidado ?? false;
+  const { data: presencasConvidado } = useQuery(presencasComoConvidadoQuery(data?.user.id));
+  const META_CONVIDADO = 3;
+  const jogados = Math.min(presencasConvidado ?? 0, META_CONVIDADO);
   const [salvando, setSalvando] = useState(false);
   const [editandoNome, setEditandoNome] = useState(false);
   const [nome, setNome] = useState("");
@@ -117,9 +123,27 @@ function PerfilPage() {
             <Pencil className="size-4 text-muted-foreground" />
           </button>
         )}
-        <p className="mt-1 text-xs uppercase tracking-widest text-gold">
-          {data?.isAdmin ? "Diretoria" : data?.isConvidado ? "Convidado" : "Associado"}
-        </p>
+        <p className="mt-1 text-xs uppercase tracking-widest text-gold">{data?.rotuloPapel}</p>
+
+        {isConvidado && (
+          <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-3 text-left">
+            <p className="flex items-center gap-2 font-display text-lg text-gold">
+              <Trophy className="size-4" /> Caminho para virar Associado
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Presenças como convidado:{" "}
+              <strong className="text-foreground">
+                {jogados}/{META_CONVIDADO}
+              </strong>
+            </p>
+            <Progress value={(jogados / META_CONVIDADO) * 100} className="mt-2 h-2" />
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {jogados >= META_CONVIDADO
+                ? "Meta batida! Fale com a diretoria para ser promovido a Associado."
+                : `Faltam ${META_CONVIDADO - jogados} baba(s) para você poder virar Associado.`}
+            </p>
+          </div>
+        )}
 
         {tempo && (
           <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-3">
@@ -173,6 +197,12 @@ function PerfilPage() {
       <Link to="/pagamentos">
         <Button variant="goldOutline" size="lg" className="w-full">
           <Wallet className="size-4" /> Histórico de pagamentos
+        </Button>
+      </Link>
+
+      <Link to="/ajuda">
+        <Button variant="outline" size="lg" className="w-full">
+          <LifeBuoy className="size-4" /> Ajuda e regras
         </Button>
       </Link>
 
