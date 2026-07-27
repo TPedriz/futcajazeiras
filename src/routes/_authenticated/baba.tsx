@@ -317,7 +317,7 @@ function BabaPage() {
                     <DialogHeader>
                       <DialogTitle>Adicionar convidado</DialogTitle>
                       <DialogDescription>
-                        Digite o nome. A diretoria irá aprovar antes do jogo.
+                        Digite o nome. Vamos gerar um PIX de R$ 5,00 e, assim que o pagamento cair, o convidado entra na lista.
                       </DialogDescription>
                     </DialogHeader>
                     <Input
@@ -333,7 +333,7 @@ function BabaPage() {
                         onClick={() => adicionarConvidado.mutate()}
                         disabled={adicionarConvidado.isPending}
                       >
-                        Enviar
+                        Gerar PIX
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -373,6 +373,7 @@ function BabaPage() {
                 nome={p.nome_convidado!}
                 tipo="convidado"
                 statusConvidado={p.status_convidado ?? undefined}
+                mpStatus={p.mp_status}
                 onApprove={isAdmin && p.status_convidado === "pendente" ? () => moderarConvidado.mutate({ id: p.id, status: "aprovado" }) : undefined}
                 onReject={isAdmin && p.status_convidado === "pendente" ? () => moderarConvidado.mutate({ id: p.id, status: "rejeitado" }) : undefined}
                 onRemove={isAdmin ? () => removerPresenca.mutate(p.id) : undefined}
@@ -381,6 +382,16 @@ function BabaPage() {
           </ul>
         )}
       </div>
+
+      <PixDialog
+        open={pixAberto}
+        onOpenChange={setPixAberto}
+        titulo="Taxa do convidado"
+        descricao="Escaneie o QR Code ou copie o código no app do seu banco. A confirmação é automática."
+        dados={dadosPix}
+        carregando={adicionarConvidado.isPending}
+        pago={pagoPix}
+      />
     </div>
   );
 }
