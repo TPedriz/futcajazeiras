@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Trophy, Minus, ShieldX, Goal, Plus } from "lucide-react";
+import { Trophy, Minus, ShieldX, Goal, Plus, RotateCcw, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/resultados")({
   loader: ({ context }) => context.queryClient.ensureQueryData(todasSessoesQuery()),
@@ -42,6 +42,56 @@ function ResultadosPage() {
       toast.success("Resultado salvo");
       qc.invalidateQueries({ queryKey: ["times-baba", babaId] });
       qc.invalidateQueries({ queryKey: ["ranking-mes"] });
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  const invalidarTudo = () => {
+    qc.invalidateQueries({ queryKey: ["estatisticas-baba"] });
+    qc.invalidateQueries({ queryKey: ["times-baba"] });
+    qc.invalidateQueries({ queryKey: ["ranking-mes"] });
+  };
+
+  const idsDoMes = () => {
+    const agora = new Date();
+    const ini = new Date(agora.getFullYear(), agora.getMonth(), 1).getTime();
+    const fim = new Date(agora.getFullYear(), agora.getMonth() + 1, 1).getTime();
+    return sessoes
+      .filter((s) => {
+        const t = new Date(s.data_horario).getTime();
+        return t >= ini && t < fim;
+      })
+      .map((s) => s.id);
+  };
+
+  const zerarMes = useMutation({
+    mutationFn: async () => {
+      const ids = idsDoMes();
+      if (ids.length === 0) return;
+      const { error: e1 } = await supabase.from("estatisticas_baba").delete().in("baba_id", ids);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("times_baba").update({ resultado: null }).in("baba_id", ids);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      toast.success("Ranking do mês zerado");
+      invalidarTudo();
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  const zerarTudo = useMutation({
+    mutationFn: async () => {
+      const ids = sessoes.map((s) => s.id);
+      if (ids.length === 0) return;
+      const { error: e1 } = await supabase.from("estatisticas_baba").delete().in("baba_id", ids);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("times_baba").update({ resultado: null }).in("baba_id", ids);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      toast.success("Estatísticas gerais resetadas");
+      invalidarTudo();
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -97,6 +147,38 @@ function ResultadosPage() {
           Marque o resultado de cada time e lance gols e cartões. Tudo alimenta o ranking do mês.
         </p>
       </div>
+
+      <div className="card-premium border-destructive/40 p-4">
+        <p className="text-xs uppercase tracking-widest text-destructive">Zona de risco</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Ações exclusivas da diretoria. Não dá para desfazer.
+        </p>
+        <div className="mt-3 grid gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={zerarMes.isPending}
+            onClick={() => {
+              if (confirm("Zerar o ranking deste mês? Gols, cartões e resultados do mês serão apagados."))
+                zerarMes.mutate();
+            }}
+          >
+            <RotateCcw className="size-4" /> Zerar ranking do mês
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={zerarTudo.isPending}
+            onClick={() => {
+              if (confirm("Resetar TODAS as estatísticas do histórico? Essa ação é definitiva."))
+                zerarTudo.mutate();
+            }}
+          >
+            <Trash2 className="size-4" /> Resetar estatísticas gerais
+          </Button>
+        </div>
+      </div>
+
 
       {(times ?? []).length === 0 && (
         <div className="card-premium p-6 text-center">

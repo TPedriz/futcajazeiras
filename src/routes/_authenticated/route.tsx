@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/BottomNav";
 import { perfilAtualQuery } from "@/lib/babaQueries";
 import { BrandLogo } from "@/components/BrandLogo";
+import { SinoNotificacoes } from "@/components/SinoNotificacoes";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -32,12 +33,14 @@ function AuthenticatedLayout() {
             <div className="leading-tight">
               <p className="font-display text-lg tracking-wider text-foreground">Fut Cajazeiras</p>
               <p className="text-[10px] uppercase tracking-widest text-gold">
-                {isAdmin ? "Diretoria" : "Associado"}
+                {data?.rotuloPapel ?? "Convidado"}
               </p>
             </div>
           </div>
+          <SinoNotificacoes userId={data?.user.id} />
         </div>
       </header>
+
 
       <main className="mx-auto max-w-md px-4 pt-4 pb-28">
         <Outlet />
