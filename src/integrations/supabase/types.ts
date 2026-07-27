@@ -124,6 +124,36 @@ export type Database = {
           },
         ]
       }
+      notificacoes: {
+        Row: {
+          criado_em: string
+          id: string
+          lida: boolean
+          mensagem: string
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          lida?: boolean
+          mensagem?: string
+          tipo?: string
+          titulo: string
+          usuario_id: string
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          lida?: boolean
+          mensagem?: string
+          tipo?: string
+          titulo?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       papeis_usuario: {
         Row: {
           criado_em: string
@@ -341,6 +371,48 @@ export type Database = {
           },
         ]
       }
+      suspensoes: {
+        Row: {
+          baba_bloqueado_id: string | null
+          baba_origem_id: string | null
+          criado_em: string
+          id: string
+          motivo: string
+          usuario_id: string
+        }
+        Insert: {
+          baba_bloqueado_id?: string | null
+          baba_origem_id?: string | null
+          criado_em?: string
+          id?: string
+          motivo?: string
+          usuario_id: string
+        }
+        Update: {
+          baba_bloqueado_id?: string | null
+          baba_origem_id?: string | null
+          criado_em?: string
+          id?: string
+          motivo?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suspensoes_baba_bloqueado_id_fkey"
+            columns: ["baba_bloqueado_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_baba"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suspensoes_baba_origem_id_fkey"
+            columns: ["baba_origem_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_baba"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       times_baba: {
         Row: {
           atualizado_em: string
@@ -439,6 +511,15 @@ export type Database = {
     }
     Functions: {
       garante_mensalidades_mes: { Args: never; Returns: undefined }
+      notifica: {
+        Args: {
+          _mensagem: string
+          _tipo: string
+          _titulo: string
+          _usuario_id: string
+        }
+        Returns: undefined
+      }
       tem_papel: {
         Args: {
           _papel: Database["public"]["Enums"]["papel_usuario"]
