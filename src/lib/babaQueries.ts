@@ -206,3 +206,47 @@ export const perfisPublicosQuery = () =>
       return data ?? [];
     },
   });
+
+export const minhasSolicitacoesQuery = (userId: string | undefined, babaId: string | undefined) =>
+  queryOptions({
+    queryKey: ["solicitacoes-minhas", userId, babaId],
+    enabled: !!userId && !!babaId,
+    queryFn: async () => {
+      if (!userId || !babaId) return [];
+      const { data, error } = await supabase
+        .from("solicitacoes_convidado")
+        .select("*")
+        .eq("solicitante_id", userId)
+        .eq("baba_id", babaId)
+        .order("criado_em", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const solicitacoesRecebidasQuery = (userId: string | undefined, babaId: string | undefined) =>
+  queryOptions({
+    queryKey: ["solicitacoes-recebidas", userId, babaId],
+    enabled: !!userId && !!babaId,
+    queryFn: async () => {
+      if (!userId || !babaId) return [];
+      const { data, error } = await supabase
+        .from("solicitacoes_convidado")
+        .select("*")
+        .eq("anfitriao_id", userId)
+        .eq("baba_id", babaId)
+        .order("criado_em", { ascending: false });
+      if (error) throw error;
+
+      const ids = Array.from(new Set((data ?? []).map((s) => s.solicitante_id)));
+      const nomes = new Map<string, string>();
+      if (ids.length > 0) {
+        const { data: perfis } = await supabase
+          .from("perfis_publicos")
+          .select("id, nome")
+          .in("id", ids);
+        for (const p of perfis ?? []) nomes.set(p.id, p.nome);
+      }
+      return (data ?? []).map((s) => ({ ...s, nomeSolicitante: nomes.get(s.solicitante_id) ?? "Convidado" }));
+    },
+  });
