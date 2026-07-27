@@ -462,7 +462,7 @@ function PresencaCard({ numero, nome, posicao, tipo, statusConvidado, mpStatus, 
           {isConvidado ? (
             <>
               <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Convidado</span>
-              {statusConvidado === "pendente" && <span className="text-[10px] text-gold">• pendente</span>}
+              {aguardandoPix && <span className="text-[10px] text-gold">• aguardando pagamento</span>}
               {statusConvidado === "rejeitado" && <span className="text-[10px] text-destructive">• rejeitado</span>}
             </>
           ) : posicao === "goleiro" ? (
