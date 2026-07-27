@@ -46,7 +46,7 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       if (!babaId) return [];
       const { data: presencas, error } = await supabase
         .from("presencas")
-        .select("id, baba_id, usuario_id, nome_convidado, status_convidado, confirmado_em")
+        .select("id, baba_id, usuario_id, nome_convidado, status_convidado, confirmado_em, mp_status, valor")
         .eq("baba_id", babaId)
         .order("confirmado_em", { ascending: true });
       if (error) throw error;
