@@ -25,8 +25,10 @@ export interface TimeSorteado {
   linha: JogadorSorteio[];
 }
 
-const TAM_TIME = 7;
-const LETRAS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+export const TAMANHOS_TIME = [6, 7] as const;
+export type TamanhoTime = (typeof TAMANHOS_TIME)[number];
+
+const LETRAS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
 function embaralhar<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -37,15 +39,20 @@ function embaralhar<T>(arr: T[]): T[] {
   return a;
 }
 
-export function sortearTimes(jogadores: JogadorSorteio[]): {
+export function sortearTimes(
+  jogadores: JogadorSorteio[],
+  tamanhoTime: number = 7,
+): {
   times: TimeSorteado[];
   sobras: JogadorSorteio[];
 } {
-  if (jogadores.length < TAM_TIME) {
+  const tam = Math.max(2, Math.floor(tamanhoTime));
+  if (jogadores.length < tam) {
     return { times: [], sobras: jogadores };
   }
 
-  const totalTimes = Math.floor(jogadores.length / TAM_TIME);
+  // Quantidade dinâmica de times: o máximo de times completos possível.
+  const totalTimes = Math.floor(jogadores.length / tam);
   const goleiros = embaralhar(jogadores.filter((j) => j.posicao === "goleiro"));
   const linha = embaralhar(jogadores.filter((j) => j.posicao === "linha"));
 
@@ -65,9 +72,9 @@ export function sortearTimes(jogadores: JogadorSorteio[]): {
   const linhaTotal = [...linha, ...goleiros.map((g) => ({ ...g, posicao: "linha" as const }))];
   const poolLinha = embaralhar(linhaTotal);
 
-  // Preenche cada time: quem tem goleiro precisa de 6 de linha; quem não tem, precisa de 7
+  // Preenche cada time: quem tem goleiro precisa de tam-1 de linha; quem não tem, precisa de tam
   for (const time of times) {
-    const necessarios = time.goleiro ? TAM_TIME - 1 : TAM_TIME;
+    const necessarios = time.goleiro ? tam - 1 : tam;
     for (let i = 0; i < necessarios && poolLinha.length > 0; i++) {
       time.linha.push(poolLinha.shift()!);
     }
@@ -75,6 +82,7 @@ export function sortearTimes(jogadores: JogadorSorteio[]): {
 
   return { times, sobras: poolLinha };
 }
+
 
 export function formatarTimesParaWhatsApp(
   times: TimeSorteado[],
