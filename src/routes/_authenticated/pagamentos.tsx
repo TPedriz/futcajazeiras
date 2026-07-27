@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { perfilAtualQuery, minhasMensalidadesQuery } from "@/lib/babaQueries";
 import { tempoDeAssociado } from "@/lib/associado";
+import { criarPixMensalidade, consultarPixMensalidade } from "@/lib/pagamentos.functions";
+import { PixDialog, type DadosPix } from "@/components/PixDialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle2, AlertCircle, CalendarClock, Wallet, Heart } from "lucide-react";
+import { CheckCircle2, AlertCircle, CalendarClock, Wallet, Heart, QrCode } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/pagamentos")({
   head: () => ({
@@ -22,10 +28,61 @@ export const Route = createFileRoute("/_authenticated/pagamentos")({
 function PagamentosPage() {
   const { data: perfilData } = useSuspenseQuery(perfilAtualQuery());
   const { data: mensalidades, isLoading } = useQuery(minhasMensalidadesQuery(perfilData?.user.id));
+  const qc = useQueryClient();
+
+  const gerarPix = useServerFn(criarPixMensalidade);
+  const consultarPix = useServerFn(consultarPixMensalidade);
+
+  const [pixAberto, setPixAberto] = useState(false);
+  const [mensalidadeAtiva, setMensalidadeAtiva] = useState<string | null>(null);
+  const [dadosPix, setDadosPix] = useState<DadosPix | null>(null);
+  const [pago, setPago] = useState(false);
+
+  const cobrar = useMutation({
+    mutationFn: async (mensalidadeId: string) => {
+      setMensalidadeAtiva(mensalidadeId);
+      setDadosPix(null);
+      setPago(false);
+      setPixAberto(true);
+      return await gerarPix({ data: { mensalidadeId } });
+    },
+    onSuccess: (res) => {
+      if (res.pago) {
+        setPago(true);
+        qc.invalidateQueries({ queryKey: ["mensalidades-minhas"] });
+        return;
+      }
+      setDadosPix({ qrCode: res.qrCode, qrBase64: res.qrBase64, valor: res.valor });
+    },
+    onError: (e: Error) => {
+      setPixAberto(false);
+      toast.error("Não foi possível gerar o PIX", { description: e.message });
+    },
+  });
+
+  // Polling enquanto o modal está aberto e o pagamento não foi confirmado
+  useEffect(() => {
+    if (!pixAberto || pago || !mensalidadeAtiva) return;
+    const id = setInterval(async () => {
+      try {
+        const r = await consultarPix({ data: { mensalidadeId: mensalidadeAtiva } });
+        if (r.pago) {
+          setPago(true);
+          qc.invalidateQueries({ queryKey: ["mensalidades-minhas"] });
+          qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+          toast.success("Mensalidade paga!");
+        }
+      } catch {
+        /* silencioso: tentamos de novo no próximo ciclo */
+      }
+    }, 5000);
+    return () => clearInterval(id);
+  }, [pixAberto, pago, mensalidadeAtiva, consultarPix, qc]);
 
   const tempo = tempoDeAssociado(perfilData?.perfil?.criado_em);
   const pagas = (mensalidades ?? []).filter((m) => m.status === "pago").length;
   const pendentes = (mensalidades ?? []).filter((m) => m.status === "pendente").length;
+
 
   return (
     <div className="space-y-5">
