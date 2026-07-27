@@ -180,6 +180,13 @@ export function RankingMensal() {
           </li>
         ))}
       </ul>
+
+      {top.length > 0 && (
+        <Button variant="goldOutline" size="lg" className="mt-4 w-full" onClick={exportarImagem}>
+          <ImageDown className="size-4" /> Compartilhar ranking como imagem
+        </Button>
+      )}
     </section>
+
   );
 }
