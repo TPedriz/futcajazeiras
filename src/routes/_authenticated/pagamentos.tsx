@@ -166,6 +166,17 @@ function PagamentosPage() {
           <p className="mt-1 text-sm text-muted-foreground">Assim que a diretoria abrir o mês, ele aparece aqui.</p>
         </div>
       )}
+
+      <PixDialog
+        open={pixAberto}
+        onOpenChange={setPixAberto}
+        titulo="Pagar mensalidade"
+        descricao="Escaneie o QR Code ou copie o código no app do seu banco."
+        dados={dadosPix}
+        carregando={cobrar.isPending}
+        pago={pago}
+      />
     </div>
+
   );
 }
