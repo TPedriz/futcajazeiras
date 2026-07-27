@@ -78,6 +78,8 @@ function BabaPage() {
 
   const userId = perfilData?.user.id;
   const isAdmin = perfilData?.isAdmin ?? false;
+  const isConvidado = perfilData?.isConvidado ?? false;
+
 
   const minhaPresenca = presencas?.find((p) => p.usuario_id === userId && !p.nome_convidado);
   const meuConvidado = presencas?.find((p) => p.usuario_id === userId && p.nome_convidado);
