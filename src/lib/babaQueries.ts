@@ -13,11 +13,17 @@ export const perfilAtualQuery = () =>
         supabase.from("papeis_usuario").select("papel").eq("user_id", userData.user.id),
       ]);
 
+      const lista = (papeis ?? []).map((p) => p.papel);
+      const isAdmin = lista.includes("administrador");
       return {
         user: userData.user,
         perfil,
-        isAdmin: (papeis ?? []).some((p) => p.papel === "administrador"),
+        papeis: lista,
+        isAdmin,
+        isAssociado: isAdmin || lista.includes("associado"),
+        isConvidado: !isAdmin && !lista.includes("associado"),
       };
+
     },
   });
 
