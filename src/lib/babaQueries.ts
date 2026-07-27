@@ -15,13 +15,19 @@ export const perfilAtualQuery = () =>
 
       const lista = (papeis ?? []).map((p) => p.papel);
       const isAdmin = lista.includes("administrador");
+      const isConvidado = !isAdmin && !lista.includes("associado");
       return {
         user: userData.user,
         perfil,
         papeis: lista,
         isAdmin,
         isAssociado: isAdmin || lista.includes("associado"),
-        isConvidado: !isAdmin && !lista.includes("associado"),
+        isConvidado,
+        papelPrincipal: (isAdmin ? "administrador" : isConvidado ? "convidado" : "associado") as
+          | "administrador"
+          | "associado"
+          | "convidado",
+        rotuloPapel: isAdmin ? "Diretoria" : isConvidado ? "Convidado" : "Associado",
       };
 
     },
