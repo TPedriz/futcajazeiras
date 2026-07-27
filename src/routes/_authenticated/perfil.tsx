@@ -3,10 +3,12 @@ import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { perfilAtualQuery } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart } from "lucide-react";
+import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save } from "lucide-react";
+
 import { Link } from "@tanstack/react-router";
 import { tempoDeAssociado } from "@/lib/associado";
 import { BrandLogo } from "@/components/BrandLogo";
