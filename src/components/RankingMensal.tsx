@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import escudo from "@/assets/fut-cajazeiras-escudo.png";
+import escudoAsset from "@/assets/fut-cajazeiras-escudo.png.asset.json";
+
+const escudo = escudoAsset.url;
 
 interface LinhaRanking {
   nome: string;
