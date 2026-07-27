@@ -35,6 +35,27 @@ function PerfilPage() {
   const emDia = perfil?.status_pagamento === "pago";
   const tempo = tempoDeAssociado(perfil?.criado_em);
   const [salvando, setSalvando] = useState(false);
+  const [editandoNome, setEditandoNome] = useState(false);
+  const [nome, setNome] = useState("");
+
+  const salvarNome = async () => {
+    if (!perfil) return;
+    if (nome.trim().length < 2) {
+      toast.error("Informe seu nome completo.");
+      return;
+    }
+    setSalvando(true);
+    const { error } = await supabase.from("perfis").update({ nome: nome.trim() }).eq("id", perfil.id);
+    setSalvando(false);
+    if (error) {
+      toast.error("Não foi possível salvar o nome.");
+      return;
+    }
+    toast.success("Nome atualizado!");
+    setEditandoNome(false);
+    qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+    qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+  };
 
   const alterarPosicao = async (nova: "linha" | "goleiro") => {
     if (!perfil || nova === perfil.posicao) return;
@@ -51,6 +72,7 @@ function PerfilPage() {
     toast.success("Posição atualizada!");
     qc.invalidateQueries({ queryKey: ["perfil-atual"] });
   };
+
 
   const sair = async () => {
     await qc.cancelQueries();
