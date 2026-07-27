@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import escudo from "@/assets/fut-cajazeiras-escudo.png";
 
 interface LinhaRanking {
   nome: string;
@@ -14,20 +15,39 @@ interface LinhaRanking {
 }
 
 /** Desenha o ranking num canvas e devolve o PNG. */
-function desenharRanking(mes: string, linhas: LinhaRanking[]): Promise<Blob | null> {
+function carregarEscudo(): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = escudo;
+  });
+}
+
+async function desenharRanking(mes: string, linhas: LinhaRanking[]): Promise<Blob | null> {
   const L = 1080;
   const A = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = L;
   canvas.height = A;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return Promise.resolve(null);
+  if (!ctx) return null;
 
   const fundo = ctx.createLinearGradient(0, 0, L, A);
   fundo.addColorStop(0, "#0b0b0d");
   fundo.addColorStop(1, "#1a0d0f");
   ctx.fillStyle = fundo;
   ctx.fillRect(0, 0, L, A);
+
+  const brasao = await carregarEscudo();
+  if (brasao) {
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    const tam = L * 0.85;
+    ctx.drawImage(brasao, (L - tam) / 2, (A - tam) / 2, tam, tam);
+    ctx.restore();
+  }
 
   ctx.strokeStyle = "#c9a227";
   ctx.lineWidth = 6;
@@ -36,15 +56,15 @@ function desenharRanking(mes: string, linhas: LinhaRanking[]): Promise<Blob | nu
   ctx.textAlign = "center";
   ctx.fillStyle = "#c9a227";
   ctx.font = "bold 40px Inter, system-ui, sans-serif";
-  ctx.fillText("FUT CAJAZEIRAS", L / 2, 140);
+  ctx.fillText("FUT CAJAZEIRAS", L / 2, 190);
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 84px Inter, system-ui, sans-serif";
-  ctx.fillText("RANKING DO MÊS", L / 2, 240);
+  ctx.fillText("RANKING DO MÊS", L / 2, 272);
   ctx.fillStyle = "#c9a227";
   ctx.font = "48px Inter, system-ui, sans-serif";
-  ctx.fillText(mes.toUpperCase(), L / 2, 310);
+  ctx.fillText(mes.toUpperCase(), L / 2, 338);
 
-  let y = 420;
+  let y = 450;
   ctx.textAlign = "left";
   linhas.forEach((r, i) => {
     ctx.fillStyle = i === 0 ? "rgba(201,162,39,0.14)" : "rgba(255,255,255,0.05)";
@@ -71,7 +91,9 @@ function desenharRanking(mes: string, linhas: LinhaRanking[]): Promise<Blob | nu
   ctx.font = "32px Inter, system-ui, sans-serif";
   ctx.fillText("futcajazeiras.lovable.app", L / 2, A - 90);
 
-  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (brasao) ctx.drawImage(brasao, L / 2 - 55, 40, 110, 110);
+
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
 }
 
 export function RankingMensal() {
