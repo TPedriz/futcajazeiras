@@ -4,6 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
 import { criarPixConvidado, consultarPixConvidado } from "@/lib/pagamentos.functions";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
+import { ConviteConvidado } from "@/components/ConviteConvidado";
+import { SolicitacoesRecebidas } from "@/components/SolicitacoesRecebidas";
+
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
