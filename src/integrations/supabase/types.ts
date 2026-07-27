@@ -293,6 +293,54 @@ export type Database = {
         }
         Relationships: []
       }
+      solicitacoes_convidado: {
+        Row: {
+          anfitriao_id: string
+          atualizado_em: string
+          baba_id: string
+          criado_em: string
+          id: string
+          presenca_id: string | null
+          solicitante_id: string
+          status: Database["public"]["Enums"]["status_convidado"]
+        }
+        Insert: {
+          anfitriao_id: string
+          atualizado_em?: string
+          baba_id: string
+          criado_em?: string
+          id?: string
+          presenca_id?: string | null
+          solicitante_id: string
+          status?: Database["public"]["Enums"]["status_convidado"]
+        }
+        Update: {
+          anfitriao_id?: string
+          atualizado_em?: string
+          baba_id?: string
+          criado_em?: string
+          id?: string
+          presenca_id?: string | null
+          solicitante_id?: string
+          status?: Database["public"]["Enums"]["status_convidado"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_convidado_baba_id_fkey"
+            columns: ["baba_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_baba"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_convidado_presenca_id_fkey"
+            columns: ["presenca_id"]
+            isOneToOne: false
+            referencedRelation: "presencas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       times_baba: {
         Row: {
           atualizado_em: string
@@ -400,7 +448,7 @@ export type Database = {
       }
     }
     Enums: {
-      papel_usuario: "administrador" | "associado"
+      papel_usuario: "administrador" | "associado" | "convidado"
       posicao_jogador: "goleiro" | "linha"
       resultado_time: "vitoria" | "derrota" | "empate"
       status_convidado: "pendente" | "aprovado" | "rejeitado"
@@ -532,7 +580,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      papel_usuario: ["administrador", "associado"],
+      papel_usuario: ["administrador", "associado", "convidado"],
       posicao_jogador: ["goleiro", "linha"],
       resultado_time: ["vitoria", "derrota", "empate"],
       status_convidado: ["pendente", "aprovado", "rejeitado"],
