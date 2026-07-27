@@ -19,6 +19,8 @@ function SorteioPage() {
   const { data: sessao } = useSuspenseQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
   const [resultado, setResultado] = useState<{ times: TimeSorteado[]; sobras: JogadorSorteio[] } | null>(null);
+  const [tamanho, setTamanho] = useState<number>(7);
+
   const qc = useQueryClient();
 
   const usuarioPorPresenca = useMemo(() => {
