@@ -66,6 +66,12 @@ function BabaPage() {
   const queryClient = useQueryClient();
   const [convidadoOpen, setConvidadoOpen] = useState(false);
   const [nomeConvidado, setNomeConvidado] = useState("");
+  const [pixAberto, setPixAberto] = useState(false);
+  const [pagoPix, setPagoPix] = useState(false);
+  const [dadosPix, setDadosPix] = useState<DadosPix | null>(null);
+  const [presencaAtiva, setPresencaAtiva] = useState<string | null>(null);
+  const gerarPixConvidado = useServerFn(criarPixConvidado);
+  const conferirPixConvidado = useServerFn(consultarPixConvidado);
 
   const userId = perfilData?.user.id;
   const isAdmin = perfilData?.isAdmin ?? false;
