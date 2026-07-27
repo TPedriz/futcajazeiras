@@ -32,12 +32,14 @@ function AuthenticatedLayout() {
             <div className="leading-tight">
               <p className="font-display text-lg tracking-wider text-foreground">Fut Cajazeiras</p>
               <p className="text-[10px] uppercase tracking-widest text-gold">
-                {isAdmin ? "Diretoria" : "Associado"}
+                {data?.rotuloPapel ?? "Convidado"}
               </p>
             </div>
           </div>
+          <SinoNotificacoes userId={data?.user.id} />
         </div>
       </header>
+
 
       <main className="mx-auto max-w-md px-4 pt-4 pb-28">
         <Outlet />
