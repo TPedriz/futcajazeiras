@@ -3,7 +3,7 @@ import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import { supabase } from "@/integrations/supabase/client";
 import { proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
-import { sortearTimes, formatarTimesParaWhatsApp, type JogadorSorteio, type TimeSorteado } from "@/lib/sorteio";
+import { sortearTimes, formatarTimesParaWhatsApp, TAMANHOS_TIME, type JogadorSorteio, type TimeSorteado } from "@/lib/sorteio";
 import { useState, useMemo } from "react";
 import { Shuffle, Copy, HandMetal, User, Save } from "lucide-react";
 import { toast } from "sonner";
