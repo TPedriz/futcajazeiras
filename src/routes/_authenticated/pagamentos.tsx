@@ -114,7 +114,10 @@ function PagamentosPage() {
         </div>
       </div>
 
+      <PresentearMensalidade />
+
       {isLoading && <p className="text-sm text-muted-foreground">Carregando histórico...</p>}
+
 
       <ul className="space-y-2">
         {(mensalidades ?? []).map((m) => {
