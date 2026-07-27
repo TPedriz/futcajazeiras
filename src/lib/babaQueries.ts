@@ -250,3 +250,99 @@ export const solicitacoesRecebidasQuery = (userId: string | undefined, babaId: s
       return (data ?? []).map((s) => ({ ...s, nomeSolicitante: nomes.get(s.solicitante_id) ?? "Convidado" }));
     },
   });
+
+/** Notificações do usuário logado, mais recentes primeiro. */
+export const notificacoesQuery = (userId: string | undefined) =>
+  queryOptions({
+    queryKey: ["notificacoes", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from("notificacoes")
+        .select("*")
+        .order("criado_em", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/** Mural de punições: suspensões ativas e recentes. */
+export const suspensoesQuery = () =>
+  queryOptions({
+    queryKey: ["suspensoes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("suspensoes")
+        .select("*")
+        .order("criado_em", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+
+      const ids = Array.from(new Set((data ?? []).map((s) => s.usuario_id)));
+      const nomes = new Map<string, string>();
+      if (ids.length > 0) {
+        const { data: perfis } = await supabase.from("perfis_publicos").select("id, nome").in("id", ids);
+        for (const p of perfis ?? []) nomes.set(p.id, p.nome);
+      }
+      return (data ?? []).map((s) => ({ ...s, nome: nomes.get(s.usuario_id) ?? "Jogador" }));
+    },
+  });
+
+/** Quantas vezes o usuário já jogou como convidado (para virar associado). */
+export const presencasComoConvidadoQuery = (userId: string | undefined) =>
+  queryOptions({
+    queryKey: ["presencas-convidado", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) return 0;
+      const { count, error } = await supabase
+        .from("solicitacoes_convidado")
+        .select("id", { count: "exact", head: true })
+        .eq("solicitante_id", userId)
+        .eq("status", "aprovado");
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+/** Dia fixo de vencimento da mensalidade. */
+export const DIA_VENCIMENTO = 10;
+
+/** Situação do jogador para o check-in: inadimplência e suspensão. */
+export const situacaoCheckinQuery = (userId: string | undefined, babaId: string | undefined) =>
+  queryOptions({
+    queryKey: ["situacao-checkin", userId, babaId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) return { inadimplente: false, suspenso: false, motivoSuspensao: "" };
+      const referencia = mesReferencia();
+      const [{ data: mensalidade }, { data: suspensao }] = await Promise.all([
+        supabase
+          .from("mensalidades")
+          .select("status")
+          .eq("usuario_id", userId)
+          .eq("referencia", referencia)
+          .maybeSingle(),
+        babaId
+          ? supabase
+              .from("suspensoes")
+              .select("motivo")
+              .eq("usuario_id", userId)
+              .eq("baba_bloqueado_id", babaId)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+      const hoje = new Date();
+      const passouVencimento = hoje.getDate() > DIA_VENCIMENTO;
+      const pago = mensalidade?.status === "pago";
+
+      return {
+        inadimplente: passouVencimento && !pago,
+        suspenso: !!suspensao,
+        motivoSuspensao: suspensao?.motivo ?? "",
+      };
+    },
+  });
