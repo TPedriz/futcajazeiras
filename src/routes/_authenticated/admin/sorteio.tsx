@@ -114,6 +114,37 @@ function SorteioPage() {
         </p>
       </div>
 
+      <div className="card-premium p-5">
+        <p className="text-xs uppercase tracking-widest text-gold">Jogadores por time</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {TAMANHOS_TIME.map((t) => (
+            <Button
+              key={t}
+              variant={tamanho === t ? "gold" : "outline"}
+              size="lg"
+              onClick={() => {
+                setTamanho(t);
+                setResultado(null);
+              }}
+            >
+              {t} por time
+            </Button>
+          ))}
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Dá para formar <strong className="text-foreground">{previa.times}</strong>{" "}
+          {previa.times === 1 ? "time" : "times"} de {tamanho}
+          {previa.reservas > 0 && (
+            <>
+              {" "}— <strong className="text-foreground">{previa.reservas}</strong>{" "}
+              {previa.reservas === 1 ? "sobra vira reserva" : "sobras viram reservas"}
+            </>
+          )}
+          .
+        </p>
+      </div>
+
+
       <div className="grid grid-cols-2 gap-2">
         <Button variant="hero" size="lg" onClick={sortear}>
           <Shuffle className="size-4" /> Sortear
