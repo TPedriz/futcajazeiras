@@ -72,14 +72,20 @@ function SorteioPage() {
       }));
   }, [presencas]);
 
+  const previa = useMemo(() => {
+    const t = Math.floor(jogadores.length / tamanho);
+    return { times: t, reservas: jogadores.length - t * tamanho };
+  }, [jogadores.length, tamanho]);
+
   const sortear = () => {
-    if (jogadores.length < 7) {
-      toast.error("Poucos jogadores", { description: "Precisa de pelo menos 7 confirmados." });
+    if (jogadores.length < tamanho) {
+      toast.error("Poucos jogadores", { description: `Precisa de pelo menos ${tamanho} confirmados.` });
       return;
     }
-    setResultado(sortearTimes(jogadores));
-    toast.success("Times sorteados!");
+    setResultado(sortearTimes(jogadores, tamanho));
+    toast.success(`${previa.times} times sorteados!`);
   };
+
 
   const copiar = async () => {
     if (!resultado || !sessao) return;
