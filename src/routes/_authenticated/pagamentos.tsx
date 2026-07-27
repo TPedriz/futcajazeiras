@@ -121,7 +121,7 @@ function PagamentosPage() {
           const pago = m.status === "pago";
           const atrasado = !pago && new Date(m.vencimento) < new Date();
           return (
-            <li key={m.id} className="card-premium flex items-center gap-3 p-4">
+            <li key={m.id} className="card-premium flex flex-wrap items-center gap-3 p-4">
               <div className={`flex size-10 items-center justify-center rounded-full ${pago ? "bg-gold/10 text-gold" : "bg-destructive/10 text-destructive"}`}>
                 {pago ? <CheckCircle2 className="size-5" /> : <AlertCircle className="size-5" />}
               </div>
@@ -142,10 +142,22 @@ function PagamentosPage() {
               >
                 {pago ? "Pago" : atrasado ? "Atrasado" : "Em aberto"}
               </span>
+              {!pago && (
+                <Button
+                  variant="hero"
+                  size="lg"
+                  className="w-full"
+                  disabled={cobrar.isPending}
+                  onClick={() => cobrar.mutate(m.id)}
+                >
+                  <QrCode className="size-4" /> Pagar com PIX — R$ {Number(m.valor || 15).toFixed(2).replace(".", ",")}
+                </Button>
+              )}
             </li>
           );
         })}
       </ul>
+
 
       {!isLoading && (mensalidades ?? []).length === 0 && (
         <div className="card-premium p-6 text-center">
