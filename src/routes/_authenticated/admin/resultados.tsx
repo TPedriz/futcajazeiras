@@ -98,6 +98,38 @@ function ResultadosPage() {
         </p>
       </div>
 
+      <div className="card-premium border-destructive/40 p-4">
+        <p className="text-xs uppercase tracking-widest text-destructive">Zona de risco</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Ações exclusivas da diretoria. Não dá para desfazer.
+        </p>
+        <div className="mt-3 grid gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={zerarMes.isPending}
+            onClick={() => {
+              if (confirm("Zerar o ranking deste mês? Gols, cartões e resultados do mês serão apagados."))
+                zerarMes.mutate();
+            }}
+          >
+            <RotateCcw className="size-4" /> Zerar ranking do mês
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={zerarTudo.isPending}
+            onClick={() => {
+              if (confirm("Resetar TODAS as estatísticas do histórico? Essa ação é definitiva."))
+                zerarTudo.mutate();
+            }}
+          >
+            <Trash2 className="size-4" /> Resetar estatísticas gerais
+          </Button>
+        </div>
+      </div>
+
+
       {(times ?? []).length === 0 && (
         <div className="card-premium p-6 text-center">
           <Trophy className="mx-auto size-10 text-muted-foreground/50" />
