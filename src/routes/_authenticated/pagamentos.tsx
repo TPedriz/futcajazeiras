@@ -5,6 +5,8 @@ import { perfilAtualQuery, minhasMensalidadesQuery } from "@/lib/babaQueries";
 import { tempoDeAssociado } from "@/lib/associado";
 import { criarPixMensalidade, consultarPixMensalidade } from "@/lib/pagamentos.functions";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
+import { PresentearMensalidade } from "@/components/PresentearMensalidade";
+
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
