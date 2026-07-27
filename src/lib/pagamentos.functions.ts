@@ -184,12 +184,19 @@ export const consultarPixConvidado = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: presenca } = await supabase
       .from("presencas")
-      .select("id, usuario_id, status_convidado, mp_payment_id")
+      .select("id, usuario_id, status_convidado, mp_payment_id, pix_qr_code, pix_qr_base64, valor")
       .eq("id", data.presencaId)
       .maybeSingle();
     if (!presenca || presenca.usuario_id !== userId) throw new Error("Convidado não encontrado");
-    if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved" };
-    if (!presenca.mp_payment_id) return { pago: false, status: "sem_cobranca" };
+
+    const pix = {
+      qrCode: presenca.pix_qr_code as string | null,
+      qrBase64: presenca.pix_qr_base64 as string | null,
+      valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : 5,
+    };
+
+    if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...pix };
+    if (!presenca.mp_payment_id) return { pago: false, status: "sem_cobranca", ...pix };
 
     const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
     const pagamento = await consultarPagamentoMp(presenca.mp_payment_id);
@@ -197,5 +204,5 @@ export const consultarPixConvidado = createServerFn({ method: "POST" })
     const { aplicarPagamento } = await import("@/lib/pagamentos.server");
     await aplicarPagamento(`convidado:${presenca.id}`, pagamento.status);
 
-    return { pago: pagamento.status === "approved", status: pagamento.status };
+    return { pago: pagamento.status === "approved", status: pagamento.status, ...pix };
   });

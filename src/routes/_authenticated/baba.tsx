@@ -409,10 +409,12 @@ function ContadorFechamento({ fechamento, fechado }: { fechamento: string; fecha
   );
 }
 
-function StatusConvidadoBadge({ status }: { status: string }) {
-  if (status === "aprovado") return <Badge className="mt-1 bg-success text-success-foreground">Aprovado</Badge>;
+function StatusConvidadoBadge({ status, mpStatus }: { status: string; mpStatus?: string | null }) {
+  if (status === "aprovado") return <Badge className="mt-1 bg-success text-success-foreground">Confirmado</Badge>;
   if (status === "rejeitado") return <Badge variant="destructive" className="mt-1">Rejeitado</Badge>;
-  return <Badge variant="outline" className="mt-1 border-gold/40 text-gold">Aguardando aprovação</Badge>;
+  if (mpStatus === "rejected" || mpStatus === "cancelled")
+    return <Badge variant="destructive" className="mt-1">Pagamento não concluído</Badge>;
+  return <Badge variant="outline" className="mt-1 border-gold/40 text-gold">Aguardando pagamento</Badge>;
 }
 
 interface PresencaCardProps {
