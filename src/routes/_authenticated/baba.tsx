@@ -112,22 +112,28 @@ function BabaPage() {
     mutationFn: async () => {
       if (!sessao || !userId) throw new Error("Sessão indisponível");
       if (!nomeConvidado.trim()) throw new Error("Informe o nome do convidado");
-      const { error } = await supabase.from("presencas").insert({
-        baba_id: sessao.id,
-        usuario_id: userId,
-        nome_convidado: nomeConvidado.trim(),
-        status_convidado: "pendente",
-      });
-      if (error) throw error;
+      setDadosPix(null);
+      setPagoPix(false);
+      setPixAberto(true);
+      return await gerarPixConvidado({ data: { babaId: sessao.id, nome: nomeConvidado.trim() } });
     },
-    onSuccess: () => {
-      toast.success("Convidado enviado", { description: "Aguardando aprovação da diretoria." });
+    onSuccess: (res) => {
       setNomeConvidado("");
       setConvidadoOpen(false);
+      setPresencaAtiva(res.presencaId);
       invalidar();
+      if (res.pago) {
+        setPagoPix(true);
+        return;
+      }
+      setDadosPix({ qrCode: res.qrCode, qrBase64: res.qrBase64, valor: res.valor });
     },
-    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+    onError: (e: Error) => {
+      setPixAberto(false);
+      toast.error("Erro", { description: e.message });
+    },
   });
+
 
   const removerPresenca = useMutation({
     mutationFn: async (id: string) => {
