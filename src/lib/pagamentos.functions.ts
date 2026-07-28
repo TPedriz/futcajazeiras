@@ -155,16 +155,18 @@ export const criarPixConvidado = createServerFn({ method: "POST" })
     });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin
-      .from("presencas")
-      .update({
+    await supabaseAdmin.from("presencas").update({ mp_status: pix.status }).eq("id", presenca.id);
+    await supabaseAdmin.from("presencas_pagamento").upsert(
+      {
+        presenca_id: presenca.id,
         mp_payment_id: pix.paymentId,
-        mp_status: pix.status,
         pix_qr_code: pix.qrCode,
         pix_qr_base64: pix.qrBase64,
         pix_expira_em: pix.expiraEm,
-      })
-      .eq("id", presenca.id);
+      },
+      { onConflict: "presenca_id" },
+    );
+
 
     return {
       presencaId: presenca.id,
