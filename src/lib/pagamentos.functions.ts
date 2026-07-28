@@ -186,27 +186,36 @@ export const consultarPixConvidado = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: presenca } = await supabase
       .from("presencas")
-      .select("id, usuario_id, status_convidado, mp_payment_id, pix_qr_code, pix_qr_base64, valor")
+      .select("id, usuario_id, convidado_user_id, status_convidado, valor")
       .eq("id", data.presencaId)
       .maybeSingle();
-    if (!presenca || presenca.usuario_id !== userId) throw new Error("Convidado não encontrado");
+    if (!presenca || (presenca.usuario_id !== userId && presenca.convidado_user_id !== userId)) {
+      throw new Error("Convidado não encontrado");
+    }
+
+    const { data: cobranca } = await supabase
+      .from("presencas_pagamento")
+      .select("mp_payment_id, pix_qr_code, pix_qr_base64")
+      .eq("presenca_id", presenca.id)
+      .maybeSingle();
 
     const pix = {
-      qrCode: presenca.pix_qr_code as string | null,
-      qrBase64: presenca.pix_qr_base64 as string | null,
+      qrCode: cobranca?.pix_qr_code ?? null,
+      qrBase64: cobranca?.pix_qr_base64 ?? null,
       valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : 5,
     };
 
     if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...pix };
-    if (!presenca.mp_payment_id) return { pago: false, status: "sem_cobranca", ...pix };
+    if (!cobranca?.mp_payment_id) return { pago: false, status: "sem_cobranca", ...pix };
 
     const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
-    const pagamento = await consultarPagamentoMp(presenca.mp_payment_id);
+    const pagamento = await consultarPagamentoMp(cobranca.mp_payment_id);
 
     const { aplicarPagamento } = await import("@/lib/pagamentos.server");
     await aplicarPagamento(`convidado:${presenca.id}`, pagamento.status);
 
     return { pago: pagamento.status === "approved", status: pagamento.status, ...pix };
+
   });
 
 /** Lista associados com mensalidade em aberto (para presentear). */
