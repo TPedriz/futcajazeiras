@@ -58,7 +58,9 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       if (!babaId) return [];
       const { data: presencas, error } = await supabase
         .from("presencas")
-        .select("id, baba_id, usuario_id, nome_convidado, status_convidado, confirmado_em, mp_status, valor")
+        .select(
+          "id, baba_id, usuario_id, nome_convidado, telefone_convidado, convidado_user_id, status_convidado, confirmado_em, mp_status, valor, chegou_em, ordem_chegada, compareceu",
+        )
         .eq("baba_id", babaId)
         .order("confirmado_em", { ascending: true });
       if (error) throw error;
@@ -66,15 +68,15 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       const ids = Array.from(
         new Set((presencas ?? []).map((p) => p.usuario_id).filter(Boolean)),
       ) as string[];
-      const mapa = new Map<string, { id: string; nome: string; posicao: "linha" | "goleiro" }>();
+      const mapa = new Map<
+        string,
+        { id: string; nome: string; posicao: "linha" | "goleiro"; time_coracao: "bahia" | "vitoria" | null }
+      >();
       if (ids.length > 0) {
-        const { data: perfis } = await (supabase as unknown as {
-          from: (t: string) => {
-            select: (c: string) => {
-              in: (col: string, vals: string[]) => Promise<{ data: { id: string; nome: string; posicao: "linha" | "goleiro" }[] | null }>;
-            };
-          };
-        }).from("perfis_publicos").select("id, nome, posicao").in("id", ids);
+        const { data: perfis } = await supabase
+          .from("perfis_publicos")
+          .select("id, nome, posicao, time_coracao")
+          .in("id", ids);
         for (const p of perfis ?? []) mapa.set(p.id, p);
       }
 
@@ -84,6 +86,7 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       }));
     },
   });
+
 
 export const todasSessoesQuery = () =>
   queryOptions({
