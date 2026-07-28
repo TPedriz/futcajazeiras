@@ -1,21 +1,22 @@
 /**
- * Algoritmo de Sorteio de Times — Fut 7
+ * Algoritmo de Sorteio de Times — Fut Cajazeiras
  *
- * Regras:
- * - 7 jogadores por time (1 goleiro + 6 linha).
- * - Número de times = teto(confirmados / 7).
- * - Se há goleiros >= times: 1 goleiro por time, sorteados aleatoriamente. Sobressalentes viram linha.
- * - Se há goleiros < times: distribui 1 goleiro por vez nos primeiros N times; times restantes ficam sem goleiro fixo e completam 7 com linha.
- * - Preenchimento restante: sorteio aleatório de jogadores de linha.
+ * Regras atuais:
+ * - NINGUÉM fica de reserva: todos os jogadores confirmados entram em algum time.
+ * - Número de times = teto(total / tamanho). O último time pode ficar incompleto.
+ * - Goleiros são distribuídos 1 por time; goleiros sobressalentes viram linha.
+ * - Modo BAxVI: divide os associados entre Time Bahia e Time Vitória pelo time do coração.
  */
 
 export type Posicao = "goleiro" | "linha";
+export type TimeCoracao = "bahia" | "vitoria";
 
 export interface JogadorSorteio {
   id: string;
   nome: string;
   posicao: Posicao;
   isConvidado: boolean;
+  timeCoracao?: TimeCoracao | null;
 }
 
 export interface TimeSorteado {
@@ -42,17 +43,12 @@ function embaralhar<T>(arr: T[]): T[] {
 export function sortearTimes(
   jogadores: JogadorSorteio[],
   tamanhoTime: number = 7,
-): {
-  times: TimeSorteado[];
-  sobras: JogadorSorteio[];
-} {
+): { times: TimeSorteado[]; sobras: JogadorSorteio[] } {
   const tam = Math.max(2, Math.floor(tamanhoTime));
-  if (jogadores.length < tam) {
-    return { times: [], sobras: jogadores };
-  }
+  if (jogadores.length === 0) return { times: [], sobras: [] };
 
-  // Quantidade dinâmica de times: o máximo de times completos possível.
-  const totalTimes = Math.floor(jogadores.length / tam);
+  // Todo mundo joga: arredondamos para cima, o último time pode ficar incompleto.
+  const totalTimes = Math.max(1, Math.ceil(jogadores.length / tam));
   const goleiros = embaralhar(jogadores.filter((j) => j.posicao === "goleiro"));
   const linha = embaralhar(jogadores.filter((j) => j.posicao === "linha"));
 
@@ -63,31 +59,61 @@ export function sortearTimes(
     linha: [],
   }));
 
-  // Distribui goleiros — 1 por time até esgotar
   for (let i = 0; i < totalTimes && goleiros.length > 0; i++) {
     times[i].goleiro = goleiros.shift()!;
   }
 
-  // Goleiros sobressalentes viram linha
-  const linhaTotal = [...linha, ...goleiros.map((g) => ({ ...g, posicao: "linha" as const }))];
-  const poolLinha = embaralhar(linhaTotal);
+  const pool = embaralhar([
+    ...linha,
+    ...goleiros.map((g) => ({ ...g, posicao: "linha" as const })),
+  ]);
 
-  // Preenche cada time: quem tem goleiro precisa de tam-1 de linha; quem não tem, precisa de tam
+  // Primeiro completa cada time até o tamanho padrão...
   for (const time of times) {
-    const necessarios = time.goleiro ? tam - 1 : tam;
-    for (let i = 0; i < necessarios && poolLinha.length > 0; i++) {
-      time.linha.push(poolLinha.shift()!);
+    const necessarios = (time.goleiro ? tam - 1 : tam) - time.linha.length;
+    for (let i = 0; i < necessarios && pool.length > 0; i++) {
+      time.linha.push(pool.shift()!);
     }
   }
+  // ...e se ainda sobrar alguém, distribui em rodízio. Ninguém fica de fora.
+  let idx = 0;
+  while (pool.length > 0) {
+    times[idx % times.length].linha.push(pool.shift()!);
+    idx++;
+  }
 
-  return { times, sobras: poolLinha };
+  return { times, sobras: [] };
 }
 
+/** Modo BAxVI: Bahia contra Vitória, todos os associados entram. */
+export function sortearBaxVi(jogadores: JogadorSorteio[]): {
+  times: TimeSorteado[];
+  semTime: JogadorSorteio[];
+} {
+  const bahia = embaralhar(jogadores.filter((j) => j.timeCoracao === "bahia"));
+  const vitoria = embaralhar(jogadores.filter((j) => j.timeCoracao === "vitoria"));
+  const semTime = jogadores.filter((j) => j.timeCoracao !== "bahia" && j.timeCoracao !== "vitoria");
+
+  const montar = (numero: number, nome: string, grupo: JogadorSorteio[]): TimeSorteado => {
+    const goleiro = grupo.find((j) => j.posicao === "goleiro") ?? null;
+    return {
+      numero,
+      nome,
+      goleiro,
+      linha: grupo.filter((j) => j.id !== goleiro?.id),
+    };
+  };
+
+  return {
+    times: [montar(1, "Time Bahia", bahia), montar(2, "Time Vitória", vitoria)],
+    semTime,
+  };
+}
 
 export function formatarTimesParaWhatsApp(
   times: TimeSorteado[],
   sobras: JogadorSorteio[],
-  dataBaba?: string
+  dataBaba?: string,
 ): string {
   const linhas: string[] = [];
   linhas.push("⚽ *FUT CAJAZEIRAS — TIMES SORTEADOS* ⚽");
@@ -108,7 +134,7 @@ export function formatarTimesParaWhatsApp(
   }
 
   if (sobras.length > 0) {
-    linhas.push("*Reservas*");
+    linhas.push("*Sem time definido*");
     sobras.forEach((s) => linhas.push(`• ${s.nome}`));
   }
 

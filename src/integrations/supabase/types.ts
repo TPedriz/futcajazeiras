@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       estatisticas_baba: {
         Row: {
+          assistencias: number
           atualizado_em: string
           baba_id: string
           cartoes_amarelos: number
@@ -27,6 +28,7 @@ export type Database = {
           usuario_id: string
         }
         Insert: {
+          assistencias?: number
           atualizado_em?: string
           baba_id: string
           cartoes_amarelos?: number
@@ -38,6 +40,7 @@ export type Database = {
           usuario_id: string
         }
         Update: {
+          assistencias?: number
           atualizado_em?: string
           baba_id?: string
           cartoes_amarelos?: number
@@ -177,6 +180,7 @@ export type Database = {
       }
       perfis: {
         Row: {
+          ativo: boolean
           atualizado_em: string
           criado_em: string
           email: string
@@ -185,8 +189,10 @@ export type Database = {
           posicao: Database["public"]["Enums"]["posicao_jogador"]
           status_pagamento: Database["public"]["Enums"]["status_pagamento"]
           telefone: string
+          time_coracao: Database["public"]["Enums"]["time_coracao"] | null
         }
         Insert: {
+          ativo?: boolean
           atualizado_em?: string
           criado_em?: string
           email: string
@@ -195,8 +201,10 @@ export type Database = {
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
           status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
           telefone?: string
+          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
         }
         Update: {
+          ativo?: boolean
           atualizado_em?: string
           criado_em?: string
           email?: string
@@ -205,24 +213,31 @@ export type Database = {
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
           status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
           telefone?: string
+          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
         }
         Relationships: []
       }
       perfis_publicos: {
         Row: {
+          ativo: boolean
           id: string
           nome: string
           posicao: Database["public"]["Enums"]["posicao_jogador"]
+          time_coracao: Database["public"]["Enums"]["time_coracao"] | null
         }
         Insert: {
+          ativo?: boolean
           id: string
           nome: string
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
         }
         Update: {
+          ativo?: boolean
           id?: string
           nome?: string
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
         }
         Relationships: [
           {
@@ -237,49 +252,52 @@ export type Database = {
       presencas: {
         Row: {
           baba_id: string
+          chegou_em: string | null
+          compareceu: boolean | null
           confirmado_em: string
+          convidado_user_id: string | null
           id: string
-          mp_payment_id: string | null
           mp_status: string | null
           nome_convidado: string | null
-          pix_expira_em: string | null
-          pix_qr_base64: string | null
-          pix_qr_code: string | null
+          ordem_chegada: number | null
           status_convidado:
             | Database["public"]["Enums"]["status_convidado"]
             | null
+          telefone_convidado: string | null
           usuario_id: string
           valor: number
         }
         Insert: {
           baba_id: string
+          chegou_em?: string | null
+          compareceu?: boolean | null
           confirmado_em?: string
+          convidado_user_id?: string | null
           id?: string
-          mp_payment_id?: string | null
           mp_status?: string | null
           nome_convidado?: string | null
-          pix_expira_em?: string | null
-          pix_qr_base64?: string | null
-          pix_qr_code?: string | null
+          ordem_chegada?: number | null
           status_convidado?:
             | Database["public"]["Enums"]["status_convidado"]
             | null
+          telefone_convidado?: string | null
           usuario_id: string
           valor?: number
         }
         Update: {
           baba_id?: string
+          chegou_em?: string | null
+          compareceu?: boolean | null
           confirmado_em?: string
+          convidado_user_id?: string | null
           id?: string
-          mp_payment_id?: string | null
           mp_status?: string | null
           nome_convidado?: string | null
-          pix_expira_em?: string | null
-          pix_qr_base64?: string | null
-          pix_qr_code?: string | null
+          ordem_chegada?: number | null
           status_convidado?:
             | Database["public"]["Enums"]["status_convidado"]
             | null
+          telefone_convidado?: string | null
           usuario_id?: string
           valor?: number
         }
@@ -289,6 +307,44 @@ export type Database = {
             columns: ["baba_id"]
             isOneToOne: false
             referencedRelation: "sessoes_baba"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presencas_pagamento: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          mp_payment_id: string | null
+          pix_expira_em: string | null
+          pix_qr_base64: string | null
+          pix_qr_code: string | null
+          presenca_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          mp_payment_id?: string | null
+          pix_expira_em?: string | null
+          pix_qr_base64?: string | null
+          pix_qr_code?: string | null
+          presenca_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          mp_payment_id?: string | null
+          pix_expira_em?: string | null
+          pix_qr_base64?: string | null
+          pix_qr_code?: string | null
+          presenca_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presencas_pagamento_presenca_id_fkey"
+            columns: ["presenca_id"]
+            isOneToOne: true
+            referencedRelation: "presencas"
             referencedColumns: ["id"]
           },
         ]
@@ -320,6 +376,36 @@ export type Database = {
           fechamento_lista?: string
           id?: string
           local?: string
+        }
+        Relationships: []
+      }
+      solicitacoes_associacao: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          decidido_por: string | null
+          id: string
+          observacao: string
+          status: Database["public"]["Enums"]["status_solicitacao_assoc"]
+          usuario_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          decidido_por?: string | null
+          id?: string
+          observacao?: string
+          status?: Database["public"]["Enums"]["status_solicitacao_assoc"]
+          usuario_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          decidido_por?: string | null
+          id?: string
+          observacao?: string
+          status?: Database["public"]["Enums"]["status_solicitacao_assoc"]
+          usuario_id?: string
         }
         Relationships: []
       }
@@ -494,6 +580,7 @@ export type Database = {
     Views: {
       ranking_mensal: {
         Row: {
+          assistencias: number | null
           cartoes_amarelos: number | null
           cartoes_azuis: number | null
           cartoes_vermelhos: number | null
@@ -510,6 +597,11 @@ export type Database = {
       }
     }
     Functions: {
+      babas_pagos_convidado: { Args: { _user_id: string }; Returns: number }
+      garante_mensalidade: {
+        Args: { _referencia: string; _usuario_id: string }
+        Returns: string
+      }
       garante_mensalidades_mes: { Args: never; Returns: undefined }
       notifica: {
         Args: {
@@ -527,6 +619,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      total_associados_ativos: { Args: never; Returns: number }
     }
     Enums: {
       papel_usuario: "administrador" | "associado" | "convidado"
@@ -534,6 +627,8 @@ export type Database = {
       resultado_time: "vitoria" | "derrota" | "empate"
       status_convidado: "pendente" | "aprovado" | "rejeitado"
       status_pagamento: "pago" | "pendente"
+      status_solicitacao_assoc: "pendente" | "aprovado" | "rejeitado"
+      time_coracao: "bahia" | "vitoria"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -666,6 +761,8 @@ export const Constants = {
       resultado_time: ["vitoria", "derrota", "empate"],
       status_convidado: ["pendente", "aprovado", "rejeitado"],
       status_pagamento: ["pago", "pendente"],
+      status_solicitacao_assoc: ["pendente", "aprovado", "rejeitado"],
+      time_coracao: ["bahia", "vitoria"],
     },
   },
 } as const

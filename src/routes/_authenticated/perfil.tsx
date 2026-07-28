@@ -1,17 +1,22 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { perfilAtualQuery, presencasComoConvidadoQuery } from "@/lib/babaQueries";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  perfilAtualQuery,
+  babasPagosConvidadoQuery,
+  minhaSolicitacaoAssociacaoQuery,
+  vagasAssociadosQuery,
+  META_CONVIDADO,
+  LIMITE_ASSOCIADOS,
+} from "@/lib/babaQueries";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save, LifeBuoy, Trophy } from "lucide-react";
-
-import { Link } from "@tanstack/react-router";
+import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save, LifeBuoy, Trophy, ShieldCheck } from "lucide-react";
 import { tempoDeAssociado } from "@/lib/associado";
 import { BrandLogo } from "@/components/BrandLogo";
 import { useState } from "react";
@@ -21,12 +26,11 @@ export const Route = createFileRoute("/_authenticated/perfil")({
   head: () => ({
     meta: [
       { title: "Perfil — Fut Cajazeiras" },
-      { name: "description", content: "Gerencie seu perfil no Fut Cajazeiras: WhatsApp cadastrado, posição preferida (linha ou goleiro) e status da mensalidade." },
+      { name: "description", content: "Gerencie seu perfil no Fut Cajazeiras: WhatsApp cadastrado, posição preferida, time do coração e status da mensalidade." },
       { property: "og:title", content: "Seu Perfil — Fut Cajazeiras" },
       { property: "og:description", content: "Atualize sua posição preferida e acompanhe sua mensalidade no Fut Cajazeiras." },
     ],
   }),
-
   component: PerfilPage,
 });
 
@@ -39,9 +43,15 @@ function PerfilPage() {
   const emDia = perfil?.status_pagamento === "pago";
   const tempo = tempoDeAssociado(perfil?.criado_em);
   const isConvidado = data?.isConvidado ?? false;
-  const { data: presencasConvidado } = useQuery(presencasComoConvidadoQuery(data?.user.id));
-  const META_CONVIDADO = 3;
-  const jogados = Math.min(presencasConvidado ?? 0, META_CONVIDADO);
+
+  const { data: babasPagos } = useQuery(babasPagosConvidadoQuery(data?.user.id));
+  const { data: solicitacao } = useQuery(minhaSolicitacaoAssociacaoQuery(data?.user.id));
+  const { data: vagas } = useQuery(vagasAssociadosQuery());
+
+  const jogados = Math.min(babasPagos ?? 0, META_CONVIDADO);
+  const podePedirAssociacao = jogados >= META_CONVIDADO;
+  const lotado = (vagas ?? 0) >= LIMITE_ASSOCIADOS;
+
   const [salvando, setSalvando] = useState(false);
   const [editandoNome, setEditandoNome] = useState(false);
   const [nome, setNome] = useState("");
@@ -68,10 +78,7 @@ function PerfilPage() {
   const alterarPosicao = async (nova: "linha" | "goleiro") => {
     if (!perfil || nova === perfil.posicao) return;
     setSalvando(true);
-    const { error } = await supabase
-      .from("perfis")
-      .update({ posicao: nova })
-      .eq("id", perfil.id);
+    const { error } = await supabase.from("perfis").update({ posicao: nova }).eq("id", perfil.id);
     setSalvando(false);
     if (error) {
       toast.error("Não foi possível atualizar a posição.");
@@ -81,6 +88,34 @@ function PerfilPage() {
     qc.invalidateQueries({ queryKey: ["perfil-atual"] });
   };
 
+  const definirTimeCoracao = async (time: "bahia" | "vitoria") => {
+    if (!perfil || perfil.time_coracao) return;
+    setSalvando(true);
+    const { error } = await supabase.from("perfis").update({ time_coracao: time }).eq("id", perfil.id);
+    setSalvando(false);
+    if (error) {
+      toast.error("Não foi possível salvar o time do coração.");
+      return;
+    }
+    toast.success("Time do coração definido! Só a diretoria pode mudar daqui pra frente.");
+    qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+    qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+  };
+
+  const pedirAssociacao = async () => {
+    if (!data?.user.id) return;
+    setSalvando(true);
+    const { error } = await supabase
+      .from("solicitacoes_associacao")
+      .insert({ usuario_id: data.user.id });
+    setSalvando(false);
+    if (error) {
+      toast.error("Não foi possível enviar o pedido", { description: error.message });
+      return;
+    }
+    toast.success("Pedido enviado!", { description: "A diretoria vai analisar sua associação." });
+    qc.invalidateQueries({ queryKey: ["solicitacao-associacao"] });
+  };
 
   const sair = async () => {
     await qc.cancelQueries();
@@ -124,6 +159,9 @@ function PerfilPage() {
           </button>
         )}
         <p className="mt-1 text-xs uppercase tracking-widest text-gold">{data?.rotuloPapel}</p>
+        {perfil?.ativo === false && (
+          <Badge variant="destructive" className="mt-2">Conta desativada</Badge>
+        )}
 
         {isConvidado && (
           <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-3 text-left">
@@ -131,17 +169,40 @@ function PerfilPage() {
               <Trophy className="size-4" /> Caminho para virar Associado
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Presenças como convidado:{" "}
+              Babas pagos como convidado:{" "}
               <strong className="text-foreground">
                 {jogados}/{META_CONVIDADO}
               </strong>
             </p>
             <Progress value={(jogados / META_CONVIDADO) * 100} className="mt-2 h-2" />
             <p className="mt-2 text-[11px] text-muted-foreground">
-              {jogados >= META_CONVIDADO
-                ? "Meta batida! Fale com a diretoria para ser promovido a Associado."
-                : `Faltam ${META_CONVIDADO - jogados} baba(s) para você poder virar Associado.`}
+              Só conta baba com a taxa de convidado confirmada. Convite cancelado ou não pago não entra.
             </p>
+
+            {solicitacao?.status === "pendente" ? (
+              <Badge variant="outline" className="mt-3 border-gold/40 text-gold">
+                Pedido de associação em análise
+              </Badge>
+            ) : podePedirAssociacao ? (
+              <Button
+                variant="gold"
+                size="lg"
+                className="mt-3 w-full"
+                disabled={salvando || lotado}
+                onClick={pedirAssociacao}
+              >
+                <ShieldCheck className="size-4" /> Solicitar associação ao baba
+              </Button>
+            ) : (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Faltam {META_CONVIDADO - jogados} baba(s) pagos para liberar o pedido.
+              </p>
+            )}
+            {lotado && podePedirAssociacao && (
+              <p className="mt-2 text-[11px] text-destructive">
+                O baba está com as {LIMITE_ASSOCIADOS} vagas preenchidas. Aguarde abrir vaga.
+              </p>
+            )}
           </div>
         )}
 
@@ -161,20 +222,40 @@ function PerfilPage() {
       </div>
 
       <div className="card-premium divide-y divide-border">
-        <InfoRow
-          Icon={Phone}
-          label="WhatsApp"
-          value={perfil?.telefone ? formataTelefone(perfil.telefone) : "—"}
-        />
+        <InfoRow Icon={Phone} label="WhatsApp" value={perfil?.telefone ? formataTelefone(perfil.telefone) : "—"} />
         <InfoRow
           Icon={Shield}
           label="Mensalidade"
-          value={emDia ? "Em dia" : "Pendente"}
-          highlight={emDia ? "gold" : "destructive"}
+          value={isConvidado ? "Isento (convidado)" : emDia ? "Em dia" : "Pendente"}
+          highlight={isConvidado ? undefined : emDia ? "gold" : "destructive"}
         />
       </div>
 
-      <div className="card-premium p-4 space-y-3">
+      {/* Time do coração — BAxVI */}
+      <div className="card-premium space-y-3 p-4">
+        <Label className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+          <Heart className="size-4" /> Time do coração (BAxVI)
+        </Label>
+        {perfil?.time_coracao ? (
+          <p className="font-display text-2xl text-gold">
+            {perfil.time_coracao === "bahia" ? "Bahia" : "Vitória"}
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" size="lg" disabled={salvando} onClick={() => definirTimeCoracao("bahia")}>
+              Bahia
+            </Button>
+            <Button variant="outline" size="lg" disabled={salvando} onClick={() => definirTimeCoracao("vitoria")}>
+              Vitória
+            </Button>
+          </div>
+        )}
+        <p className="text-[11px] text-muted-foreground">
+          A escolha é definitiva: depois de marcada, só a diretoria pode alterar.
+        </p>
+      </div>
+
+      <div className="card-premium space-y-3 p-4">
         <Label htmlFor="posicao-perfil" className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
           {perfil?.posicao === "goleiro" ? <HandMetal className="size-4" /> : <User className="size-4" />}
           Posição preferida

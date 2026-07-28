@@ -58,7 +58,9 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       if (!babaId) return [];
       const { data: presencas, error } = await supabase
         .from("presencas")
-        .select("id, baba_id, usuario_id, nome_convidado, status_convidado, confirmado_em, mp_status, valor")
+        .select(
+          "id, baba_id, usuario_id, nome_convidado, telefone_convidado, convidado_user_id, status_convidado, confirmado_em, mp_status, valor, chegou_em, ordem_chegada, compareceu",
+        )
         .eq("baba_id", babaId)
         .order("confirmado_em", { ascending: true });
       if (error) throw error;
@@ -66,15 +68,15 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       const ids = Array.from(
         new Set((presencas ?? []).map((p) => p.usuario_id).filter(Boolean)),
       ) as string[];
-      const mapa = new Map<string, { id: string; nome: string; posicao: "linha" | "goleiro" }>();
+      const mapa = new Map<
+        string,
+        { id: string; nome: string; posicao: "linha" | "goleiro"; time_coracao: "bahia" | "vitoria" | null }
+      >();
       if (ids.length > 0) {
-        const { data: perfis } = await (supabase as unknown as {
-          from: (t: string) => {
-            select: (c: string) => {
-              in: (col: string, vals: string[]) => Promise<{ data: { id: string; nome: string; posicao: "linha" | "goleiro" }[] | null }>;
-            };
-          };
-        }).from("perfis_publicos").select("id, nome, posicao").in("id", ids);
+        const { data: perfis } = await supabase
+          .from("perfis_publicos")
+          .select("id, nome, posicao, time_coracao")
+          .in("id", ids);
         for (const p of perfis ?? []) mapa.set(p.id, p);
       }
 
@@ -84,6 +86,7 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       }));
     },
   });
+
 
 export const todasSessoesQuery = () =>
   queryOptions({
@@ -296,22 +299,79 @@ export const suspensoesQuery = () =>
     },
   });
 
-/** Quantas vezes o usuário já jogou como convidado (para virar associado). */
-export const presencasComoConvidadoQuery = (userId: string | undefined) =>
+/** Meta de babas pagos que o convidado precisa cumprir para pedir associação. */
+export const META_CONVIDADO = 3;
+
+/** Limite global de associados ativos. */
+export const LIMITE_ASSOCIADOS = 50;
+
+/**
+ * Quantos babas o convidado já jogou COM PAGAMENTO CONFIRMADO.
+ * Só conta presença de convidado aprovada (PIX pago) e ligada a ele.
+ */
+export const babasPagosConvidadoQuery = (userId: string | undefined) =>
   queryOptions({
-    queryKey: ["presencas-convidado", userId],
+    queryKey: ["babas-pagos-convidado", userId],
     enabled: !!userId,
     queryFn: async () => {
       if (!userId) return 0;
-      const { count, error } = await supabase
-        .from("solicitacoes_convidado")
-        .select("id", { count: "exact", head: true })
-        .eq("solicitante_id", userId)
-        .eq("status", "aprovado");
+      const { data, error } = await supabase.rpc("babas_pagos_convidado", { _user_id: userId });
       if (error) throw error;
-      return count ?? 0;
+      return Number(data ?? 0);
     },
   });
+
+/** Total de associados ativos (para o limite de 50 vagas). */
+export const vagasAssociadosQuery = () =>
+  queryOptions({
+    queryKey: ["vagas-associados"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("total_associados_ativos");
+      if (error) throw error;
+      return Number(data ?? 0);
+    },
+  });
+
+/** Minha solicitação de associação mais recente. */
+export const minhaSolicitacaoAssociacaoQuery = (userId: string | undefined) =>
+  queryOptions({
+    queryKey: ["solicitacao-associacao", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from("solicitacoes_associacao")
+        .select("*")
+        .eq("usuario_id", userId)
+        .order("criado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+/** Solicitações de associação pendentes (diretoria). */
+export const solicitacoesAssociacaoQuery = () =>
+  queryOptions({
+    queryKey: ["solicitacoes-associacao"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("solicitacoes_associacao")
+        .select("*")
+        .order("criado_em", { ascending: false });
+      if (error) throw error;
+
+      const ids = Array.from(new Set((data ?? []).map((s) => s.usuario_id)));
+      const nomes = new Map<string, string>();
+      if (ids.length > 0) {
+        const { data: perfis } = await supabase.from("perfis_publicos").select("id, nome").in("id", ids);
+        for (const p of perfis ?? []) nomes.set(p.id, p.nome);
+      }
+      return (data ?? []).map((s) => ({ ...s, nome: nomes.get(s.usuario_id) ?? "Convidado" }));
+    },
+  });
+
 
 /** Dia fixo de vencimento da mensalidade. */
 export const DIA_VENCIMENTO = 10;
