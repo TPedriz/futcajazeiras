@@ -104,6 +104,8 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
         baba_id: sol.baba_id,
         usuario_id: userId,
         nome_convidado: perfilSolicitante?.nome ?? "Convidado",
+        telefone_convidado: perfilSolicitante?.telefone ?? null,
+        convidado_user_id: sol.solicitante_id,
         status_convidado: "pendente",
         valor: 5,
       })
@@ -121,16 +123,18 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
       idempotencyKey: `convidado-${presenca.id}`,
     });
 
-    await supabaseAdmin
-      .from("presencas")
-      .update({
+    await supabaseAdmin.from("presencas").update({ mp_status: pix.status }).eq("id", presenca.id);
+    await supabaseAdmin.from("presencas_pagamento").upsert(
+      {
+        presenca_id: presenca.id,
         mp_payment_id: pix.paymentId,
-        mp_status: pix.status,
         pix_qr_code: pix.qrCode,
         pix_qr_base64: pix.qrBase64,
         pix_expira_em: pix.expiraEm,
-      })
-      .eq("id", presenca.id);
+      },
+      { onConflict: "presenca_id" },
+    );
+
 
     await supabase
       .from("solicitacoes_convidado")
