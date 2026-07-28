@@ -163,24 +163,31 @@ export const pixDaSolicitacao = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: presenca } = await supabaseAdmin
       .from("presencas")
-      .select("id, status_convidado, mp_payment_id, pix_qr_code, pix_qr_base64, valor")
+      .select("id, status_convidado, valor")
       .eq("id", sol.presenca_id)
       .maybeSingle();
     if (!presenca) throw new Error("Cobrança não encontrada");
 
+    const { data: cobranca } = await supabaseAdmin
+      .from("presencas_pagamento")
+      .select("mp_payment_id, pix_qr_code, pix_qr_base64")
+      .eq("presenca_id", presenca.id)
+      .maybeSingle();
+
     const base = {
-      qrCode: presenca.pix_qr_code as string | null,
-      qrBase64: presenca.pix_qr_base64 as string | null,
+      qrCode: cobranca?.pix_qr_code ?? null,
+      qrBase64: cobranca?.pix_qr_base64 ?? null,
       valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : 5,
     };
 
     if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...base };
-    if (!presenca.mp_payment_id) return { pago: false, status: "sem_cobranca", ...base };
+    if (!cobranca?.mp_payment_id) return { pago: false, status: "sem_cobranca", ...base };
 
     const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
-    const pagamento = await consultarPagamentoMp(presenca.mp_payment_id);
+    const pagamento = await consultarPagamentoMp(cobranca.mp_payment_id);
     const { aplicarPagamento } = await import("@/lib/pagamentos.server");
     await aplicarPagamento(`convidado:${presenca.id}`, pagamento.status);
 
     return { pago: pagamento.status === "approved", status: pagamento.status, ...base };
+
   });
