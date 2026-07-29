@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, MapPin, Lock, Unlock, Trash2 } from "lucide-react";
+import { Calendar, MapPin, Lock, Unlock, Trash2, Eye, EyeOff, Navigation } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(todasSessoesQuery()),
