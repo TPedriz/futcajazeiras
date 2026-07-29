@@ -150,39 +150,65 @@ function SorteioPage() {
           {format(new Date(sessao.data_horario), "dd/MM 'às' HH:mm", { locale: ptBR })}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          {jogadores.length} jogadores elegíveis ({jogadores.filter((j) => j.posicao === "goleiro").length} goleiros)
+          {jogadores.length} jogadores elegíveis ({jogadores.filter((j) => j.posicao === "goleiro").length} goleiros) •{" "}
+          {jogadores.filter((j) => j.ordemChegada != null).length} com chegada confirmada
         </p>
       </div>
 
       <div className="card-premium p-5">
-        <p className="text-xs uppercase tracking-widest text-gold">Jogadores por time</p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {TAMANHOS_TIME.map((t) => (
+        <p className="text-xs uppercase tracking-widest text-gold">Modo do sorteio</p>
+        <div className="mt-3 grid gap-2">
+          {(
+            [
+              { v: "aleatorio", t: "Aleatório", d: "Sorteio embaralhado entre todos da lista." },
+              { v: "chegada", t: "Ordem de chegada", d: "Times na ordem do check-in por GPS. Times A e B só com associados." },
+              { v: "baxvi", t: "BAxVI", d: "Bahia x Vitória, exclusivo para associados." },
+            ] as const
+          ).map((m) => (
             <Button
-              key={t}
-              variant={tamanho === t ? "gold" : "outline"}
+              key={m.v}
+              variant={modo === m.v ? "gold" : "outline"}
               size="lg"
+              className="h-auto flex-col items-start py-3 text-left"
               onClick={() => {
-                setTamanho(t);
+                setModo(m.v);
                 setResultado(null);
               }}
             >
-              {t} por time
+              <span className="font-semibold">{m.t}</span>
+              <span className="text-[11px] opacity-80">{m.d}</span>
             </Button>
           ))}
         </div>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Dá para formar <strong className="text-foreground">{previa.times}</strong>{" "}
-          {previa.times === 1 ? "time" : "times"} de {tamanho}
-          {previa.reservas > 0 && (
-            <>
-              {" "}— <strong className="text-foreground">{previa.reservas}</strong>{" "}
-              {previa.reservas === 1 ? "sobra vira reserva" : "sobras viram reservas"}
-            </>
-          )}
-          .
-        </p>
       </div>
+
+      {modo !== "baxvi" && (
+        <div className="card-premium p-5">
+          <p className="text-xs uppercase tracking-widest text-gold">Jogadores por time</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {TAMANHOS_TIME.map((t) => (
+              <Button
+                key={t}
+                variant={tamanho === t ? "gold" : "outline"}
+                size="lg"
+                onClick={() => {
+                  setTamanho(t);
+                  setResultado(null);
+                }}
+              >
+                {t} por time
+              </Button>
+            ))}
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {elegiveis.length} jogadores nesse modo — dá para formar{" "}
+            <strong className="text-foreground">{previa.times}</strong>{" "}
+            {previa.times === 1 ? "time" : "times"}. Ninguém fica de reserva; o último time pode ficar
+            incompleto.
+          </p>
+        </div>
+      )}
+
 
 
       <div className="grid grid-cols-2 gap-2">
