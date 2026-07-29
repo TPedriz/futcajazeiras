@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/admin/usuarios")({
 });
 
 function UsuariosPage() {
-  const { data: perfis } = useSuspenseQuery(todosAssociadosQuery());
+  const { data: todos } = useSuspenseQuery(todosAssociadosQuery());
   const { data: papeis } = useQuery(papeisTodosQuery());
   const { data: sessao } = useQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
@@ -29,9 +29,16 @@ function UsuariosPage() {
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [posicao, setPosicao] = useState<"linha" | "goleiro">("linha");
+  const [filtro, setFiltro] = useState<FiltroPapel>("todos");
 
-  const papelDe = (id: string) =>
-    (papeis ?? []).find((p) => p.user_id === id)?.papel ?? "convidado";
+  const papelDe = (id: string) => {
+    const meus = (papeis ?? []).filter((p) => p.user_id === id).map((p) => p.papel);
+    if (meus.includes("administrador")) return "administrador";
+    if (meus.includes("associado")) return "associado";
+    return "convidado";
+  };
+  const perfis = todos.filter((p) => filtro === "todos" || papelDe(p.id) === filtro);
+
 
   const salvar = useMutation({
     mutationFn: async (id: string) => {
