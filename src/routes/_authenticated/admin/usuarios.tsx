@@ -72,6 +72,20 @@ function UsuariosPage() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
+  const alternarAtivo = useMutation({
+    mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
+      const { error } = await supabase.from("perfis").update({ ativo }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(v.ativo ? "Usuário reativado" : "Usuário desativado");
+      qc.invalidateQueries({ queryKey: ["associados-todos"] });
+      qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+      qc.invalidateQueries({ queryKey: ["vagas-associados"] });
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
   const naLista = (id: string) =>
     (presencas ?? []).some((p) => p.usuario_id === id && !p.nome_convidado);
 
@@ -81,11 +95,15 @@ function UsuariosPage() {
         <p className="text-xs uppercase tracking-widest text-gold">Cadastros</p>
         <h2 className="font-display text-2xl">Usuários</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Edite nome, WhatsApp e posição de qualquer pessoa, e tire quem quiser da lista do próximo baba.
+          Edite nome, WhatsApp e posição, desative quem saiu do baba (sem apagar o histórico) e tire
+          quem quiser da lista do próximo baba.
         </p>
       </div>
 
+      <FiltroCargo valor={filtro} onChange={setFiltro} total={perfis.length} />
+
       <ul className="space-y-2">
+
         {perfis.map((p) => {
           const emEdicao = editando === p.id;
           return (
