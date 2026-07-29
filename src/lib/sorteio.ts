@@ -17,7 +17,10 @@ export interface JogadorSorteio {
   posicao: Posicao;
   isConvidado: boolean;
   timeCoracao?: TimeCoracao | null;
+  /** Ordem de chegada registrada pelo check-in por GPS. */
+  ordemChegada?: number | null;
 }
+
 
 export interface TimeSorteado {
   numero: number;
