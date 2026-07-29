@@ -3,8 +3,11 @@ import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import { todosAssociadosQuery, papeisTodosQuery, perfilAtualQuery } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Shield, User, HandHeart } from "lucide-react";
+
 
 type Papel = "convidado" | "associado" | "administrador";
 
@@ -24,6 +27,8 @@ function CargosPage() {
   const { data: papeis } = useQuery(papeisTodosQuery());
   const { data: perfilData } = useSuspenseQuery(perfilAtualQuery());
   const qc = useQueryClient();
+  const [filtro, setFiltro] = useState<FiltroPapel>("todos");
+
 
   const papelDe = (userId: string): Papel => {
     const meus = (papeis ?? []).filter((p) => p.user_id === userId).map((p) => p.papel);
@@ -47,6 +52,8 @@ function CargosPage() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
+  const visiveis = associados.filter((a) => filtro === "todos" || papelDe(a.id) === filtro);
+
   return (
     <div className="space-y-4">
       <div className="card-premium p-4">
@@ -56,8 +63,11 @@ function CargosPage() {
         </p>
       </div>
 
+      <FiltroCargo valor={filtro} onChange={setFiltro} total={visiveis.length} />
+
       <ul className="space-y-2">
-        {associados.map((a) => {
+
+        {visiveis.map((a) => {
           const papel = papelDe(a.id);
           const euMesmo = a.id === perfilData?.user.id;
           const Icone = papel === "administrador" ? Shield : papel === "associado" ? User : HandHeart;

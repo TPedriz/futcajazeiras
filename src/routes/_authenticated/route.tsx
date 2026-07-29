@@ -23,6 +23,32 @@ function AuthenticatedLayout() {
   const { data } = useSuspenseQuery(perfilAtualQuery());
   const isAdmin = data?.isAdmin ?? false;
 
+  if (data?.perfil && data.perfil.ativo === false) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="card-premium max-w-sm p-6 text-center">
+          <BrandLogo size="sm" />
+          <p className="mt-4 font-display text-2xl">Conta desativada</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Seu acesso ao Fut Cajazeiras está inativo. Fale com a diretoria para reativar.
+          </p>
+          <button
+            type="button"
+            className="mt-4 text-sm text-gold underline"
+            onClick={() => {
+              void supabase.auth.signOut().then(() => {
+                window.location.href = "/auth";
+              });
+            }}
+          >
+            Sair
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header mobile */}

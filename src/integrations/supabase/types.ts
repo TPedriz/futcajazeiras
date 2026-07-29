@@ -357,7 +357,11 @@ export type Database = {
           esta_fechado: boolean
           fechamento_lista: string
           id: string
+          latitude: number
           local: string
+          longitude: number
+          mostrar_lista_chegada: boolean
+          raio_metros: number
         }
         Insert: {
           atualizado_em?: string
@@ -366,7 +370,11 @@ export type Database = {
           esta_fechado?: boolean
           fechamento_lista: string
           id?: string
+          latitude?: number
           local: string
+          longitude?: number
+          mostrar_lista_chegada?: boolean
+          raio_metros?: number
         }
         Update: {
           atualizado_em?: string
@@ -375,7 +383,11 @@ export type Database = {
           esta_fechado?: boolean
           fechamento_lista?: string
           id?: string
+          latitude?: number
           local?: string
+          longitude?: number
+          mostrar_lista_chegada?: boolean
+          raio_metros?: number
         }
         Relationships: []
       }
@@ -603,6 +615,10 @@ export type Database = {
         Returns: string
       }
       garante_mensalidades_mes: { Args: never; Returns: undefined }
+      marcar_chegada: {
+        Args: { _lat: number; _lng: number; _presenca_id: string }
+        Returns: number
+      }
       notifica: {
         Args: {
           _mensagem: string

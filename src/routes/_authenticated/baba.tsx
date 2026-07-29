@@ -10,6 +10,8 @@ import {
 } from "@/lib/babaQueries";
 import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
+import { ChegadaGps } from "@/components/ChegadaGps";
+
 import { criarPixConvidado, consultarPixConvidado } from "@/lib/pagamentos.functions";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
 import { ConviteConvidado } from "@/components/ConviteConvidado";
@@ -424,7 +426,16 @@ function BabaPage() {
         )}
       </div>
 
+      <ChegadaGps
+        sessao={sessao}
+        presencas={presencas ?? []}
+        minhaPresencaId={minhaPresenca?.id}
+        jaChegou={!!minhaPresenca?.ordem_chegada}
+        isAdmin={isAdmin}
+      />
+
       <MuralPunicoes />
+
 
       <PixDialog
         open={pixAberto}

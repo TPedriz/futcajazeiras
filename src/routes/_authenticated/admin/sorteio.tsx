@@ -3,9 +3,18 @@ import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import { supabase } from "@/integrations/supabase/client";
 import { proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
-import { sortearTimes, formatarTimesParaWhatsApp, TAMANHOS_TIME, type JogadorSorteio, type TimeSorteado } from "@/lib/sorteio";
+import {
+  sortearTimes,
+  sortearPorOrdemChegada,
+  sortearBaxVi,
+  formatarTimesParaWhatsApp,
+  TAMANHOS_TIME,
+  type JogadorSorteio,
+  type TimeSorteado,
+} from "@/lib/sorteio";
 import { useState, useMemo } from "react";
 import { Shuffle, Copy, HandMetal, User, Save } from "lucide-react";
+
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -20,6 +29,8 @@ function SorteioPage() {
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
   const [resultado, setResultado] = useState<{ times: TimeSorteado[]; sobras: JogadorSorteio[] } | null>(null);
   const [tamanho, setTamanho] = useState<number>(7);
+  const [modo, setModo] = useState<"aleatorio" | "chegada" | "baxvi">("aleatorio");
+
 
   const qc = useQueryClient();
 
@@ -69,22 +80,51 @@ function SorteioPage() {
         nome: p.nome_convidado ?? p.perfis?.nome ?? "Jogador",
         posicao: (p.nome_convidado ? "linha" : (p.perfis?.posicao ?? "linha")) as "goleiro" | "linha",
         isConvidado: !!p.nome_convidado,
+        timeCoracao: p.perfis?.time_coracao ?? null,
+        ordemChegada: p.ordem_chegada ?? null,
       }));
   }, [presencas]);
 
+  const elegiveis = useMemo(
+    () => (modo === "chegada" ? jogadores.filter((j) => j.ordemChegada != null) : jogadores),
+    [jogadores, modo],
+  );
+
   const previa = useMemo(() => {
-    const t = Math.floor(jogadores.length / tamanho);
-    return { times: t, reservas: jogadores.length - t * tamanho };
-  }, [jogadores.length, tamanho]);
+    if (modo === "baxvi") return { times: 2, reservas: 0 };
+    return { times: Math.ceil(elegiveis.length / tamanho), reservas: 0 };
+  }, [elegiveis.length, tamanho, modo]);
 
   const sortear = () => {
-    if (jogadores.length < tamanho) {
-      toast.error("Poucos jogadores", { description: `Precisa de pelo menos ${tamanho} confirmados.` });
+    if (modo === "baxvi") {
+      const associados = jogadores.filter((j) => !j.isConvidado);
+      const r = sortearBaxVi(associados);
+      if (r.semTime.length > 0) {
+        toast.warning("Alguns associados ficaram sem time", {
+          description: `${r.semTime.length} não escolheram Bahia ou Vitória no perfil.`,
+        });
+      }
+      setResultado({ times: r.times, sobras: r.semTime });
+      toast.success("BAxVI montado!");
       return;
     }
-    setResultado(sortearTimes(jogadores, tamanho));
-    toast.success(`${previa.times} times sorteados!`);
+    if (elegiveis.length < 2) {
+      toast.error("Poucos jogadores", {
+        description:
+          modo === "chegada"
+            ? "Ninguém marcou chegada por GPS ainda."
+            : "Precisa de pelo menos 2 confirmados.",
+      });
+      return;
+    }
+    setResultado(
+      modo === "chegada"
+        ? sortearPorOrdemChegada(elegiveis, tamanho)
+        : sortearTimes(elegiveis, tamanho),
+    );
+    toast.success(`${previa.times} times montados!`);
   };
+
 
 
   const copiar = async () => {
@@ -110,39 +150,65 @@ function SorteioPage() {
           {format(new Date(sessao.data_horario), "dd/MM 'às' HH:mm", { locale: ptBR })}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          {jogadores.length} jogadores elegíveis ({jogadores.filter((j) => j.posicao === "goleiro").length} goleiros)
+          {jogadores.length} jogadores elegíveis ({jogadores.filter((j) => j.posicao === "goleiro").length} goleiros) •{" "}
+          {jogadores.filter((j) => j.ordemChegada != null).length} com chegada confirmada
         </p>
       </div>
 
       <div className="card-premium p-5">
-        <p className="text-xs uppercase tracking-widest text-gold">Jogadores por time</p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {TAMANHOS_TIME.map((t) => (
+        <p className="text-xs uppercase tracking-widest text-gold">Modo do sorteio</p>
+        <div className="mt-3 grid gap-2">
+          {(
+            [
+              { v: "aleatorio", t: "Aleatório", d: "Sorteio embaralhado entre todos da lista." },
+              { v: "chegada", t: "Ordem de chegada", d: "Times na ordem do check-in por GPS. Times A e B só com associados." },
+              { v: "baxvi", t: "BAxVI", d: "Bahia x Vitória, exclusivo para associados." },
+            ] as const
+          ).map((m) => (
             <Button
-              key={t}
-              variant={tamanho === t ? "gold" : "outline"}
+              key={m.v}
+              variant={modo === m.v ? "gold" : "outline"}
               size="lg"
+              className="h-auto flex-col items-start py-3 text-left"
               onClick={() => {
-                setTamanho(t);
+                setModo(m.v);
                 setResultado(null);
               }}
             >
-              {t} por time
+              <span className="font-semibold">{m.t}</span>
+              <span className="text-[11px] opacity-80">{m.d}</span>
             </Button>
           ))}
         </div>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Dá para formar <strong className="text-foreground">{previa.times}</strong>{" "}
-          {previa.times === 1 ? "time" : "times"} de {tamanho}
-          {previa.reservas > 0 && (
-            <>
-              {" "}— <strong className="text-foreground">{previa.reservas}</strong>{" "}
-              {previa.reservas === 1 ? "sobra vira reserva" : "sobras viram reservas"}
-            </>
-          )}
-          .
-        </p>
       </div>
+
+      {modo !== "baxvi" && (
+        <div className="card-premium p-5">
+          <p className="text-xs uppercase tracking-widest text-gold">Jogadores por time</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {TAMANHOS_TIME.map((t) => (
+              <Button
+                key={t}
+                variant={tamanho === t ? "gold" : "outline"}
+                size="lg"
+                onClick={() => {
+                  setTamanho(t);
+                  setResultado(null);
+                }}
+              >
+                {t} por time
+              </Button>
+            ))}
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {elegiveis.length} jogadores nesse modo — dá para formar{" "}
+            <strong className="text-foreground">{previa.times}</strong>{" "}
+            {previa.times === 1 ? "time" : "times"}. Ninguém fica de reserva; o último time pode ficar
+            incompleto.
+          </p>
+        </div>
+      )}
+
 
 
       <div className="grid grid-cols-2 gap-2">

@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { todosAssociadosQuery, mensalidadesDoMesQuery, mesReferencia } from "@/lib/babaQueries";
+import { todosAssociadosQuery, mensalidadesDoMesQuery, mesReferencia, papeisTodosQuery } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
 import { toast } from "sonner";
 import { CheckCircle2, AlertCircle, HandMetal, User, CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
@@ -15,14 +16,25 @@ export const Route = createFileRoute("/_authenticated/admin/financeiro")({
 });
 
 function FinanceiroPage() {
-  const { data: associados } = useSuspenseQuery(todosAssociadosQuery());
+  const { data: todos } = useSuspenseQuery(todosAssociadosQuery());
+  const { data: papeis } = useQuery(papeisTodosQuery());
   const [refDate, setRefDate] = useState(() => new Date(`${mesReferencia()}T12:00:00`));
+  const [filtro, setFiltro] = useState<FiltroPapel>("todos");
   const referencia = mesReferencia(refDate);
   const { data: mensalidades } = useQuery(mensalidadesDoMesQuery(referencia));
   const qc = useQueryClient();
 
+  const papelDe = (id: string) => {
+    const meus = (papeis ?? []).filter((p) => p.user_id === id).map((p) => p.papel);
+    if (meus.includes("administrador")) return "administrador";
+    if (meus.includes("associado")) return "associado";
+    return "convidado";
+  };
+  const associados = todos.filter((a) => filtro === "todos" || papelDe(a.id) === filtro);
+
   const porUsuario = new Map((mensalidades ?? []).map((m) => [m.usuario_id, m]));
   const ultimoDia = format(new Date(new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0)), "dd/MM/yyyy");
+
 
   const alterar = useMutation({
     mutationFn: async ({ usuarioId, status }: { usuarioId: string; status: "pago" | "pendente" }) => {
@@ -80,6 +92,10 @@ function FinanceiroPage() {
           <p className="font-display text-3xl text-destructive">{associados.length - emDia}</p>
         </div>
       </div>
+
+      <FiltroCargo valor={filtro} onChange={setFiltro} total={associados.length} />
+
+
 
       <ul className="space-y-2">
         {associados.map((a) => {

@@ -7,17 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formataTelefone, normalizaTelefone } from "@/lib/telefone";
-import { Pencil, UserMinus, Save, X } from "lucide-react";
+import { Pencil, UserMinus, Save, X, Power } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/admin/usuarios")({
   component: UsuariosPage,
 });
 
 function UsuariosPage() {
-  const { data: perfis } = useSuspenseQuery(todosAssociadosQuery());
+  const { data: todos } = useSuspenseQuery(todosAssociadosQuery());
   const { data: papeis } = useQuery(papeisTodosQuery());
   const { data: sessao } = useQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
@@ -27,9 +29,16 @@ function UsuariosPage() {
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [posicao, setPosicao] = useState<"linha" | "goleiro">("linha");
+  const [filtro, setFiltro] = useState<FiltroPapel>("todos");
 
-  const papelDe = (id: string) =>
-    (papeis ?? []).find((p) => p.user_id === id)?.papel ?? "convidado";
+  const papelDe = (id: string) => {
+    const meus = (papeis ?? []).filter((p) => p.user_id === id).map((p) => p.papel);
+    if (meus.includes("administrador")) return "administrador";
+    if (meus.includes("associado")) return "associado";
+    return "convidado";
+  };
+  const perfis = todos.filter((p) => filtro === "todos" || papelDe(p.id) === filtro);
+
 
   const salvar = useMutation({
     mutationFn: async (id: string) => {
@@ -63,6 +72,20 @@ function UsuariosPage() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
+  const alternarAtivo = useMutation({
+    mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
+      const { error } = await supabase.from("perfis").update({ ativo }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(v.ativo ? "Usuário reativado" : "Usuário desativado");
+      qc.invalidateQueries({ queryKey: ["associados-todos"] });
+      qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+      qc.invalidateQueries({ queryKey: ["vagas-associados"] });
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
   const naLista = (id: string) =>
     (presencas ?? []).some((p) => p.usuario_id === id && !p.nome_convidado);
 
@@ -72,11 +95,15 @@ function UsuariosPage() {
         <p className="text-xs uppercase tracking-widest text-gold">Cadastros</p>
         <h2 className="font-display text-2xl">Usuários</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Edite nome, WhatsApp e posição de qualquer pessoa, e tire quem quiser da lista do próximo baba.
+          Edite nome, WhatsApp e posição, desative quem saiu do baba (sem apagar o histórico) e tire
+          quem quiser da lista do próximo baba.
         </p>
       </div>
 
+      <FiltroCargo valor={filtro} onChange={setFiltro} total={perfis.length} />
+
       <ul className="space-y-2">
+
         {perfis.map((p) => {
           const emEdicao = editando === p.id;
           return (
@@ -115,13 +142,18 @@ function UsuariosPage() {
               ) : (
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{p.nome}</p>
+                    <p className={`truncate font-semibold ${p.ativo ? "" : "text-muted-foreground line-through"}`}>
+                      {p.nome}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {p.telefone ? formataTelefone(p.telefone) : "sem WhatsApp"} • {p.posicao === "goleiro" ? "Goleiro" : "Linha"}
                     </p>
-                    <Badge variant="outline" className="mt-1 border-gold/40 text-gold capitalize">
-                      {papelDe(p.id)}
-                    </Badge>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <Badge variant="outline" className="border-gold/40 text-gold capitalize">
+                        {papelDe(p.id)}
+                      </Badge>
+                      {!p.ativo && <Badge variant="destructive">Inativo</Badge>}
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
@@ -137,6 +169,15 @@ function UsuariosPage() {
                     <Pencil className="size-4" />
                   </Button>
                   <Button
+                    variant={p.ativo ? "outline" : "success"}
+                    size="icon"
+                    aria-label={p.ativo ? `Desativar ${p.nome}` : `Reativar ${p.nome}`}
+                    disabled={alternarAtivo.isPending}
+                    onClick={() => alternarAtivo.mutate({ id: p.id, ativo: !p.ativo })}
+                  >
+                    <Power className="size-4" />
+                  </Button>
+                  <Button
                     variant="outline"
                     size="icon"
                     aria-label={`Remover ${p.nome} da lista do baba`}
@@ -146,6 +187,7 @@ function UsuariosPage() {
                     <UserMinus className="size-4" />
                   </Button>
                 </div>
+
               )}
             </li>
           );

@@ -17,7 +17,10 @@ export interface JogadorSorteio {
   posicao: Posicao;
   isConvidado: boolean;
   timeCoracao?: TimeCoracao | null;
+  /** Ordem de chegada registrada pelo check-in por GPS. */
+  ordemChegada?: number | null;
 }
+
 
 export interface TimeSorteado {
   numero: number;
@@ -140,3 +143,45 @@ export function formatarTimesParaWhatsApp(
 
   return linhas.join("\n");
 }
+
+/**
+ * Modo "Ordem de Chegada": os times saem na ordem exata do check-in por GPS.
+ * Times A e B são exclusivos de associados — convidados são empurrados para o Time C em diante.
+ * Ninguém fica de reserva: o último time pode ficar incompleto.
+ */
+export function sortearPorOrdemChegada(
+  jogadores: JogadorSorteio[],
+  tamanhoTime: number = 7,
+): { times: TimeSorteado[]; sobras: JogadorSorteio[] } {
+  const tam = Math.max(2, Math.floor(tamanhoTime));
+  const fila = [...jogadores].sort(
+    (a, b) => (a.ordemChegada ?? Number.MAX_SAFE_INTEGER) - (b.ordemChegada ?? Number.MAX_SAFE_INTEGER),
+  );
+  if (fila.length === 0) return { times: [], sobras: [] };
+
+  const associados = fila.filter((j) => !j.isConvidado);
+  const primeiros = associados.slice(0, tam * 2);
+  const restantes = fila.filter((j) => !primeiros.some((p) => p.id === j.id));
+
+  const grupos: JogadorSorteio[][] = [];
+  grupos.push(primeiros.slice(0, tam));
+  if (primeiros.length > tam) grupos.push(primeiros.slice(tam));
+  else if (primeiros.length === tam) grupos.push([]);
+
+  for (let i = 0; i < restantes.length; i += tam) grupos.push(restantes.slice(i, i + tam));
+
+  const times: TimeSorteado[] = grupos
+    .filter((g) => g.length > 0)
+    .map((grupo, i) => {
+      const goleiro = grupo.find((j) => j.posicao === "goleiro") ?? null;
+      return {
+        numero: i + 1,
+        nome: `Time ${LETRAS[i] ?? i + 1}`,
+        goleiro,
+        linha: grupo.filter((j) => j.id !== goleiro?.id),
+      };
+    });
+
+  return { times, sobras: [] };
+}
+
