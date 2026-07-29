@@ -79,6 +79,21 @@ function AdminSessoes() {
     },
   });
 
+  const toggleLista = useMutation({
+    mutationFn: async ({ id, mostrar }: { id: string; mostrar: boolean }) => {
+      const { error } = await supabase
+        .from("sessoes_baba")
+        .update({ mostrar_lista_chegada: mostrar })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Visibilidade da lista atualizada");
+      invalidar();
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
   const excluir = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("sessoes_baba").delete().eq("id", id);
@@ -88,6 +103,7 @@ function AdminSessoes() {
       toast.success("Baba excluído");
       invalidar();
     },
+    onError: (e: Error) => toast.error("Erro ao excluir", { description: e.message }),
   });
 
   return (
@@ -102,10 +118,32 @@ function AdminSessoes() {
           <Label htmlFor="loc">Local</Label>
           <Input id="loc" value={local} onChange={(e) => setLocal(e.target.value)} className="h-12" />
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label htmlFor="lat">Latitude</Label>
+            <Input id="lat" value={lat} onChange={(e) => setLat(e.target.value)} className="h-12" inputMode="decimal" />
+          </div>
+          <div>
+            <Label htmlFor="lng">Longitude</Label>
+            <Input id="lng" value={lng} onChange={(e) => setLng(e.target.value)} className="h-12" inputMode="decimal" />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="raio">Raio do check-in (metros)</Label>
+          <Input id="raio" value={raio} onChange={(e) => setRaio(e.target.value)} className="h-12" inputMode="numeric" />
+        </div>
+        <Button variant="goldOutline" size="lg" className="w-full" onClick={usarMinhaLocalizacao}>
+          <Navigation className="size-4" /> Usar minha localização atual
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          O check-in presencial abre 30 min antes do baba, vai até 20:30 e só funciona dentro do raio
+          definido. A ordem de chegada define os Times A e B.
+        </p>
         <Button variant="hero" size="lg" className="w-full" onClick={() => criar.mutate()} disabled={criar.isPending}>
           Criar baba
         </Button>
       </div>
+
 
       <div>
         <p className="mb-3 font-display text-xl">Histórico</p>
