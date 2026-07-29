@@ -162,20 +162,49 @@ function AdminSessoes() {
                     <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                       <MapPin className="size-3" /> {s.local}
                     </div>
-                    {s.esta_fechado && (
-                      <span className="mt-2 inline-block rounded bg-destructive/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-destructive">
-                        Fechado
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {s.esta_fechado && (
+                        <span className="rounded bg-destructive/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-destructive">
+                          Fechado
+                        </span>
+                      )}
+                      <span className="rounded bg-muted px-2 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+                        {s.mostrar_lista_chegada ? "Lista visível" : "Lista oculta"}
                       </span>
-                    )}
+                    </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => toggleFechado.mutate({ id: s.id, fechado: !s.esta_fechado })}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={s.mostrar_lista_chegada ? "Ocultar lista de chegada" : "Mostrar lista de chegada"}
+                      onClick={() => toggleLista.mutate({ id: s.id, mostrar: !s.mostrar_lista_chegada })}
+                    >
+                      {s.mostrar_lista_chegada ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={s.esta_fechado ? "Reabrir lista do baba" : "Fechar lista do baba"}
+                      onClick={() => toggleFechado.mutate({ id: s.id, fechado: !s.esta_fechado })}
+                    >
                       {s.esta_fechado ? <Unlock className="size-4" /> : <Lock className="size-4" />}
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => excluir.mutate(s.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive"
+                      aria-label="Excluir baba"
+                      onClick={() => {
+                        if (confirm("Excluir esta partida? Presenças, times e estatísticas dela serão apagados.")) {
+                          excluir.mutate(s.id);
+                        }
+                      }}
+                    >
                       <Trash2 className="size-4" />
                     </Button>
                   </div>
+
                 </div>
               </li>
             ))}
