@@ -27,6 +27,8 @@ function CargosPage() {
   const { data: papeis } = useQuery(papeisTodosQuery());
   const { data: perfilData } = useSuspenseQuery(perfilAtualQuery());
   const qc = useQueryClient();
+  const [filtro, setFiltro] = useState<FiltroPapel>("todos");
+
 
   const papelDe = (userId: string): Papel => {
     const meus = (papeis ?? []).filter((p) => p.user_id === userId).map((p) => p.papel);
