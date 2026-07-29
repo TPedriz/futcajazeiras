@@ -67,7 +67,7 @@ function CargosPage() {
 
       <ul className="space-y-2">
 
-        {associados.map((a) => {
+        {visiveis.map((a) => {
           const papel = papelDe(a.id);
           const euMesmo = a.id === perfilData?.user.id;
           const Icone = papel === "administrador" ? Shield : papel === "associado" ? User : HandHeart;
