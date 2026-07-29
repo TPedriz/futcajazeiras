@@ -424,7 +424,16 @@ function BabaPage() {
         )}
       </div>
 
+      <ChegadaGps
+        sessao={sessao}
+        presencas={presencas ?? []}
+        minhaPresencaId={minhaPresenca?.id}
+        jaChegou={!!minhaPresenca?.ordem_chegada}
+        isAdmin={isAdmin}
+      />
+
       <MuralPunicoes />
+
 
       <PixDialog
         open={pixAberto}
