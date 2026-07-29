@@ -3,8 +3,11 @@ import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import { todosAssociadosQuery, papeisTodosQuery, perfilAtualQuery } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Shield, User, HandHeart } from "lucide-react";
+
 
 type Papel = "convidado" | "associado" | "administrador";
 
