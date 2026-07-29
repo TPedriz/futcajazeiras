@@ -52,6 +52,8 @@ function CargosPage() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
+  const visiveis = associados.filter((a) => filtro === "todos" || papelDe(a.id) === filtro);
+
   return (
     <div className="space-y-4">
       <div className="card-premium p-4">
@@ -61,7 +63,10 @@ function CargosPage() {
         </p>
       </div>
 
+      <FiltroCargo valor={filtro} onChange={setFiltro} total={visiveis.length} />
+
       <ul className="space-y-2">
+
         {associados.map((a) => {
           const papel = papelDe(a.id);
           const euMesmo = a.id === perfilData?.user.id;
