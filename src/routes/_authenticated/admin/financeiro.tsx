@@ -93,6 +93,10 @@ function FinanceiroPage() {
         </div>
       </div>
 
+      <FiltroCargo valor={filtro} onChange={setFiltro} total={associados.length} />
+
+
+
       <ul className="space-y-2">
         {associados.map((a) => {
           const ok = porUsuario.get(a.id)?.status === "pago";
