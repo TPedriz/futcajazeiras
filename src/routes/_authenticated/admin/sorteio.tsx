@@ -29,6 +29,8 @@ function SorteioPage() {
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
   const [resultado, setResultado] = useState<{ times: TimeSorteado[]; sobras: JogadorSorteio[] } | null>(null);
   const [tamanho, setTamanho] = useState<number>(7);
+  const [modo, setModo] = useState<"aleatorio" | "chegada" | "baxvi">("aleatorio");
+
 
   const qc = useQueryClient();
 
