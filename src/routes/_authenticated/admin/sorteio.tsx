@@ -80,22 +80,51 @@ function SorteioPage() {
         nome: p.nome_convidado ?? p.perfis?.nome ?? "Jogador",
         posicao: (p.nome_convidado ? "linha" : (p.perfis?.posicao ?? "linha")) as "goleiro" | "linha",
         isConvidado: !!p.nome_convidado,
+        timeCoracao: p.perfis?.time_coracao ?? null,
+        ordemChegada: p.ordem_chegada ?? null,
       }));
   }, [presencas]);
 
+  const elegiveis = useMemo(
+    () => (modo === "chegada" ? jogadores.filter((j) => j.ordemChegada != null) : jogadores),
+    [jogadores, modo],
+  );
+
   const previa = useMemo(() => {
-    const t = Math.floor(jogadores.length / tamanho);
-    return { times: t, reservas: jogadores.length - t * tamanho };
-  }, [jogadores.length, tamanho]);
+    if (modo === "baxvi") return { times: 2, reservas: 0 };
+    return { times: Math.ceil(elegiveis.length / tamanho), reservas: 0 };
+  }, [elegiveis.length, tamanho, modo]);
 
   const sortear = () => {
-    if (jogadores.length < tamanho) {
-      toast.error("Poucos jogadores", { description: `Precisa de pelo menos ${tamanho} confirmados.` });
+    if (modo === "baxvi") {
+      const associados = jogadores.filter((j) => !j.isConvidado);
+      const r = sortearBaxVi(associados);
+      if (r.semTime.length > 0) {
+        toast.warning("Alguns associados ficaram sem time", {
+          description: `${r.semTime.length} não escolheram Bahia ou Vitória no perfil.`,
+        });
+      }
+      setResultado({ times: r.times, sobras: r.semTime });
+      toast.success("BAxVI montado!");
       return;
     }
-    setResultado(sortearTimes(jogadores, tamanho));
-    toast.success(`${previa.times} times sorteados!`);
+    if (elegiveis.length < 2) {
+      toast.error("Poucos jogadores", {
+        description:
+          modo === "chegada"
+            ? "Ninguém marcou chegada por GPS ainda."
+            : "Precisa de pelo menos 2 confirmados.",
+      });
+      return;
+    }
+    setResultado(
+      modo === "chegada"
+        ? sortearPorOrdemChegada(elegiveis, tamanho)
+        : sortearTimes(elegiveis, tamanho),
+    );
+    toast.success(`${previa.times} times montados!`);
   };
+
 
 
   const copiar = async () => {
