@@ -142,13 +142,18 @@ function UsuariosPage() {
               ) : (
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{p.nome}</p>
+                    <p className={`truncate font-semibold ${p.ativo ? "" : "text-muted-foreground line-through"}`}>
+                      {p.nome}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {p.telefone ? formataTelefone(p.telefone) : "sem WhatsApp"} • {p.posicao === "goleiro" ? "Goleiro" : "Linha"}
                     </p>
-                    <Badge variant="outline" className="mt-1 border-gold/40 text-gold capitalize">
-                      {papelDe(p.id)}
-                    </Badge>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <Badge variant="outline" className="border-gold/40 text-gold capitalize">
+                        {papelDe(p.id)}
+                      </Badge>
+                      {!p.ativo && <Badge variant="destructive">Inativo</Badge>}
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
@@ -164,6 +169,15 @@ function UsuariosPage() {
                     <Pencil className="size-4" />
                   </Button>
                   <Button
+                    variant={p.ativo ? "outline" : "success"}
+                    size="icon"
+                    aria-label={p.ativo ? `Desativar ${p.nome}` : `Reativar ${p.nome}`}
+                    disabled={alternarAtivo.isPending}
+                    onClick={() => alternarAtivo.mutate({ id: p.id, ativo: !p.ativo })}
+                  >
+                    <Power className="size-4" />
+                  </Button>
+                  <Button
                     variant="outline"
                     size="icon"
                     aria-label={`Remover ${p.nome} da lista do baba`}
@@ -173,6 +187,7 @@ function UsuariosPage() {
                     <UserMinus className="size-4" />
                   </Button>
                 </div>
+
               )}
             </li>
           );
