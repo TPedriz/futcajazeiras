@@ -22,10 +22,26 @@ function AdminSessoes() {
 
   const [dataHorario, setDataHorario] = useState("");
   const [local, setLocal] = useState("Arena Cajazeiras");
+  const [lat, setLat] = useState("-12.9088");
+  const [lng, setLng] = useState("-38.4142");
+  const [raio, setRaio] = useState("1000");
 
   const invalidar = () => {
     qc.invalidateQueries({ queryKey: ["sessoes-todas"] });
     qc.invalidateQueries({ queryKey: ["proxima-sessao"] });
+  };
+
+  const usarMinhaLocalizacao = () => {
+    if (!("geolocation" in navigator)) return toast.error("Localização indisponível neste aparelho");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude.toFixed(6));
+        setLng(pos.coords.longitude.toFixed(6));
+        toast.success("Coordenadas da arena atualizadas");
+      },
+      () => toast.error("Não foi possível ler o GPS"),
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
   };
 
   const criar = useMutation({
@@ -37,9 +53,13 @@ function AdminSessoes() {
         data_horario: jogo.toISOString(),
         local,
         fechamento_lista: fechamento.toISOString(),
+        latitude: Number(lat),
+        longitude: Number(lng),
+        raio_metros: Math.max(100, Number(raio) || 1000),
       });
       if (error) throw error;
     },
+
     onSuccess: () => {
       toast.success("Baba criado!");
       setDataHorario("");
