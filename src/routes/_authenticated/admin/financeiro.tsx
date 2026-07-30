@@ -95,6 +95,10 @@ function FinanceiroPage() {
 
       <FiltroCargo valor={filtro} onChange={setFiltro} total={associados.length} />
 
+      <ValorMensalidadeCard />
+
+
+
 
 
       <ul className="space-y-2">
