@@ -25,12 +25,11 @@ interface Props {
   isAdmin: boolean;
 }
 
-/** Janela do check-in presencial: abre 30 min antes e encerra às 20:30 do dia do baba. */
+/** Janela do check-in presencial: abre 30 min antes e encerra 1 hora após o início do baba. */
 export function janelaChegada(dataHorario: string) {
   const jogo = new Date(dataHorario);
   const abertura = new Date(jogo.getTime() - 30 * 60 * 1000);
-  const limite = new Date(jogo);
-  limite.setHours(20, 30, 0, 0);
+  const limite = new Date(jogo.getTime() + 60 * 60 * 1000);
   return { abertura, limite };
 }
 

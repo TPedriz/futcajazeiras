@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Trophy, Minus, ShieldX, Goal, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Trophy, Minus, ShieldX, Goal, Plus, RotateCcw, Trash2, Handshake } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/resultados")({
   loader: ({ context }) => context.queryClient.ensureQueryData(todasSessoesQuery()),
@@ -103,13 +103,14 @@ function ResultadosPage() {
       delta,
     }: {
       usuarioId: string;
-      campo: "gols" | "cartoes_amarelos" | "cartoes_azuis" | "cartoes_vermelhos";
+      campo: "gols" | "assistencias" | "cartoes_amarelos" | "cartoes_azuis" | "cartoes_vermelhos";
       delta: number;
     }) => {
       if (!babaId) throw new Error("Selecione um baba");
       const atual = statMap.get(usuarioId);
       const base = {
         gols: atual?.gols ?? 0,
+        assistencias: atual?.assistencias ?? 0,
         cartoes_amarelos: atual?.cartoes_amarelos ?? 0,
         cartoes_azuis: atual?.cartoes_azuis ?? 0,
         cartoes_vermelhos: atual?.cartoes_vermelhos ?? 0,
@@ -144,7 +145,8 @@ function ResultadosPage() {
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Marque o resultado de cada time e lance gols e cartões. Tudo alimenta o ranking do mês.
+          Escolha qualquer baba do histórico para lançar ou corrigir gols, assistências e cartões. As alterações
+          valem retroativamente e o ranking do mês é recalculado na hora.
         </p>
       </div>
 
@@ -237,14 +239,18 @@ function ResultadosPage() {
                     {j.usuario_id && (
                       <span className="flex items-center gap-1 text-xs text-gold">
                         <Goal className="size-3" /> {s?.gols ?? 0}
+                        <Handshake className="ml-2 size-3" /> {s?.assistencias ?? 0}
                       </span>
                     )}
                   </div>
                   {j.usuario_id && (
-                    <div className="mt-2 grid grid-cols-4 gap-1">
+                    <div className="mt-2 grid grid-cols-5 gap-1">
                       <StatBtn label="Gol" valor={s?.gols ?? 0} cor="bg-gold/15 text-gold"
                         onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "gols", delta: 1 })}
                         onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "gols", delta: -1 })} />
+                      <StatBtn label="Assist." valor={s?.assistencias ?? 0} cor="bg-success/15 text-success"
+                        onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "assistencias", delta: 1 })}
+                        onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "assistencias", delta: -1 })} />
                       <StatBtn label="Amar." valor={s?.cartoes_amarelos ?? 0} cor="bg-yellow-500/15 text-yellow-400"
                         onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "cartoes_amarelos", delta: 1 })}
                         onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "cartoes_amarelos", delta: -1 })} />

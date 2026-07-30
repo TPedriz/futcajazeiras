@@ -36,23 +36,13 @@ export const solicitarConvite = createServerFn({ method: "POST" })
     z.object({ babaId: z.string().uuid(), anfitriaoId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: existente } = await supabase
-      .from("solicitacoes_convidado")
-      .select("id, status")
-      .eq("baba_id", data.babaId)
-      .eq("solicitante_id", userId)
-      .neq("status", "rejeitado")
-      .maybeSingle();
-    if (existente) throw new Error("Você já tem uma solicitação em aberto para esse baba");
-
-    const { data: nova, error } = await supabase
-      .from("solicitacoes_convidado")
-      .insert({ baba_id: data.babaId, solicitante_id: userId, anfitriao_id: data.anfitriaoId })
-      .select("id")
-      .single();
-    if (error) throw error;
-    return { solicitacaoId: nova.id };
+    const { supabase } = context;
+    const { data: id, error } = await supabase.rpc("solicita_convite", {
+      _baba_id: data.babaId,
+      _anfitriao_id: data.anfitriaoId,
+    });
+    if (error) throw new Error(error.message);
+    return { solicitacaoId: id as string };
   });
 
 /** Associado aceita ou recusa. Ao aceitar, cria a presença de convidado e gera o PIX. */
@@ -104,7 +94,6 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
         baba_id: sol.baba_id,
         usuario_id: userId,
         nome_convidado: perfilSolicitante?.nome ?? "Convidado",
-        telefone_convidado: perfilSolicitante?.telefone ?? null,
         convidado_user_id: sol.solicitante_id,
         status_convidado: "pendente",
         valor: 5,
@@ -112,6 +101,12 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (erroPresenca) throw erroPresenca;
+
+    if (perfilSolicitante?.telefone) {
+      await supabaseAdmin
+        .from("presencas_contato")
+        .upsert({ presenca_id: presenca.id, telefone: perfilSolicitante.telefone }, { onConflict: "presenca_id" });
+    }
 
     const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } = await import("@/lib/mercadopago.server");
     const pix = await criarPagamentoPix({

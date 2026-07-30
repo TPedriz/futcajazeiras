@@ -59,13 +59,33 @@ const secoes = [
     ],
   },
   {
+    id: "chegada",
+    titulo: "Check-in na arena (GPS)",
+    itens: [
+      ["Quando abre?", "30 minutos antes do horário do baba e encerra 1 hora depois do início."],
+      ["Preciso estar no local?", "Sim. O app valida seu GPS: você precisa estar a menos de 1 km da arena."],
+      ["Para que serve a ordem?", "A ordem de chegada define quem entra primeiro nos times A e B no sorteio por chegada."],
+      ["A lista fica pública?", "Só quando a diretoria libera a visualização. Antes disso, apenas a diretoria enxerga."],
+    ],
+  },
+  {
+    id: "perfil",
+    titulo: "Perfil e foto",
+    itens: [
+      ["Como coloco minha foto?", "No Perfil, toque no ícone de câmera sobre o avatar e escolha uma imagem de até 5 MB."],
+      ["Posso mudar meu nome?", "Pode. Toque no nome no Perfil e salve. A diretoria é avisada da alteração."],
+      ["E o time do coração?", "A escolha entre Bahia e Vitória é definitiva; depois só a diretoria altera."],
+    ],
+  },
+  {
     id: "regras",
     titulo: "Regras e ranking",
     itens: [
-      ["Como funciona o ranking?", "Top 5 do mês por gols, com vitórias e derrotas contadas pelos times marcados como vencedores ou perdedores."],
-      ["Quem lança gols e cartões?", "Somente a diretoria, pela aba Resultados do painel admin."],
+      ["Como funciona o ranking?", "Top 5 do mês por gols e assistências, com vitórias e derrotas contadas pelos times marcados como vencedores ou perdedores."],
+      ["Quem lança as estatísticas?", "Somente a diretoria, pela aba Resultados. Gols, assistências e cartões podem ser corrigidos retroativamente em qualquer baba do histórico."],
       ["Cartão vermelho, e agora?", "Suspensão automática de 1 baba: você fica fora do próximo jogo e aparece no mural de punições."],
-      ["Como funciona o sorteio?", "Times de 6 ou 7 jogadores, equilibrando goleiros e jogadores de linha. Quem sobra vira reserva."],
+      ["Como funciona o sorteio?", "Times de 6 ou 7 jogadores, equilibrando goleiros e linha. Ninguém fica de fora: há os modos Aleatório, Ordem de chegada e BAxVI."],
+      ["A mensalidade pode mudar de valor?", "Pode. A diretoria reajusta o valor no painel Financeiro e as próximas cobranças já saem com o novo valor."],
     ],
   },
 ];

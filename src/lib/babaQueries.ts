@@ -59,7 +59,7 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       const { data: presencas, error } = await supabase
         .from("presencas")
         .select(
-          "id, baba_id, usuario_id, nome_convidado, telefone_convidado, convidado_user_id, status_convidado, confirmado_em, mp_status, valor, chegou_em, ordem_chegada, compareceu",
+          "id, baba_id, usuario_id, nome_convidado, convidado_user_id, status_convidado, confirmado_em, mp_status, valor, chegou_em, ordem_chegada, compareceu",
         )
         .eq("baba_id", babaId)
         .order("confirmado_em", { ascending: true });
@@ -209,7 +209,7 @@ export const perfisPublicosQuery = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("perfis_publicos")
-        .select("id, nome, posicao")
+        .select("id, nome, posicao, avatar_url")
         .order("nome", { ascending: true });
       if (error) throw error;
       return data ?? [];
@@ -410,5 +410,20 @@ export const situacaoCheckinQuery = (userId: string | undefined, babaId: string 
         suspenso: !!suspensao,
         motivoSuspensao: suspensao?.motivo ?? "",
       };
+    },
+  });
+
+/** Valor atual da mensalidade definido pela diretoria. */
+export const valorMensalidadeQuery = () =>
+  queryOptions({
+    queryKey: ["valor-mensalidade"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("configuracoes")
+        .select("valor")
+        .eq("chave", "valor_mensalidade")
+        .maybeSingle();
+      if (error) throw error;
+      return Number(data?.valor ?? 20);
     },
   });

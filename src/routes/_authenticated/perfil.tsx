@@ -16,9 +16,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save, LifeBuoy, Trophy, ShieldCheck } from "lucide-react";
+import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save, LifeBuoy, Trophy, ShieldCheck, Camera } from "lucide-react";
 import { tempoDeAssociado } from "@/lib/associado";
-import { BrandLogo } from "@/components/BrandLogo";
+import { AvatarJogador } from "@/components/AvatarJogador";
 import { useState } from "react";
 import { formataTelefone } from "@/lib/telefone";
 
@@ -55,6 +55,37 @@ function PerfilPage() {
   const [salvando, setSalvando] = useState(false);
   const [editandoNome, setEditandoNome] = useState(false);
   const [nome, setNome] = useState("");
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
+
+  const enviarFoto = async (arquivo: File) => {
+    if (!perfil) return;
+    if (arquivo.size > 5 * 1024 * 1024) {
+      toast.error("Foto muito grande", { description: "Envie uma imagem de até 5 MB." });
+      return;
+    }
+    setEnviandoFoto(true);
+    const extensao = arquivo.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const caminho = `${perfil.id}/avatar-${Date.now()}.${extensao}`;
+    const { error: erroUpload } = await supabase.storage
+      .from("avatares")
+      .upload(caminho, arquivo, { upsert: true, contentType: arquivo.type });
+    if (erroUpload) {
+      setEnviandoFoto(false);
+      toast.error("Não foi possível enviar a foto", { description: erroUpload.message });
+      return;
+    }
+    const anterior = perfil.avatar_url;
+    const { error } = await supabase.from("perfis").update({ avatar_url: caminho }).eq("id", perfil.id);
+    setEnviandoFoto(false);
+    if (error) {
+      toast.error("Não foi possível salvar a foto.");
+      return;
+    }
+    if (anterior) await supabase.storage.from("avatares").remove([anterior]);
+    toast.success("Foto atualizada!");
+    qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+    qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+  };
 
   const salvarNome = async () => {
     if (!perfil) return;
@@ -128,7 +159,29 @@ function PerfilPage() {
   return (
     <div className="space-y-5">
       <div className="card-premium p-6 text-center">
-        <BrandLogo size="md" className="mx-auto" />
+        <div className="relative mx-auto w-fit">
+          <AvatarJogador caminho={perfil?.avatar_url} nome={perfil?.nome} size="lg" />
+          <label
+            htmlFor="foto-perfil"
+            className="absolute -bottom-1 -right-1 flex size-9 cursor-pointer items-center justify-center rounded-full border border-gold/40 bg-background text-gold"
+            aria-label="Trocar foto do perfil"
+          >
+            <Camera className="size-4" />
+          </label>
+          <input
+            id="foto-perfil"
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            disabled={enviandoFoto}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              e.target.value = "";
+              if (arquivo) enviarFoto(arquivo);
+            }}
+          />
+        </div>
+        {enviandoFoto && <p className="mt-2 text-[11px] text-muted-foreground">Enviando foto…</p>}
         {editandoNome ? (
           <div className="mt-3 space-y-2 text-left">
             <Label htmlFor="nome-perfil" className="text-xs uppercase tracking-widest text-muted-foreground">

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, CheckCheck, HandHeart, Wallet, ShieldX, Info } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Bell, CheckCheck, HandHeart, Wallet, ShieldX, Info, ClipboardList, UserCog } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,11 +14,15 @@ const icones = {
   convidado: HandHeart,
   pagamento: Wallet,
   suspensao: ShieldX,
+  associacao: UserCog,
+  auditoria: UserCog,
+  lista: ClipboardList,
   geral: Info,
 } as const;
 
 export function SinoNotificacoes({ userId }: { userId: string | undefined }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { data: notificacoes } = useQuery(notificacoesQuery(userId));
 
   useEffect(() => {
@@ -79,16 +84,29 @@ export function SinoNotificacoes({ userId }: { userId: string | undefined }) {
             <ul className="divide-y divide-border">
               {(notificacoes ?? []).map((n) => {
                 const Icone = icones[(n.tipo as keyof typeof icones) ?? "geral"] ?? Info;
+                const abrir = async () => {
+                  if (!n.lida) {
+                    await supabase.from("notificacoes").update({ lida: true }).eq("id", n.id);
+                    qc.invalidateQueries({ queryKey: ["notificacoes", userId] });
+                  }
+                  if (n.link) navigate({ to: n.link as never });
+                };
                 return (
-                  <li key={n.id} className={`flex gap-3 p-3 ${n.lida ? "" : "bg-gold/5"}`}>
-                    <Icone className={`mt-0.5 size-4 shrink-0 ${n.lida ? "text-muted-foreground" : "text-gold"}`} />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold">{n.titulo}</p>
-                      <p className="text-xs text-muted-foreground">{n.mensagem}</p>
-                      <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground/70">
-                        {formatDistanceToNow(new Date(n.criado_em), { addSuffix: true, locale: ptBR })}
-                      </p>
-                    </div>
+                  <li key={n.id} className={n.lida ? "" : "bg-gold/5"}>
+                    <button
+                      type="button"
+                      onClick={abrir}
+                      className="flex w-full gap-3 p-3 text-left transition-colors hover:bg-surface"
+                    >
+                      <Icone className={`mt-0.5 size-4 shrink-0 ${n.lida ? "text-muted-foreground" : "text-gold"}`} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold">{n.titulo}</p>
+                        <p className="text-xs text-muted-foreground">{n.mensagem}</p>
+                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground/70">
+                          {formatDistanceToNow(new Date(n.criado_em), { addSuffix: true, locale: ptBR })}
+                        </p>
+                      </div>
+                    </button>
                   </li>
                 );
               })}
