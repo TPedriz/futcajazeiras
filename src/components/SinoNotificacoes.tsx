@@ -14,11 +14,15 @@ const icones = {
   convidado: HandHeart,
   pagamento: Wallet,
   suspensao: ShieldX,
+  associacao: UserCog,
+  auditoria: UserCog,
+  lista: ClipboardList,
   geral: Info,
 } as const;
 
 export function SinoNotificacoes({ userId }: { userId: string | undefined }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { data: notificacoes } = useQuery(notificacoesQuery(userId));
 
   useEffect(() => {
