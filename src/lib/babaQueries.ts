@@ -209,7 +209,7 @@ export const perfisPublicosQuery = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("perfis_publicos")
-        .select("id, nome, posicao")
+        .select("id, nome, posicao, avatar_url")
         .order("nome", { ascending: true });
       if (error) throw error;
       return data ?? [];
