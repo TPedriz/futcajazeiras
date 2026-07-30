@@ -55,6 +55,37 @@ function PerfilPage() {
   const [salvando, setSalvando] = useState(false);
   const [editandoNome, setEditandoNome] = useState(false);
   const [nome, setNome] = useState("");
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
+
+  const enviarFoto = async (arquivo: File) => {
+    if (!perfil) return;
+    if (arquivo.size > 5 * 1024 * 1024) {
+      toast.error("Foto muito grande", { description: "Envie uma imagem de até 5 MB." });
+      return;
+    }
+    setEnviandoFoto(true);
+    const extensao = arquivo.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const caminho = `${perfil.id}/avatar-${Date.now()}.${extensao}`;
+    const { error: erroUpload } = await supabase.storage
+      .from("avatares")
+      .upload(caminho, arquivo, { upsert: true, contentType: arquivo.type });
+    if (erroUpload) {
+      setEnviandoFoto(false);
+      toast.error("Não foi possível enviar a foto", { description: erroUpload.message });
+      return;
+    }
+    const anterior = perfil.avatar_url;
+    const { error } = await supabase.from("perfis").update({ avatar_url: caminho }).eq("id", perfil.id);
+    setEnviandoFoto(false);
+    if (error) {
+      toast.error("Não foi possível salvar a foto.");
+      return;
+    }
+    if (anterior) await supabase.storage.from("avatares").remove([anterior]);
+    toast.success("Foto atualizada!");
+    qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+    qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+  };
 
   const salvarNome = async () => {
     if (!perfil) return;
