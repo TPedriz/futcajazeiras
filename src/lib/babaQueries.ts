@@ -59,7 +59,7 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       const { data: presencas, error } = await supabase
         .from("presencas")
         .select(
-          "id, baba_id, usuario_id, nome_convidado, telefone_convidado, convidado_user_id, status_convidado, confirmado_em, mp_status, valor, chegou_em, ordem_chegada, compareceu",
+          "id, baba_id, usuario_id, nome_convidado, convidado_user_id, status_convidado, confirmado_em, mp_status, valor, chegou_em, ordem_chegada, compareceu",
         )
         .eq("baba_id", babaId)
         .order("confirmado_em", { ascending: true });
