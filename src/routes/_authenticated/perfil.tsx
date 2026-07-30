@@ -16,9 +16,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save, LifeBuoy, Trophy, ShieldCheck } from "lucide-react";
+import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save, LifeBuoy, Trophy, ShieldCheck, Camera } from "lucide-react";
 import { tempoDeAssociado } from "@/lib/associado";
-import { BrandLogo } from "@/components/BrandLogo";
+import { AvatarJogador } from "@/components/AvatarJogador";
 import { useState } from "react";
 import { formataTelefone } from "@/lib/telefone";
 
