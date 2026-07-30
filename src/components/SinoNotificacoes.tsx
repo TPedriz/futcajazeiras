@@ -89,7 +89,7 @@ export function SinoNotificacoes({ userId }: { userId: string | undefined }) {
                     await supabase.from("notificacoes").update({ lida: true }).eq("id", n.id);
                     qc.invalidateQueries({ queryKey: ["notificacoes", userId] });
                   }
-                  if (n.link) navigate({ to: n.link });
+                  if (n.link) navigate({ to: n.link as never });
                 };
                 return (
                   <li key={n.id} className={n.lida ? "" : "bg-gold/5"}>
