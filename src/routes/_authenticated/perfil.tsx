@@ -128,7 +128,29 @@ function PerfilPage() {
   return (
     <div className="space-y-5">
       <div className="card-premium p-6 text-center">
-        <BrandLogo size="md" className="mx-auto" />
+        <div className="relative mx-auto w-fit">
+          <AvatarJogador caminho={perfil?.avatar_url} nome={perfil?.nome} size="lg" />
+          <label
+            htmlFor="foto-perfil"
+            className="absolute -bottom-1 -right-1 flex size-9 cursor-pointer items-center justify-center rounded-full border border-gold/40 bg-background text-gold"
+            aria-label="Trocar foto do perfil"
+          >
+            <Camera className="size-4" />
+          </label>
+          <input
+            id="foto-perfil"
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            disabled={enviandoFoto}
+            onChange={(e) => {
+              const arquivo = e.target.files?.[0];
+              e.target.value = "";
+              if (arquivo) enviarFoto(arquivo);
+            }}
+          />
+        </div>
+        {enviandoFoto && <p className="mt-2 text-[11px] text-muted-foreground">Enviando foto…</p>}
         {editandoNome ? (
           <div className="mt-3 space-y-2 text-left">
             <Label htmlFor="nome-perfil" className="text-xs uppercase tracking-widest text-muted-foreground">
