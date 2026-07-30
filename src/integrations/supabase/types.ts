@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      configuracoes: {
+        Row: {
+          atualizado_em: string
+          chave: string
+          valor: number
+        }
+        Insert: {
+          atualizado_em?: string
+          chave: string
+          valor: number
+        }
+        Update: {
+          atualizado_em?: string
+          chave?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       estatisticas_baba: {
         Row: {
           assistencias: number
@@ -132,6 +150,7 @@ export type Database = {
           criado_em: string
           id: string
           lida: boolean
+          link: string | null
           mensagem: string
           tipo: string
           titulo: string
@@ -141,6 +160,7 @@ export type Database = {
           criado_em?: string
           id?: string
           lida?: boolean
+          link?: string | null
           mensagem?: string
           tipo?: string
           titulo: string
@@ -150,6 +170,7 @@ export type Database = {
           criado_em?: string
           id?: string
           lida?: boolean
+          link?: string | null
           mensagem?: string
           tipo?: string
           titulo?: string
@@ -182,6 +203,7 @@ export type Database = {
         Row: {
           ativo: boolean
           atualizado_em: string
+          avatar_url: string | null
           criado_em: string
           email: string
           id: string
@@ -194,6 +216,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           atualizado_em?: string
+          avatar_url?: string | null
           criado_em?: string
           email: string
           id: string
@@ -206,6 +229,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           atualizado_em?: string
+          avatar_url?: string | null
           criado_em?: string
           email?: string
           id?: string
@@ -220,6 +244,7 @@ export type Database = {
       perfis_publicos: {
         Row: {
           ativo: boolean
+          avatar_url: string | null
           id: string
           nome: string
           posicao: Database["public"]["Enums"]["posicao_jogador"]
@@ -227,6 +252,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          avatar_url?: string | null
           id: string
           nome: string
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
@@ -234,6 +260,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          avatar_url?: string | null
           id?: string
           nome?: string
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
@@ -263,7 +290,6 @@ export type Database = {
           status_convidado:
             | Database["public"]["Enums"]["status_convidado"]
             | null
-          telefone_convidado: string | null
           usuario_id: string
           valor: number
         }
@@ -280,7 +306,6 @@ export type Database = {
           status_convidado?:
             | Database["public"]["Enums"]["status_convidado"]
             | null
-          telefone_convidado?: string | null
           usuario_id: string
           valor?: number
         }
@@ -297,7 +322,6 @@ export type Database = {
           status_convidado?:
             | Database["public"]["Enums"]["status_convidado"]
             | null
-          telefone_convidado?: string | null
           usuario_id?: string
           valor?: number
         }
@@ -307,6 +331,32 @@ export type Database = {
             columns: ["baba_id"]
             isOneToOne: false
             referencedRelation: "sessoes_baba"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presencas_contato: {
+        Row: {
+          criado_em: string
+          presenca_id: string
+          telefone: string
+        }
+        Insert: {
+          criado_em?: string
+          presenca_id: string
+          telefone?: string
+        }
+        Update: {
+          criado_em?: string
+          presenca_id?: string
+          telefone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presencas_contato_presenca_id_fkey"
+            columns: ["presenca_id"]
+            isOneToOne: true
+            referencedRelation: "presencas"
             referencedColumns: ["id"]
           },
         ]
@@ -619,14 +669,38 @@ export type Database = {
         Args: { _lat: number; _lng: number; _presenca_id: string }
         Returns: number
       }
-      notifica: {
+      notifica:
+        | {
+            Args: {
+              _mensagem: string
+              _tipo: string
+              _titulo: string
+              _usuario_id: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _link?: string
+              _mensagem: string
+              _tipo: string
+              _titulo: string
+              _usuario_id: string
+            }
+            Returns: undefined
+          }
+      notifica_admins: {
         Args: {
+          _link?: string
           _mensagem: string
           _tipo: string
           _titulo: string
-          _usuario_id: string
         }
         Returns: undefined
+      }
+      solicita_convite: {
+        Args: { _anfitriao_id: string; _baba_id: string }
+        Returns: string
       }
       tem_papel: {
         Args: {
@@ -636,6 +710,7 @@ export type Database = {
         Returns: boolean
       }
       total_associados_ativos: { Args: never; Returns: number }
+      valor_mensalidade: { Args: never; Returns: number }
     }
     Enums: {
       papel_usuario: "administrador" | "associado" | "convidado"
