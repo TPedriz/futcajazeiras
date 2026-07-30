@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, CheckCheck, HandHeart, Wallet, ShieldX, Info } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Bell, CheckCheck, HandHeart, Wallet, ShieldX, Info, ClipboardList, UserCog } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
