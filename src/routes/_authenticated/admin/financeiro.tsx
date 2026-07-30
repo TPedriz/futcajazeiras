@@ -1,11 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { todosAssociadosQuery, mensalidadesDoMesQuery, mesReferencia, papeisTodosQuery } from "@/lib/babaQueries";
+import {
+  todosAssociadosQuery,
+  mensalidadesDoMesQuery,
+  mesReferencia,
+  papeisTodosQuery,
+  valorMensalidadeQuery,
+} from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle, HandMetal, User, CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle2, AlertCircle, HandMetal, User, CalendarClock, ChevronLeft, ChevronRight, Coins } from "lucide-react";
 import { useState } from "react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";

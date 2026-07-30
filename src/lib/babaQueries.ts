@@ -412,3 +412,18 @@ export const situacaoCheckinQuery = (userId: string | undefined, babaId: string 
       };
     },
   });
+
+/** Valor atual da mensalidade definido pela diretoria. */
+export const valorMensalidadeQuery = () =>
+  queryOptions({
+    queryKey: ["valor-mensalidade"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("configuracoes")
+        .select("valor")
+        .eq("chave", "valor_mensalidade")
+        .maybeSingle();
+      if (error) throw error;
+      return Number(data?.valor ?? 20);
+    },
+  });
