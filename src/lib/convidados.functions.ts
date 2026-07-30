@@ -104,7 +104,6 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
         baba_id: sol.baba_id,
         usuario_id: userId,
         nome_convidado: perfilSolicitante?.nome ?? "Convidado",
-        telefone_convidado: perfilSolicitante?.telefone ?? null,
         convidado_user_id: sol.solicitante_id,
         status_convidado: "pendente",
         valor: 5,
@@ -112,6 +111,12 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (erroPresenca) throw erroPresenca;
+
+    if (perfilSolicitante?.telefone) {
+      await supabaseAdmin
+        .from("presencas_contato")
+        .upsert({ presenca_id: presenca.id, telefone: perfilSolicitante.telefone }, { onConflict: "presenca_id" });
+    }
 
     const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } = await import("@/lib/mercadopago.server");
     const pix = await criarPagamentoPix({
