@@ -32,6 +32,42 @@ export type Database = {
         }
         Relationships: []
       }
+      convidados_cadastro: {
+        Row: {
+          aprovado: boolean
+          atualizado_em: string
+          bloqueado: boolean
+          criado_em: string
+          criado_por: string | null
+          id: string
+          nome: string
+          telefone: string
+          user_id: string | null
+        }
+        Insert: {
+          aprovado?: boolean
+          atualizado_em?: string
+          bloqueado?: boolean
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          nome: string
+          telefone: string
+          user_id?: string | null
+        }
+        Update: {
+          aprovado?: boolean
+          atualizado_em?: string
+          bloqueado?: boolean
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          nome?: string
+          telefone?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       estatisticas_baba: {
         Row: {
           assistencias: number
@@ -199,6 +235,64 @@ export type Database = {
         }
         Relationships: []
       }
+      pedidos_convidado: {
+        Row: {
+          anfitriao_id: string
+          atualizado_em: string
+          baba_id: string
+          convidado_id: string
+          criado_em: string
+          decidido_por: string | null
+          id: string
+          presenca_id: string | null
+          status: Database["public"]["Enums"]["status_convidado"]
+        }
+        Insert: {
+          anfitriao_id: string
+          atualizado_em?: string
+          baba_id: string
+          convidado_id: string
+          criado_em?: string
+          decidido_por?: string | null
+          id?: string
+          presenca_id?: string | null
+          status?: Database["public"]["Enums"]["status_convidado"]
+        }
+        Update: {
+          anfitriao_id?: string
+          atualizado_em?: string
+          baba_id?: string
+          convidado_id?: string
+          criado_em?: string
+          decidido_por?: string | null
+          id?: string
+          presenca_id?: string | null
+          status?: Database["public"]["Enums"]["status_convidado"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_convidado_baba_id_fkey"
+            columns: ["baba_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_baba"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_convidado_convidado_id_fkey"
+            columns: ["convidado_id"]
+            isOneToOne: false
+            referencedRelation: "convidados_cadastro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_convidado_presenca_id_fkey"
+            columns: ["presenca_id"]
+            isOneToOne: false
+            referencedRelation: "presencas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       perfis: {
         Row: {
           ativo: boolean
@@ -282,6 +376,7 @@ export type Database = {
           chegou_em: string | null
           compareceu: boolean | null
           confirmado_em: string
+          convidado_cadastro_id: string | null
           convidado_user_id: string | null
           id: string
           mp_status: string | null
@@ -298,6 +393,7 @@ export type Database = {
           chegou_em?: string | null
           compareceu?: boolean | null
           confirmado_em?: string
+          convidado_cadastro_id?: string | null
           convidado_user_id?: string | null
           id?: string
           mp_status?: string | null
@@ -314,6 +410,7 @@ export type Database = {
           chegou_em?: string | null
           compareceu?: boolean | null
           confirmado_em?: string
+          convidado_cadastro_id?: string | null
           convidado_user_id?: string | null
           id?: string
           mp_status?: string | null
@@ -331,6 +428,13 @@ export type Database = {
             columns: ["baba_id"]
             isOneToOne: false
             referencedRelation: "sessoes_baba"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presencas_convidado_cadastro_id_fkey"
+            columns: ["convidado_cadastro_id"]
+            isOneToOne: false
+            referencedRelation: "convidados_cadastro"
             referencedColumns: ["id"]
           },
         ]
@@ -405,7 +509,7 @@ export type Database = {
           criado_em: string
           data_horario: string
           esta_fechado: boolean
-          fechamento_lista: string
+          fechamento_lista: string | null
           id: string
           latitude: number
           local: string
@@ -418,7 +522,7 @@ export type Database = {
           criado_em?: string
           data_horario: string
           esta_fechado?: boolean
-          fechamento_lista: string
+          fechamento_lista?: string | null
           id?: string
           latitude?: number
           local: string
@@ -431,7 +535,7 @@ export type Database = {
           criado_em?: string
           data_horario?: string
           esta_fechado?: boolean
-          fechamento_lista?: string
+          fechamento_lista?: string | null
           id?: string
           latitude?: number
           local?: string
@@ -660,6 +764,23 @@ export type Database = {
     }
     Functions: {
       babas_pagos_convidado: { Args: { _user_id: string }; Returns: number }
+      criar_pedido_convidado: {
+        Args: {
+          _baba_id: string
+          _convidado_id?: string
+          _nome: string
+          _telefone: string
+        }
+        Returns: {
+          convidado_id: string
+          pedido_id: string
+          status: Database["public"]["Enums"]["status_convidado"]
+        }[]
+      }
+      decidir_pedido_convidado: {
+        Args: { _aprovar: boolean; _pedido_id: string }
+        Returns: undefined
+      }
       garante_mensalidade: {
         Args: { _referencia: string; _usuario_id: string }
         Returns: string
