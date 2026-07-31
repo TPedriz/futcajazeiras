@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
+import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery, fechamentoEfetivo } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle, Calendar, MapPin, Users, ArrowRight, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -94,7 +94,7 @@ function InicioPage() {
                 <span>{totalConfirmados} associados confirmados</span>
               </div>
             </div>
-            <ContadorRegressivo fechamento={proxSessao.fechamento_lista} />
+            <ContadorRegressivo fechamento={fechamentoEfetivo(proxSessao).toISOString()} />
             <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-gold">
               Ver detalhes <ArrowRight className="size-4" />
             </div>

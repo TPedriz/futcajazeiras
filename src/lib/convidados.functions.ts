@@ -186,3 +186,178 @@ export const pixDaSolicitacao = createServerFn({ method: "POST" })
     return { pago: pagamento.status === "approved", status: pagamento.status, ...base };
 
   });
+
+/* ===================== Novo fluxo de convidados ===================== */
+
+export interface PedidoConvidadoResultado {
+  pedidoId: string;
+  status: "pendente" | "aprovado" | "rejeitado";
+  convidadoId: string;
+}
+
+/** Cria o pedido: convidado novo entra como pendente; convidado da casa já nasce aprovado. */
+export const criarPedidoConvidado = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        babaId: z.string().uuid(),
+        nome: z.string().trim().max(80).optional(),
+        telefone: z.string().trim().max(30).optional(),
+        convidadoId: z.string().uuid().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<PedidoConvidadoResultado> => {
+    const { supabase } = context;
+    const { data: linhas, error } = await supabase.rpc("criar_pedido_convidado", {
+      _baba_id: data.babaId,
+      _nome: data.nome ?? "",
+      _telefone: data.telefone ?? "",
+      _convidado_id: data.convidadoId ?? undefined,
+    });
+    if (error) throw new Error(error.message);
+    const linha = Array.isArray(linhas) ? linhas[0] : linhas;
+    if (!linha) throw new Error("Não foi possível criar o pedido");
+    return {
+      pedidoId: linha.pedido_id as string,
+      status: linha.status as PedidoConvidadoResultado["status"],
+      convidadoId: linha.convidado_id as string,
+    };
+  });
+
+/** Diretoria aprova ou recusa um pedido de convidado novo. */
+export const decidirPedidoConvidado = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ pedidoId: z.string().uuid(), aprovar: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("decidir_pedido_convidado", {
+      _pedido_id: data.pedidoId,
+      _aprovar: data.aprovar,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Gera (ou reaproveita) o PIX da diária do convidado — só depois do pedido aprovado. */
+export const gerarPixPedido = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ pedidoId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<PixConvite & { presencaId: string }> => {
+    const { supabase, userId } = context;
+    const { data: pedido } = await supabase
+      .from("pedidos_convidado")
+      .select("id, baba_id, anfitriao_id, convidado_id, status, presenca_id")
+      .eq("id", data.pedidoId)
+      .maybeSingle();
+    if (!pedido || pedido.anfitriao_id !== userId) throw new Error("Pedido não encontrado");
+    if (pedido.status !== "aprovado") throw new Error("Esse convidado ainda aguarda a aprovação da diretoria");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cad } = await supabaseAdmin
+      .from("convidados_cadastro")
+      .select("id, nome, telefone, user_id, bloqueado")
+      .eq("id", pedido.convidado_id)
+      .maybeSingle();
+    if (!cad) throw new Error("Convidado não encontrado");
+    if (cad.bloqueado) throw new Error("Esse convidado está bloqueado pela diretoria");
+
+    let presencaId = pedido.presenca_id;
+    if (!presencaId) {
+      const { data: presenca, error: erroPresenca } = await supabase
+        .from("presencas")
+        .insert({
+          baba_id: pedido.baba_id,
+          usuario_id: userId,
+          nome_convidado: cad.nome,
+          convidado_cadastro_id: cad.id,
+          convidado_user_id: cad.user_id,
+          status_convidado: "pendente",
+          valor: 5,
+        })
+        .select("id")
+        .single();
+      if (erroPresenca) throw erroPresenca;
+      presencaId = presenca.id;
+      await supabaseAdmin.from("pedidos_convidado").update({ presenca_id: presencaId }).eq("id", pedido.id);
+      await supabaseAdmin
+        .from("presencas_contato")
+        .upsert({ presenca_id: presencaId, telefone: cad.telefone }, { onConflict: "presenca_id" });
+    }
+
+    const { data: presencaAtual } = await supabaseAdmin
+      .from("presencas")
+      .select("status_convidado, valor")
+      .eq("id", presencaId)
+      .maybeSingle();
+
+    const { data: cobranca } = await supabaseAdmin
+      .from("presencas_pagamento")
+      .select("mp_payment_id, pix_qr_code, pix_qr_base64, pix_expira_em")
+      .eq("presenca_id", presencaId)
+      .maybeSingle();
+
+    if (presencaAtual?.status_convidado === "aprovado") {
+      return {
+        presencaId,
+        pago: true,
+        status: "approved",
+        qrCode: cobranca?.pix_qr_code ?? null,
+        qrBase64: cobranca?.pix_qr_base64 ?? null,
+        valor: 5,
+      };
+    }
+
+    const valido =
+      cobranca?.pix_qr_code &&
+      (!cobranca.pix_expira_em || new Date(cobranca.pix_expira_em) > new Date());
+    if (valido) {
+      return {
+        presencaId,
+        pago: false,
+        status: "pending",
+        qrCode: cobranca!.pix_qr_code,
+        qrBase64: cobranca!.pix_qr_base64,
+        valor: 5,
+      };
+    }
+
+    const { data: anfitriao } = await supabaseAdmin
+      .from("perfis")
+      .select("nome, telefone")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } = await import("@/lib/mercadopago.server");
+    const pix = await criarPagamentoPix({
+      valor: VALOR_CONVIDADO,
+      descricao: `Diária de convidado — ${cad.nome}`,
+      email: emailPagador(anfitriao?.telefone, userId),
+      nome: anfitriao?.nome ?? "Associado",
+      externalReference: `convidado:${presencaId}`,
+      idempotencyKey: `convidado-${presencaId}-${Date.now()}`,
+    });
+
+    await supabaseAdmin.from("presencas").update({ mp_status: pix.status }).eq("id", presencaId);
+    await supabaseAdmin.from("presencas_pagamento").upsert(
+      {
+        presenca_id: presencaId,
+        mp_payment_id: pix.paymentId,
+        pix_qr_code: pix.qrCode,
+        pix_qr_base64: pix.qrBase64,
+        pix_expira_em: pix.expiraEm,
+      },
+      { onConflict: "presenca_id" },
+    );
+
+    return {
+      presencaId,
+      pago: pix.status === "approved",
+      status: pix.status,
+      qrCode: pix.qrCode,
+      qrBase64: pix.qrBase64,
+      valor: VALOR_CONVIDADO,
+    };
+  });

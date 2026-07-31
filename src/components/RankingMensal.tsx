@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { rankingDoMesQuery, mesReferencia } from "@/lib/babaQueries";
+import { rankingDoMesQuery, mesReferencia, perfisPublicosQuery } from "@/lib/babaQueries";
 import { Trophy, Goal, Medal, ImageDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { AvatarJogador } from "@/components/AvatarJogador";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import escudoAsset from "@/assets/fut-cajazeiras-escudo.png.asset.json";
@@ -101,6 +102,8 @@ async function desenharRanking(mes: string, linhas: LinhaRanking[]): Promise<Blo
 export function RankingMensal() {
   const referencia = mesReferencia();
   const { data, isLoading } = useQuery(rankingDoMesQuery(referencia));
+  const { data: perfis } = useQuery(perfisPublicosQuery());
+  const avatarDe = (id: string | null) => (perfis ?? []).find((p) => p.id === id)?.avatar_url ?? null;
 
   const top = [...(data ?? [])]
     .sort(
@@ -178,6 +181,7 @@ export function RankingMensal() {
             >
               {i === 0 ? <Medal className="size-4" /> : i + 1}
             </span>
+            <AvatarJogador caminho={avatarDe(r.usuario_id)} nome={r.nome} size="sm" />
             <span className="min-w-0 flex-1 truncate text-sm font-semibold">{r.nome}</span>
             <span className="flex items-center gap-1 text-sm text-gold">
               <Goal className="size-3.5" /> {r.gols ?? 0}

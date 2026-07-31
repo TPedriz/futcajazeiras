@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { MapPin, Navigation, X, Users } from "lucide-react";
+import { AvatarJogador } from "@/components/AvatarJogador";
 
 export interface PresencaChegada {
   id: string;
@@ -14,7 +15,7 @@ export interface PresencaChegada {
   status_convidado?: string | null;
   chegou_em?: string | null;
   ordem_chegada?: number | null;
-  perfis?: { nome: string } | null;
+  perfis?: { nome: string; avatar_url?: string | null } | null;
 }
 
 interface Props {
@@ -161,6 +162,7 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gold/10 font-display text-xs text-gold">
                     {p.ordem_chegada}
                   </span>
+                  <AvatarJogador caminho={p.perfis?.avatar_url} nome={p.nome_convidado ?? p.perfis?.nome} size="sm" />
                   <span className="min-w-0 flex-1 truncate text-sm">
                     {p.nome_convidado ?? p.perfis?.nome ?? "Jogador"}
                     {p.nome_convidado && <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>}
