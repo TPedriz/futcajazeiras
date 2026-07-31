@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
+import { AprovacoesConvidados } from "@/components/AprovacoesConvidados";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formataTelefone, normalizaTelefone } from "@/lib/telefone";
@@ -99,6 +100,8 @@ function UsuariosPage() {
           quem quiser da lista do próximo baba.
         </p>
       </div>
+
+      <AprovacoesConvidados />
 
       <FiltroCargo valor={filtro} onChange={setFiltro} total={perfis.length} />
 
