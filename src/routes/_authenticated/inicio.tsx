@@ -94,7 +94,7 @@ function InicioPage() {
                 <span>{totalConfirmados} associados confirmados</span>
               </div>
             </div>
-            <ContadorRegressivo fechamento={proxSessao.fechamento_lista} />
+            <ContadorRegressivo fechamento={fechamentoEfetivo(proxSessao).toISOString()} />
             <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-gold">
               Ver detalhes <ArrowRight className="size-4" />
             </div>
