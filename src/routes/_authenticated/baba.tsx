@@ -7,6 +7,7 @@ import {
   presencasDaSessaoQuery,
   situacaoCheckinQuery,
   DIA_VENCIMENTO,
+  fechamentoEfetivo,
 } from "@/lib/babaQueries";
 import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
@@ -70,7 +71,6 @@ function BabaPage() {
   const { data: situacao } = useQuery(
     situacaoCheckinQuery(perfilData?.user.id, sessao?.id),
   );
-  const queryClient = useQueryClient();
   const queryClient = useQueryClient();
 
   const userId = perfilData?.user.id;

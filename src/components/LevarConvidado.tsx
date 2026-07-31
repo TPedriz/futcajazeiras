@@ -16,7 +16,7 @@ import {
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
 import { convidadosDaCasaQuery, meusPedidosConvidadoQuery } from "@/lib/babaQueries";
 import { criarPedidoConvidado, gerarPixPedido } from "@/lib/convidados.functions";
-import { mascaraTelefone } from "@/lib/telefone";
+import { formataTelefone } from "@/lib/telefone";
 import { UserPlus, Sparkles, Home, QrCode, Clock } from "lucide-react";
 
 type Modo = "escolha" | "novo" | "casa";
@@ -150,7 +150,7 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
                   inputMode="tel"
                   placeholder="(71) 90000-0000"
                   value={telefone}
-                  onChange={(e) => setTelefone(mascaraTelefone(e.target.value))}
+                  onChange={(e) => setTelefone(formataTelefone(e.target.value))}
                 />
               </div>
               <p className="text-[11px] text-muted-foreground">
