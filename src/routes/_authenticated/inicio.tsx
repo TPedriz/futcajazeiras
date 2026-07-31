@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
+import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery, fechamentoEfetivo } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle, Calendar, MapPin, Users, ArrowRight, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
