@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { todasSessoesQuery } from "@/lib/babaQueries";
+import { todasSessoesQuery, fechamentoPadrao, fechamentoEfetivo } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,7 @@ function AdminSessoes() {
     mutationFn: async () => {
       if (!dataHorario) throw new Error("Informe data e horário");
       const jogo = new Date(dataHorario);
-      const fechamento = new Date(jogo.getTime() - 3 * 60 * 60 * 1000);
+      const fechamento = fechamentoPadrao(jogo);
       const { error } = await supabase.from("sessoes_baba").insert({
         data_horario: jogo.toISOString(),
         local,
@@ -89,6 +89,18 @@ function AdminSessoes() {
     },
     onSuccess: () => {
       toast.success("Visibilidade da lista atualizada");
+      invalidar();
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  const alterarFechamento = useMutation({
+    mutationFn: async ({ id, valor }: { id: string; valor: string }) => {
+      const { error } = await supabase.from("sessoes_baba").update({ fechamento_lista: valor }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Fechamento da lista atualizado");
       invalidar();
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
@@ -136,8 +148,9 @@ function AdminSessoes() {
           <Navigation className="size-4" /> Usar minha localização atual
         </Button>
         <p className="text-xs text-muted-foreground">
-          O check-in presencial abre 30 min antes do baba, vai até 20:30 e só funciona dentro do raio
-          definido. A ordem de chegada define os Times A e B.
+          A lista fecha por padrão às 22h do dia anterior ou 3h antes do jogo — o que vier primeiro —
+          e pode ser ajustada no histórico. O check-in presencial abre 30 min antes, encerra 1h após o
+          início e só funciona dentro do raio definido.
         </p>
         <Button variant="hero" size="lg" className="w-full" onClick={() => criar.mutate()} disabled={criar.isPending}>
           Criar baba
@@ -161,6 +174,21 @@ function AdminSessoes() {
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                       <MapPin className="size-3" /> {s.local}
+                    </div>
+                    <div className="mt-2">
+                      <Label htmlFor={`fech-${s.id}`} className="text-[11px] text-muted-foreground">
+                        Fechamento da lista
+                      </Label>
+                      <Input
+                        id={`fech-${s.id}`}
+                        type="datetime-local"
+                        className="h-10"
+                        defaultValue={format(fechamentoEfetivo(s), "yyyy-MM-dd'T'HH:mm")}
+                        onBlur={(e) =>
+                          e.target.value &&
+                          alterarFechamento.mutate({ id: s.id, valor: new Date(e.target.value).toISOString() })
+                        }
+                      />
                     </div>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {s.esta_fechado && (
