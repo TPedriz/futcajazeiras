@@ -70,15 +70,22 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       ) as string[];
       const mapa = new Map<
         string,
-        { id: string; nome: string; posicao: "linha" | "goleiro"; time_coracao: "bahia" | "vitoria" | null }
+        {
+          id: string;
+          nome: string;
+          posicao: "linha" | "goleiro";
+          time_coracao: "bahia" | "vitoria" | null;
+          avatar_url: string | null;
+        }
       >();
       if (ids.length > 0) {
         const { data: perfis } = await supabase
           .from("perfis_publicos")
-          .select("id, nome, posicao, time_coracao")
+          .select("id, nome, posicao, time_coracao, avatar_url")
           .in("id", ids);
         for (const p of perfis ?? []) mapa.set(p.id, p);
       }
+
 
       return (presencas ?? []).map((p) => ({
         ...p,
