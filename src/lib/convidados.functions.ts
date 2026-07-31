@@ -214,7 +214,7 @@ export const criarPedidoConvidado = createServerFn({ method: "POST" })
       _baba_id: data.babaId,
       _nome: data.nome ?? "",
       _telefone: data.telefone ?? "",
-      _convidado_id: data.convidadoId ?? null,
+      _convidado_id: data.convidadoId ?? undefined,
     });
     if (error) throw new Error(error.message);
     const linha = Array.isArray(linhas) ? linhas[0] : linhas;

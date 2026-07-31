@@ -434,3 +434,75 @@ export const valorMensalidadeQuery = () =>
       return Number(data?.valor ?? 20);
     },
   });
+
+/** Fechamento padrão da lista: 22h do dia anterior ou 3h antes do baba — o que vier primeiro. */
+export function fechamentoPadrao(dataHorario: Date) {
+  const tresHorasAntes = new Date(dataHorario.getTime() - 3 * 60 * 60 * 1000);
+  const vespera = new Date(dataHorario);
+  vespera.setDate(vespera.getDate() - 1);
+  vespera.setHours(22, 0, 0, 0);
+  return tresHorasAntes < vespera ? tresHorasAntes : vespera;
+}
+
+/** Data efetiva de fechamento (usa o padrão quando a diretoria não definiu). */
+export function fechamentoEfetivo(sessao: { data_horario: string; fechamento_lista: string | null }) {
+  return sessao.fechamento_lista
+    ? new Date(sessao.fechamento_lista)
+    : fechamentoPadrao(new Date(sessao.data_horario));
+}
+
+/** Convidados "da casa": já aprovados pela diretoria e sem bloqueio. */
+export const convidadosDaCasaQuery = () =>
+  queryOptions({
+    queryKey: ["convidados-da-casa"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("convidados_cadastro")
+        .select("id, nome, telefone, aprovado, bloqueado")
+        .eq("aprovado", true)
+        .eq("bloqueado", false)
+        .order("nome", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/** Pedidos de convidado que eu (associado) fiz para um baba. */
+export const meusPedidosConvidadoQuery = (userId: string | undefined, babaId: string | undefined) =>
+  queryOptions({
+    queryKey: ["pedidos-convidado-meus", userId, babaId],
+    enabled: !!userId && !!babaId,
+    queryFn: async () => {
+      if (!userId || !babaId) return [];
+      const { data, error } = await supabase
+        .from("pedidos_convidado")
+        .select("id, status, presenca_id, criado_em, convidados_cadastro(id, nome, telefone)")
+        .eq("anfitriao_id", userId)
+        .eq("baba_id", babaId)
+        .order("criado_em", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/** Pedidos de convidado aguardando decisão da diretoria. */
+export const pedidosConvidadoPendentesQuery = () =>
+  queryOptions({
+    queryKey: ["pedidos-convidado-pendentes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pedidos_convidado")
+        .select("id, status, criado_em, baba_id, anfitriao_id, convidados_cadastro(id, nome, telefone)")
+        .eq("status", "pendente")
+        .order("criado_em", { ascending: false });
+      if (error) throw error;
+
+      const ids = Array.from(new Set((data ?? []).map((p) => p.anfitriao_id)));
+      const nomes = new Map<string, string>();
+      if (ids.length > 0) {
+        const { data: perfis } = await supabase.from("perfis_publicos").select("id, nome").in("id", ids);
+        for (const p of perfis ?? []) nomes.set(p.id, p.nome);
+      }
+      return (data ?? []).map((p) => ({ ...p, nomeAnfitriao: nomes.get(p.anfitriao_id) ?? "Associado" }));
+    },
+  });
