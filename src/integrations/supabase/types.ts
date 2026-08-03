@@ -505,6 +505,7 @@ export type Database = {
       }
       sessoes_baba: {
         Row: {
+          abertura_lista: string | null
           atualizado_em: string
           criado_em: string
           data_horario: string
@@ -518,6 +519,7 @@ export type Database = {
           raio_metros: number
         }
         Insert: {
+          abertura_lista?: string | null
           atualizado_em?: string
           criado_em?: string
           data_horario: string
@@ -531,6 +533,7 @@ export type Database = {
           raio_metros?: number
         }
         Update: {
+          abertura_lista?: string | null
           atualizado_em?: string
           criado_em?: string
           data_horario?: string
