@@ -491,7 +491,7 @@ export const convidadosDaCasaQuery = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("convidados_cadastro")
-        .select("id, nome, telefone, aprovado, bloqueado")
+        .select("id, nome, aprovado, bloqueado")
         .eq("aprovado", true)
         .eq("bloqueado", false)
         .order("nome", { ascending: true });
@@ -509,7 +509,7 @@ export const meusPedidosConvidadoQuery = (userId: string | undefined, babaId: st
       if (!userId || !babaId) return [];
       const { data, error } = await supabase
         .from("pedidos_convidado")
-        .select("id, status, presenca_id, criado_em, convidados_cadastro(id, nome, telefone)")
+        .select("id, status, presenca_id, criado_em, convidados_cadastro(id, nome)")
         .eq("anfitriao_id", userId)
         .eq("baba_id", babaId)
         .order("criado_em", { ascending: false });
@@ -525,9 +525,7 @@ export const pedidosConvidadoPendentesQuery = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pedidos_convidado")
-        .select(
-          "id, status, criado_em, baba_id, anfitriao_id, convidados_cadastro(id, nome, telefone)",
-        )
+        .select("id, status, criado_em, baba_id, anfitriao_id, convidados_cadastro(id, nome)")
         .eq("status", "pendente")
         .order("criado_em", { ascending: false });
       if (error) throw error;
@@ -541,8 +539,20 @@ export const pedidosConvidadoPendentesQuery = () =>
           .in("id", ids);
         for (const p of perfis ?? []) nomes.set(p.id, p.nome);
       }
-      return (data ?? []).map((p) => ({
+
+      // O telefone só é liberado pelo banco para a diretoria / quem cadastrou.
+      const telefones = await Promise.all(
+        (data ?? []).map(async (p) => {
+          const id = p.convidados_cadastro?.id;
+          if (!id) return null;
+          const { data: tel } = await supabase.rpc("telefone_convidado", { _convidado_id: id });
+          return tel ?? null;
+        }),
+      );
+
+      return (data ?? []).map((p, i) => ({
         ...p,
+        telefoneConvidado: telefones[i],
         nomeAnfitriao: nomes.get(p.anfitriao_id) ?? "Associado",
       }));
     },
