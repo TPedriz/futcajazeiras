@@ -55,9 +55,19 @@ function AdminSessoes() {
   const [raio, setRaio] = useState("1000");
 
   const [mostrarNovoLocal, setMostrarNovoLocal] = useState(false);
-  const [novoLocal, setNovoLocal] = useState({ nome: "", latitude: "", longitude: "", raio: "1000" });
+  const [novoLocal, setNovoLocal] = useState({
+    nome: "",
+    latitude: "",
+    longitude: "",
+    raio: "1000",
+  });
   const [editLocalId, setEditLocalId] = useState<string | null>(null);
-  const [editLocal, setEditLocal] = useState({ nome: "", latitude: "", longitude: "", raio: "1000" });
+  const [editLocal, setEditLocal] = useState({
+    nome: "",
+    latitude: "",
+    longitude: "",
+    raio: "1000",
+  });
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
