@@ -27,6 +27,8 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
   const [dadosPix, setDadosPix] = useState<DadosPix | null>(null);
   const [pago, setPago] = useState(false);
   const [carregandoPix, setCarregandoPix] = useState(false);
+  const [aguardandoDiretoria, setAguardandoDiretoria] = useState(false);
+  const [semCobranca, setSemCobranca] = useState(false);
 
   const { data: anfitrioes } = useQuery({
     queryKey: ["anfitrioes"],
@@ -52,11 +54,22 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
     setPixAberto(true);
     setPago(false);
     setDadosPix(null);
+    setAguardandoDiretoria(false);
+    setSemCobranca(false);
     setCarregandoPix(true);
     try {
       const r = await verPix({ data: { solicitacaoId: ativa.id } });
-      if (r.pago) setPago(true);
-      else setDadosPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
+      if (r.pago) {
+        setPago(true);
+      } else if (r.status === "aguardando_diretoria") {
+        setAguardandoDiretoria(true);
+        setPixAberto(false);
+      } else if (r.status === "sem_cobranca") {
+        setSemCobranca(true);
+        setPixAberto(false);
+      } else {
+        setDadosPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
+      }
     } catch (e) {
       setPixAberto(false);
       toast.error("Erro", { description: (e as Error).message });
@@ -66,21 +79,35 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
   };
 
   useEffect(() => {
-    if (!pixAberto || pago || !ativa) return;
+    if (!ativa || ativa.status !== "aprovado" || pago) return;
     const id = setInterval(async () => {
       try {
         const r = await verPix({ data: { solicitacaoId: ativa.id } });
         if (r.pago) {
           setPago(true);
+          setAguardandoDiretoria(false);
+          setSemCobranca(false);
           qc.invalidateQueries({ queryKey: ["presencas", babaId] });
           toast.success("Pagamento confirmado! Você está na lista.");
+        } else if (r.status === "aguardando_diretoria") {
+          setAguardandoDiretoria(true);
+          setSemCobranca(false);
+          setPixAberto(false);
+        } else if (r.status === "sem_cobranca") {
+          setSemCobranca(true);
+          setAguardandoDiretoria(false);
+          setPixAberto(false);
+        } else if (r.qrCode) {
+          setDadosPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
+          setAguardandoDiretoria(false);
+          setSemCobranca(false);
         }
       } catch {
         /* tenta de novo */
       }
     }, 5000);
     return () => clearInterval(id);
-  }, [pixAberto, pago, ativa, verPix, qc, babaId]);
+  }, [ativa, pago, verPix, qc, babaId]);
 
   return (
     <div className="card-premium p-5">
@@ -97,19 +124,39 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
             <div className="mt-3 space-y-3 rounded-lg border border-border bg-surface p-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm text-muted-foreground">
-                  {ativa.status === "pendente" ? "Aguardando resposta do associado" : "Convite aceito"}
+                  {ativa.status === "pendente"
+                    ? "Aguardando resposta do associado"
+                    : aguardandoDiretoria
+                      ? "Aguardando aprovação da diretoria"
+                      : semCobranca
+                        ? "Aguardando o PIX ser gerado"
+                        : "Convite aceito"}
                 </p>
                 {ativa.status === "pendente" ? (
                   <Badge variant="outline" className="border-gold/40 text-gold">Pendente</Badge>
+                ) : aguardandoDiretoria ? (
+                  <Badge variant="outline" className="border-gold/40 text-gold">Diretoria</Badge>
                 ) : (
                   <Badge className="bg-success text-success-foreground">Aceito</Badge>
                 )}
               </div>
-              {ativa.status === "aprovado" && ativa.presenca_id && (
+              {aguardandoDiretoria && (
+                <p className="text-xs text-muted-foreground">
+                  O associado aceitou, mas a diretoria ainda precisa aprovar. Você será avisado.
+                </p>
+              )}
+              {semCobranca && (
+                <p className="text-xs text-muted-foreground">
+                  Aprovado! O associado ainda não gerou o PIX. Quando ele gerar, ele aparece aqui.
+                </p>
+              )}
+              {pago ? (
+                <p className="text-sm text-success">Pagamento confirmado! Você está na lista.</p>
+              ) : ativa.status === "aprovado" && !aguardandoDiretoria && !semCobranca ? (
                 <Button variant="hero" size="lg" className="w-full" onClick={abrirPix}>
                   <QrCode className="size-4" /> Pagar taxa com PIX
                 </Button>
-              )}
+              ) : null}
             </div>
           ) : (
             <div className="mt-3 space-y-2">
