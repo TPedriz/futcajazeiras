@@ -245,6 +245,7 @@ export type Database = {
           decidido_por: string | null
           id: string
           presenca_id: string | null
+          solicitacao_id: string | null
           status: Database["public"]["Enums"]["status_convidado"]
         }
         Insert: {
@@ -256,6 +257,7 @@ export type Database = {
           decidido_por?: string | null
           id?: string
           presenca_id?: string | null
+          solicitacao_id?: string | null
           status?: Database["public"]["Enums"]["status_convidado"]
         }
         Update: {
@@ -267,6 +269,7 @@ export type Database = {
           decidido_por?: string | null
           id?: string
           presenca_id?: string | null
+          solicitacao_id?: string | null
           status?: Database["public"]["Enums"]["status_convidado"]
         }
         Relationships: [

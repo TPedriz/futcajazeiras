@@ -144,6 +144,10 @@ const secoes = [
         "E o time do coração?",
         "A escolha do usuário (Bahia/Vitória) é definitiva — só a diretoria consegue alterar.",
       ],
+      [
+        "Onde aprovo convidados novos?",
+        "Na aba Usuários, na fila “Aprovações de convidados”. Nenhum PIX é gerado antes da aprovação; aprovado uma vez, o convidado vira “da casa” e entra direto nos próximos babas.",
+      ],
     ],
   },
 ];
