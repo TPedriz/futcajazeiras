@@ -509,7 +509,7 @@ export const meusPedidosConvidadoQuery = (userId: string | undefined, babaId: st
       if (!userId || !babaId) return [];
       const { data, error } = await supabase
         .from("pedidos_convidado")
-        .select("id, status, presenca_id, criado_em, convidados_cadastro(id, nome, telefone)")
+        .select("id, status, presenca_id, criado_em, convidados_cadastro(id, nome)")
         .eq("anfitriao_id", userId)
         .eq("baba_id", babaId)
         .order("criado_em", { ascending: false });
