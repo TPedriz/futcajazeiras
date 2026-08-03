@@ -1,8 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery, fechamentoEfetivo, aberturaEfetivo } from "@/lib/babaQueries";
+import {
+  perfilAtualQuery,
+  proximaSessaoQuery,
+  presencasDaSessaoQuery,
+  fechamentoEfetivo,
+  aberturaEfetivo,
+} from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Calendar, MapPin, Users, ArrowRight, Clock, Hourglass, Lock, CalendarClock } from "lucide-react";
+import {
+  CheckCircle2,
+  AlertCircle,
+  Calendar,
+  MapPin,
+  Users,
+  ArrowRight,
+  Clock,
+  Hourglass,
+  Lock,
+  CalendarClock,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { RankingMensal } from "@/components/RankingMensal";
 import { tempoDeAssociado } from "@/lib/associado";
@@ -29,9 +46,16 @@ export const Route = createFileRoute("/_authenticated/inicio")({
   head: () => ({
     meta: [
       { title: "Início — Fut Cajazeiras" },
-      { name: "description", content: "Painel do associado: veja seu status de mensalidade, o próximo baba e faça check-in direto pelo celular." },
+      {
+        name: "description",
+        content:
+          "Painel do associado: veja seu status de mensalidade, o próximo baba e faça check-in direto pelo celular.",
+      },
       { property: "og:title", content: "Painel do Associado — Fut Cajazeiras" },
-      { property: "og:description", content: "Seu status financeiro e o próximo baba do Fut Cajazeiras em um só lugar." },
+      {
+        property: "og:description",
+        content: "Seu status financeiro e o próximo baba do Fut Cajazeiras em um só lugar.",
+      },
     ],
   }),
 
@@ -60,7 +84,9 @@ function InicioPage() {
     <div className="space-y-5">
       <div>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Boa!</p>
-        <h1 className="font-display text-4xl leading-tight text-foreground">{nome.split(" ")[0]}</h1>
+        <h1 className="font-display text-4xl leading-tight text-foreground">
+          {nome.split(" ")[0]}
+        </h1>
         {tempo && (
           <p className="mt-1 text-sm text-muted-foreground">
             <span className="text-gold">{tempo.apelido}</span> — no baba há{" "}
@@ -78,7 +104,9 @@ function InicioPage() {
               {emDia ? "Em dia" : "Pendente"}
             </p>
           </div>
-          <div className={`flex size-14 items-center justify-center rounded-full ${emDia ? "bg-gold/10" : "bg-destructive/10"}`}>
+          <div
+            className={`flex size-14 items-center justify-center rounded-full ${emDia ? "bg-gold/10" : "bg-destructive/10"}`}
+          >
             {emDia ? (
               <CheckCircle2 className="size-7 text-gold" />
             ) : (

@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { todasSessoesQuery, fechamentoPadrao, fechamentoEfetivo, aberturaPadrao, aberturaEfetivo } from "@/lib/babaQueries";
+import {
+  todasSessoesQuery,
+  fechamentoPadrao,
+  fechamentoEfetivo,
+  aberturaPadrao,
+  aberturaEfetivo,
+} from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +15,17 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, MapPin, Lock, Unlock, Trash2, Eye, EyeOff, Navigation, Pencil } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Lock,
+  Unlock,
+  Trash2,
+  Eye,
+  EyeOff,
+  Navigation,
+  Pencil,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(todasSessoesQuery()),
@@ -62,7 +78,9 @@ function AdminSessoes() {
           longitude: Number(editForm.lng),
           raio_metros: Math.max(100, Number(editForm.raio) || 1000),
           abertura_lista: editForm.abertura ? new Date(editForm.abertura).toISOString() : null,
-          fechamento_lista: editForm.fechamento ? new Date(editForm.fechamento).toISOString() : null,
+          fechamento_lista: editForm.fechamento
+            ? new Date(editForm.fechamento).toISOString()
+            : null,
         })
         .eq("id", id);
       if (error) throw error;
@@ -81,7 +99,8 @@ function AdminSessoes() {
   };
 
   const usarMinhaLocalizacao = () => {
-    if (!("geolocation" in navigator)) return toast.error("Localização indisponível neste aparelho");
+    if (!("geolocation" in navigator))
+      return toast.error("Localização indisponível neste aparelho");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLat(pos.coords.latitude.toFixed(6));
@@ -121,7 +140,10 @@ function AdminSessoes() {
 
   const toggleFechado = useMutation({
     mutationFn: async ({ id, fechado }: { id: string; fechado: boolean }) => {
-      const { error } = await supabase.from("sessoes_baba").update({ esta_fechado: fechado }).eq("id", id);
+      const { error } = await supabase
+        .from("sessoes_baba")
+        .update({ esta_fechado: fechado })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -147,7 +169,10 @@ function AdminSessoes() {
 
   const alterarFechamento = useMutation({
     mutationFn: async ({ id, valor }: { id: string; valor: string }) => {
-      const { error } = await supabase.from("sessoes_baba").update({ fechamento_lista: valor }).eq("id", id);
+      const { error } = await supabase
+        .from("sessoes_baba")
+        .update({ fechamento_lista: valor })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -159,7 +184,10 @@ function AdminSessoes() {
 
   const alterarAbertura = useMutation({
     mutationFn: async ({ id, valor }: { id: string; valor: string }) => {
-      const { error } = await supabase.from("sessoes_baba").update({ abertura_lista: valor }).eq("id", id);
+      const { error } = await supabase
+        .from("sessoes_baba")
+        .update({ abertura_lista: valor })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -187,25 +215,54 @@ function AdminSessoes() {
         <p className="font-display text-xl">Novo baba</p>
         <div>
           <Label htmlFor="dt">Data e horário</Label>
-          <Input id="dt" type="datetime-local" value={dataHorario} onChange={(e) => setDataHorario(e.target.value)} className="h-12" />
+          <Input
+            id="dt"
+            type="datetime-local"
+            value={dataHorario}
+            onChange={(e) => setDataHorario(e.target.value)}
+            className="h-12"
+          />
         </div>
         <div>
           <Label htmlFor="loc">Local</Label>
-          <Input id="loc" value={local} onChange={(e) => setLocal(e.target.value)} className="h-12" />
+          <Input
+            id="loc"
+            value={local}
+            onChange={(e) => setLocal(e.target.value)}
+            className="h-12"
+          />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <Label htmlFor="lat">Latitude</Label>
-            <Input id="lat" value={lat} onChange={(e) => setLat(e.target.value)} className="h-12" inputMode="decimal" />
+            <Input
+              id="lat"
+              value={lat}
+              onChange={(e) => setLat(e.target.value)}
+              className="h-12"
+              inputMode="decimal"
+            />
           </div>
           <div>
             <Label htmlFor="lng">Longitude</Label>
-            <Input id="lng" value={lng} onChange={(e) => setLng(e.target.value)} className="h-12" inputMode="decimal" />
+            <Input
+              id="lng"
+              value={lng}
+              onChange={(e) => setLng(e.target.value)}
+              className="h-12"
+              inputMode="decimal"
+            />
           </div>
         </div>
         <div>
           <Label htmlFor="raio">Raio do check-in (metros)</Label>
-          <Input id="raio" value={raio} onChange={(e) => setRaio(e.target.value)} className="h-12" inputMode="numeric" />
+          <Input
+            id="raio"
+            value={raio}
+            onChange={(e) => setRaio(e.target.value)}
+            className="h-12"
+            inputMode="numeric"
+          />
         </div>
         <Button variant="goldOutline" size="lg" className="w-full" onClick={usarMinhaLocalizacao}>
           <Navigation className="size-4" /> Usar minha localização atual
@@ -215,11 +272,16 @@ function AdminSessoes() {
           histórico. O check-in presencial abre 30 min antes, encerra 1h após o início e só funciona
           dentro do raio definido.
         </p>
-        <Button variant="hero" size="lg" className="w-full" onClick={() => criar.mutate()} disabled={criar.isPending}>
+        <Button
+          variant="hero"
+          size="lg"
+          className="w-full"
+          onClick={() => criar.mutate()}
+          disabled={criar.isPending}
+        >
           Criar baba
         </Button>
       </div>
-
 
       <div>
         <p className="mb-3 font-display text-xl">Histórico</p>
@@ -320,97 +382,130 @@ function AdminSessoes() {
                     </div>
                   </div>
                 ) : (
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Calendar className="size-4 text-gold" />
-                      {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </div>
-                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                      <MapPin className="size-3" /> {s.local}
-                    </div>
-                    <div className="mt-2">
-                      <Label htmlFor={`abert-${s.id}`} className="text-[11px] text-muted-foreground">
-                        Abertura da lista
-                      </Label>
-                      <Input
-                        id={`abert-${s.id}`}
-                        type="datetime-local"
-                        className="h-10"
-                        defaultValue={format(aberturaEfetivo(s), "yyyy-MM-dd'T'HH:mm")}
-                        onBlur={(e) =>
-                          e.target.value &&
-                          alterarAbertura.mutate({ id: s.id, valor: new Date(e.target.value).toISOString() })
-                        }
-                      />
-                    </div>
-                    <div className="mt-2">
-                      <Label htmlFor={`fech-${s.id}`} className="text-[11px] text-muted-foreground">
-                        Fechamento da lista
-                      </Label>
-                      <Input
-                        id={`fech-${s.id}`}
-                        type="datetime-local"
-                        className="h-10"
-                        defaultValue={format(fechamentoEfetivo(s), "yyyy-MM-dd'T'HH:mm")}
-                        onBlur={(e) =>
-                          e.target.value &&
-                          alterarFechamento.mutate({ id: s.id, valor: new Date(e.target.value).toISOString() })
-                        }
-                      />
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {s.esta_fechado && (
-                        <span className="rounded bg-destructive/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-destructive">
-                          Fechado
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-sm text-foreground">
+                        <Calendar className="size-4 text-gold" />
+                        {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", {
+                          locale: ptBR,
+                        })}
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        <MapPin className="size-3" /> {s.local}
+                      </div>
+                      <div className="mt-2">
+                        <Label
+                          htmlFor={`abert-${s.id}`}
+                          className="text-[11px] text-muted-foreground"
+                        >
+                          Abertura da lista
+                        </Label>
+                        <Input
+                          id={`abert-${s.id}`}
+                          type="datetime-local"
+                          className="h-10"
+                          defaultValue={format(aberturaEfetivo(s), "yyyy-MM-dd'T'HH:mm")}
+                          onBlur={(e) =>
+                            e.target.value &&
+                            alterarAbertura.mutate({
+                              id: s.id,
+                              valor: new Date(e.target.value).toISOString(),
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="mt-2">
+                        <Label
+                          htmlFor={`fech-${s.id}`}
+                          className="text-[11px] text-muted-foreground"
+                        >
+                          Fechamento da lista
+                        </Label>
+                        <Input
+                          id={`fech-${s.id}`}
+                          type="datetime-local"
+                          className="h-10"
+                          defaultValue={format(fechamentoEfetivo(s), "yyyy-MM-dd'T'HH:mm")}
+                          onBlur={(e) =>
+                            e.target.value &&
+                            alterarFechamento.mutate({
+                              id: s.id,
+                              valor: new Date(e.target.value).toISOString(),
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {s.esta_fechado && (
+                          <span className="rounded bg-destructive/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-destructive">
+                            Fechado
+                          </span>
+                        )}
+                        <span className="rounded bg-muted px-2 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+                          {s.mostrar_lista_chegada ? "Lista visível" : "Lista oculta"}
                         </span>
-                      )}
-                      <span className="rounded bg-muted px-2 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-                        {s.mostrar_lista_chegada ? "Lista visível" : "Lista oculta"}
-                      </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Editar baba"
+                        onClick={() => iniciarEdicao(s)}
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={
+                          s.mostrar_lista_chegada
+                            ? "Ocultar lista de chegada"
+                            : "Mostrar lista de chegada"
+                        }
+                        onClick={() =>
+                          toggleLista.mutate({ id: s.id, mostrar: !s.mostrar_lista_chegada })
+                        }
+                      >
+                        {s.mostrar_lista_chegada ? (
+                          <Eye className="size-4" />
+                        ) : (
+                          <EyeOff className="size-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={
+                          s.esta_fechado ? "Reabrir lista do baba" : "Fechar lista do baba"
+                        }
+                        onClick={() => toggleFechado.mutate({ id: s.id, fechado: !s.esta_fechado })}
+                      >
+                        {s.esta_fechado ? (
+                          <Unlock className="size-4" />
+                        ) : (
+                          <Lock className="size-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive"
+                        aria-label="Excluir baba"
+                        onClick={() => {
+                          if (
+                            confirm(
+                              "Excluir esta partida? Presenças, times e estatísticas dela serão apagados.",
+                            )
+                          ) {
+                            excluir.mutate(s.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Editar baba"
-                      onClick={() => iniciarEdicao(s)}
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={s.mostrar_lista_chegada ? "Ocultar lista de chegada" : "Mostrar lista de chegada"}
-                      onClick={() => toggleLista.mutate({ id: s.id, mostrar: !s.mostrar_lista_chegada })}
-                    >
-                      {s.mostrar_lista_chegada ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={s.esta_fechado ? "Reabrir lista do baba" : "Fechar lista do baba"}
-                      onClick={() => toggleFechado.mutate({ id: s.id, fechado: !s.esta_fechado })}
-                    >
-                      {s.esta_fechado ? <Unlock className="size-4" /> : <Lock className="size-4" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive"
-                      aria-label="Excluir baba"
-                      onClick={() => {
-                        if (confirm("Excluir esta partida? Presenças, times e estatísticas dela serão apagados.")) {
-                          excluir.mutate(s.id);
-                        }
-                      }}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-
-                </div>
                 )}
               </li>
             ))}
