@@ -491,7 +491,7 @@ export const convidadosDaCasaQuery = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("convidados_cadastro")
-        .select("id, nome, telefone, aprovado, bloqueado")
+        .select("id, nome, aprovado, bloqueado")
         .eq("aprovado", true)
         .eq("bloqueado", false)
         .order("nome", { ascending: true });
