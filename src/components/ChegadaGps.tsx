@@ -37,6 +37,7 @@ export function janelaChegada(dataHorario: string) {
 export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdmin }: Props) {
   const qc = useQueryClient();
   const [agora, setAgora] = useState(() => Date.now());
+  const [erroGps, setErroGps] = useState<string | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setAgora(Date.now()), 30000);
@@ -57,21 +58,13 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
   const invalidar = () => qc.invalidateQueries({ queryKey: ["presencas", sessao.id] });
 
   const marcar = useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({ lat, lng }: { lat: number; lng: number }) => {
       if (!minhaPresencaId) throw new Error("Confirme sua presença na lista antes de marcar a chegada.");
-      if (!("geolocation" in navigator)) throw new Error("Seu celular não permitiu acesso à localização.");
-
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, () => reject(new Error("Precisamos da sua localização para validar a chegada. Libere o GPS no navegador.")), {
-          enableHighAccuracy: true,
-          timeout: 15000,
-        });
-      });
 
       const { data, error } = await supabase.rpc("marcar_chegada", {
         _presenca_id: minhaPresencaId,
-        _lat: pos.coords.latitude,
-        _lng: pos.coords.longitude,
+        _lat: lat,
+        _lng: lng,
       });
       if (error) throw new Error(error.message);
       return Number(data ?? 0);
@@ -82,6 +75,47 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
     },
     onError: (e: Error) => toast.error("Não deu para marcar", { description: e.message }),
   });
+
+  /**
+   * GPS robusto no iOS: getCurrentPosition é chamado de forma SINCRONA no
+   * gesto de toque (exigência do iOS Safari para exibir o prompt de permissão),
+   * com fallback para baixa precisão em caso de timeout e erros traduzidos.
+   */
+  const obterPosicao = () => {
+    if (!("geolocation" in navigator)) {
+      setErroGps("Seu navegador não suporta localização. Use Safari ou Chrome atualizados.");
+      return;
+    }
+    setErroGps(null);
+
+    const tentar = (altaPrecisao: boolean) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setErroGps(null);
+          marcar.mutate({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        (err) => {
+          // Timeout com alta precisão (GPS lento no iOS): tenta com localização por rede.
+          if (altaPrecisao && err.code === err.TIMEOUT) {
+            tentar(false);
+            return;
+          }
+          if (err.code === err.PERMISSION_DENIED) {
+            setErroGps(
+              "Permissão de localização negada. No iPhone: Ajustes > Safari > Localização > “Ao usar o app”. Depois tente de novo.",
+            );
+          } else if (err.code === err.POSITION_UNAVAILABLE) {
+            setErroGps("Não conseguimos pegar sua localização. Tente de novo, de preferência ao ar livre.");
+          } else {
+            setErroGps("A localização demorou demais. Toque em “Cheguei à Arena” para tentar de novo.");
+          }
+        },
+        { enableHighAccuracy: altaPrecisao, timeout: altaPrecisao ? 10000 : 15000, maximumAge: 0 },
+      );
+    };
+
+    tentar(true);
+  };
 
   const anular = useMutation({
     mutationFn: async (id: string) => {
@@ -117,16 +151,23 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
                 Chegada confirmada. Fique de olho na formação dos times.
               </div>
             ) : (
-              <Button
-                variant="hero"
-                size="lg"
-                className="mt-3 w-full"
-                disabled={!aberto || marcar.isPending || !minhaPresencaId}
-                onClick={() => marcar.mutate()}
-              >
-                <Navigation className="size-4" />
-                {aberto ? "Cheguei à Arena" : `Abre às ${hora(abertura)}`}
-              </Button>
+              <>
+                <Button
+                  variant="hero"
+                  size="lg"
+                  className="mt-3 w-full"
+                  disabled={!aberto || marcar.isPending || !minhaPresencaId}
+                  onClick={obterPosicao}
+                >
+                  <Navigation className="size-4" />
+                  {marcar.isPending ? "Validando localização…" : aberto ? "Cheguei à Arena" : `Abre às ${hora(abertura)}`}
+                </Button>
+                {erroGps && (
+                  <p className="mt-2 rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive">
+                    {erroGps}
+                  </p>
+                )}
+              </>
             )}
             {!minhaPresencaId && (
               <p className="mt-2 text-[11px] text-muted-foreground">
