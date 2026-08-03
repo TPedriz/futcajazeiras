@@ -29,7 +29,6 @@ export const perfilAtualQuery = () =>
           | "convidado",
         rotuloPapel: isAdmin ? "Diretoria" : isConvidado ? "Convidado" : "Associado",
       };
-
     },
   });
 
@@ -86,14 +85,12 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
         for (const p of perfis ?? []) mapa.set(p.id, p);
       }
 
-
       return (presencas ?? []).map((p) => ({
         ...p,
-        perfis: p.usuario_id ? mapa.get(p.usuario_id) ?? null : null,
+        perfis: p.usuario_id ? (mapa.get(p.usuario_id) ?? null) : null,
       }));
     },
   });
-
 
 export const todasSessoesQuery = () =>
   queryOptions({
@@ -187,7 +184,9 @@ export const timesDoBabaQuery = (babaId: string | undefined) =>
       if (!babaId) return [];
       const { data, error } = await supabase
         .from("times_baba")
-        .select("id, baba_id, nome, resultado, times_jogadores(id, usuario_id, nome_convidado, posicao)")
+        .select(
+          "id, baba_id, nome, resultado, times_jogadores(id, usuario_id, nome_convidado, posicao)",
+        )
         .eq("baba_id", babaId)
         .order("nome", { ascending: true });
       if (error) throw error;
@@ -240,7 +239,10 @@ export const minhasSolicitacoesQuery = (userId: string | undefined, babaId: stri
     },
   });
 
-export const solicitacoesRecebidasQuery = (userId: string | undefined, babaId: string | undefined) =>
+export const solicitacoesRecebidasQuery = (
+  userId: string | undefined,
+  babaId: string | undefined,
+) =>
   queryOptions({
     queryKey: ["solicitacoes-recebidas", userId, babaId],
     enabled: !!userId && !!babaId,
@@ -263,7 +265,10 @@ export const solicitacoesRecebidasQuery = (userId: string | undefined, babaId: s
           .in("id", ids);
         for (const p of perfis ?? []) nomes.set(p.id, p.nome);
       }
-      return (data ?? []).map((s) => ({ ...s, nomeSolicitante: nomes.get(s.solicitante_id) ?? "Convidado" }));
+      return (data ?? []).map((s) => ({
+        ...s,
+        nomeSolicitante: nomes.get(s.solicitante_id) ?? "Convidado",
+      }));
     },
   });
 
@@ -299,7 +304,10 @@ export const suspensoesQuery = () =>
       const ids = Array.from(new Set((data ?? []).map((s) => s.usuario_id)));
       const nomes = new Map<string, string>();
       if (ids.length > 0) {
-        const { data: perfis } = await supabase.from("perfis_publicos").select("id, nome").in("id", ids);
+        const { data: perfis } = await supabase
+          .from("perfis_publicos")
+          .select("id, nome")
+          .in("id", ids);
         for (const p of perfis ?? []) nomes.set(p.id, p.nome);
       }
       return (data ?? []).map((s) => ({ ...s, nome: nomes.get(s.usuario_id) ?? "Jogador" }));
@@ -372,13 +380,15 @@ export const solicitacoesAssociacaoQuery = () =>
       const ids = Array.from(new Set((data ?? []).map((s) => s.usuario_id)));
       const nomes = new Map<string, string>();
       if (ids.length > 0) {
-        const { data: perfis } = await supabase.from("perfis_publicos").select("id, nome").in("id", ids);
+        const { data: perfis } = await supabase
+          .from("perfis_publicos")
+          .select("id, nome")
+          .in("id", ids);
         for (const p of perfis ?? []) nomes.set(p.id, p.nome);
       }
       return (data ?? []).map((s) => ({ ...s, nome: nomes.get(s.usuario_id) ?? "Convidado" }));
     },
   });
-
 
 /** Dia fixo de vencimento da mensalidade. */
 export const DIA_VENCIMENTO = 10;
@@ -435,20 +445,43 @@ export const valorMensalidadeQuery = () =>
     },
   });
 
-/** Fechamento padrão da lista: 22h do dia anterior ou 3h antes do baba — o que vier primeiro. */
+/** Fechamento padrão da lista: 3 horas antes do início do baba. */
 export function fechamentoPadrao(dataHorario: Date) {
-  const tresHorasAntes = new Date(dataHorario.getTime() - 3 * 60 * 60 * 1000);
-  const vespera = new Date(dataHorario);
-  vespera.setDate(vespera.getDate() - 1);
-  vespera.setHours(22, 0, 0, 0);
-  return tresHorasAntes < vespera ? tresHorasAntes : vespera;
+  return new Date(dataHorario.getTime() - 3 * 60 * 60 * 1000);
 }
 
 /** Data efetiva de fechamento (usa o padrão quando a diretoria não definiu). */
-export function fechamentoEfetivo(sessao: { data_horario: string; fechamento_lista: string | null }) {
+export function fechamentoEfetivo(sessao: {
+  data_horario: string;
+  fechamento_lista: string | null;
+}) {
   return sessao.fechamento_lista
     ? new Date(sessao.fechamento_lista)
     : fechamentoPadrao(new Date(sessao.data_horario));
+}
+
+/**
+ * Abertura padrão da lista: 22h do dia anterior ao baba, no fuso America/Bahia
+ * (UTC-3 fixo, sem DST). Usa a data local do jogo em Salvador para o cálculo,
+ * então o resultado é o mesmo instante independente do fuso do aparelho.
+ */
+export function aberturaPadrao(dataHorario: Date) {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bahia",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(dataHorario);
+  const pega = (tipo: string) => Number(partes.find((p) => p.type === tipo)?.value);
+  // 22h do dia anterior em UTC-3 == 01h UTC do dia do jogo
+  return new Date(Date.UTC(pega("year"), pega("month") - 1, pega("day"), 1, 0, 0));
+}
+
+/** Data efetiva de abertura (usa o padrão quando a diretoria não definiu). */
+export function aberturaEfetivo(sessao: { data_horario: string; abertura_lista: string | null }) {
+  return sessao.abertura_lista
+    ? new Date(sessao.abertura_lista)
+    : aberturaPadrao(new Date(sessao.data_horario));
 }
 
 /** Convidados "da casa": já aprovados pela diretoria e sem bloqueio. */
@@ -492,7 +525,9 @@ export const pedidosConvidadoPendentesQuery = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pedidos_convidado")
-        .select("id, status, criado_em, baba_id, anfitriao_id, convidados_cadastro(id, nome, telefone)")
+        .select(
+          "id, status, criado_em, baba_id, anfitriao_id, convidados_cadastro(id, nome, telefone)",
+        )
         .eq("status", "pendente")
         .order("criado_em", { ascending: false });
       if (error) throw error;
@@ -500,9 +535,15 @@ export const pedidosConvidadoPendentesQuery = () =>
       const ids = Array.from(new Set((data ?? []).map((p) => p.anfitriao_id)));
       const nomes = new Map<string, string>();
       if (ids.length > 0) {
-        const { data: perfis } = await supabase.from("perfis_publicos").select("id, nome").in("id", ids);
+        const { data: perfis } = await supabase
+          .from("perfis_publicos")
+          .select("id, nome")
+          .in("id", ids);
         for (const p of perfis ?? []) nomes.set(p.id, p.nome);
       }
-      return (data ?? []).map((p) => ({ ...p, nomeAnfitriao: nomes.get(p.anfitriao_id) ?? "Associado" }));
+      return (data ?? []).map((p) => ({
+        ...p,
+        nomeAnfitriao: nomes.get(p.anfitriao_id) ?? "Associado",
+      }));
     },
   });
