@@ -826,6 +826,7 @@ export type Database = {
         Args: { _anfitriao_id: string; _baba_id: string }
         Returns: string
       }
+      telefone_convidado: { Args: { _convidado_id: string }; Returns: string }
       tem_papel: {
         Args: {
           _papel: Database["public"]["Enums"]["papel_usuario"]
