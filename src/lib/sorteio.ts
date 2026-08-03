@@ -25,7 +25,6 @@ export interface JogadorSorteio {
   isGoleiroFixo?: boolean;
 }
 
-
 export interface TimeSorteado {
   numero: number;
   nome: string;
@@ -165,7 +164,12 @@ export function sortearPrimeiroChegada(
 
   const times: TimeSorteado[] = [];
   const criar = (l: JogadorSorteio[]) =>
-    times.push({ numero: times.length + 1, nome: `Time ${LETRAS[times.length] ?? times.length + 1}`, goleiro: null, linha: l });
+    times.push({
+      numero: times.length + 1,
+      nome: `Time ${LETRAS[times.length] ?? times.length + 1}`,
+      goleiro: null,
+      linha: l,
+    });
 
   // Times A e B prioritários: 12 primeiros de linha, embaralhados, 6 para cada.
   const primeiros = embaralhar(linha.slice(0, linhaPorTime * 2));
@@ -241,11 +245,19 @@ export function sortearSegundoChegada(
   }
 
   // 3) Goleiros: normais recém-chegados; depois fixos continuando o round-robin.
-  const { fixoIndice, deficit, sobrando } = alocarGoleiros(times, goleirosNovos, fixos, estado.fixoIndice);
+  const { fixoIndice, deficit, sobrando } = alocarGoleiros(
+    times,
+    goleirosNovos,
+    fixos,
+    estado.fixoIndice,
+  );
 
   // Goleiros fixos que já foram alocados na 1ª etapa não podem voltar (evita duplicidade).
   const jaAlocados = new Set(estado.alocados);
-  const finalTmp = distribuirSobras(renumerar(times), sobrando.filter((s) => !jaAlocados.has(s.id)));
+  const finalTmp = distribuirSobras(
+    renumerar(times),
+    sobrando.filter((s) => !jaAlocados.has(s.id)),
+  );
 
   // Ninguém fica de fora: retardatário que ainda não entrou em time vira linha.
   const idsTmp = new Set(coletar(finalTmp));
@@ -345,7 +357,9 @@ export function formatarTimesParaWhatsApp(
   for (const time of times) {
     linhas.push(`🔴 *${time.nome}*`);
     if (time.goleiro) {
-      linhas.push(`🧤 ${time.goleiro.isGoleiroFixo ? "🔒 " : ""}${time.goleiro.nome}${time.goleiro.isConvidado ? " (convidado)" : ""}`);
+      linhas.push(
+        `🧤 ${time.goleiro.isGoleiroFixo ? "🔒 " : ""}${time.goleiro.nome}${time.goleiro.isConvidado ? " (convidado)" : ""}`,
+      );
     } else {
       linhas.push("🧤 _sem goleiro fixo_");
     }
@@ -368,4 +382,3 @@ export function formatarTimesParaWhatsApp(
  * - sortearPrimeiroChegada()  -> 1ª etapa (times A, B, C... + goleiros fixos)
  * - sortearSegundoChegada()   -> 2ª etapa (diff/retardatários)
  */
-

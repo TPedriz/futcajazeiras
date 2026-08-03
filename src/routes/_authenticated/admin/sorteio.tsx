@@ -30,17 +30,22 @@ export const Route = createFileRoute("/_authenticated/admin/sorteio")({
 function SorteioPage() {
   const { data: sessao } = useSuspenseQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
-  const [resultado, setResultado] = useState<{ times: TimeSorteado[]; sobras: JogadorSorteio[] } | null>(null);
+  const [resultado, setResultado] = useState<{
+    times: TimeSorteado[];
+    sobras: JogadorSorteio[];
+  } | null>(null);
   const [estadoChegada, setEstadoChegada] = useState<SorteioEstado | null>(null);
   const [tamanho, setTamanho] = useState<number>(7);
   const [modo, setModo] = useState<"aleatorio" | "chegada" | "baxvi">("aleatorio");
-
 
   const qc = useQueryClient();
 
   const toggleFixo = useMutation({
     mutationFn: async ({ id, fixo }: { id: string; fixo: boolean }) => {
-      const { error } = await supabase.from("presencas").update({ is_goleiro_fixo: fixo }).eq("id", id);
+      const { error } = await supabase
+        .from("presencas")
+        .update({ is_goleiro_fixo: fixo })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -81,7 +86,9 @@ function SorteioPage() {
       }
     },
     onSuccess: () => {
-      toast.success("Times salvos!", { description: "Agora lance os resultados na aba Resultados." });
+      toast.success("Times salvos!", {
+        description: "Agora lance os resultados na aba Resultados.",
+      });
       qc.invalidateQueries({ queryKey: ["times-baba", sessao?.id] });
     },
     onError: (e: Error) => toast.error("Erro ao salvar", { description: e.message }),
@@ -94,7 +101,9 @@ function SorteioPage() {
       .map((p) => ({
         id: p.id,
         nome: p.nome_convidado ?? p.perfis?.nome ?? "Jogador",
-        posicao: (p.nome_convidado ? "linha" : (p.perfis?.posicao ?? "linha")) as "goleiro" | "linha",
+        posicao: (p.nome_convidado ? "linha" : (p.perfis?.posicao ?? "linha")) as
+          | "goleiro"
+          | "linha",
         isConvidado: !!p.nome_convidado,
         timeCoracao: p.perfis?.time_coracao ?? null,
         ordemChegada: p.ordem_chegada ?? null,
@@ -112,7 +121,9 @@ function SorteioPage() {
   const goleirosChegados = useMemo(
     () =>
       (presencas ?? [])
-        .filter((p) => !p.nome_convidado && p.ordem_chegada != null && p.perfis?.posicao === "goleiro")
+        .filter(
+          (p) => !p.nome_convidado && p.ordem_chegada != null && p.perfis?.posicao === "goleiro",
+        )
         .map((p) => ({
           id: p.id,
           nome: p.perfis?.nome ?? "Goleiro",
@@ -199,8 +210,6 @@ function SorteioPage() {
     }
   };
 
-
-
   const copiar = async () => {
     if (!timesAtuais || !sessao) return;
     const txt = formatarTimesParaWhatsApp(
@@ -224,7 +233,8 @@ function SorteioPage() {
           {format(new Date(sessao.data_horario), "dd/MM 'às' HH:mm", { locale: ptBR })}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          {jogadores.length} jogadores elegíveis ({jogadores.filter((j) => j.posicao === "goleiro").length} goleiros) •{" "}
+          {jogadores.length} jogadores elegíveis (
+          {jogadores.filter((j) => j.posicao === "goleiro").length} goleiros) •{" "}
           {jogadores.filter((j) => j.ordemChegada != null).length} com chegada confirmada
         </p>
       </div>
@@ -235,7 +245,11 @@ function SorteioPage() {
           {(
             [
               { v: "aleatorio", t: "Aleatório", d: "Sorteio embaralhado entre todos da lista." },
-              { v: "chegada", t: "Ordem de chegada", d: "Duas etapas na ordem do check-in por GPS, com goleiros fixos. Times A e B com os 12 primeiros da linha." },
+              {
+                v: "chegada",
+                t: "Ordem de chegada",
+                d: "Duas etapas na ordem do check-in por GPS, com goleiros fixos. Times A e B com os 12 primeiros da linha.",
+              },
               { v: "baxvi", t: "BAxVI", d: "Bahia x Vitória, exclusivo para associados." },
             ] as const
           ).map((m) => (
@@ -278,8 +292,8 @@ function SorteioPage() {
           <p className="mt-3 text-sm text-muted-foreground">
             {elegiveis.length} jogadores nesse modo — dá para formar{" "}
             <strong className="text-foreground">{previa.times}</strong>{" "}
-            {previa.times === 1 ? "time" : "times"}. Ninguém fica de reserva; o último time pode ficar
-            incompleto.
+            {previa.times === 1 ? "time" : "times"}. Ninguém fica de reserva; o último time pode
+            ficar incompleto.
           </p>
         </div>
       )}
@@ -338,8 +352,6 @@ function SorteioPage() {
           )}
         </div>
       )}
-
-
 
       {modo === "chegada" ? (
         <div className="space-y-2">
@@ -401,8 +413,8 @@ function SorteioPage() {
         <div className="space-y-3">
           {estadoChegada?.deficit && (
             <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-600">
-              ⚠️ Sorteio realizado com déficit de goleiros — jogadores de linha foram escalados no gol
-              para não travar o sorteio.
+              ⚠️ Sorteio realizado com déficit de goleiros — jogadores de linha foram escalados no
+              gol para não travar o sorteio.
             </div>
           )}
           {timesAtuais.map((t) => (
@@ -423,7 +435,9 @@ function SorteioPage() {
                         <Lock className="size-3" /> Fixo
                       </span>
                     )}
-                    {t.goleiro.isConvidado && <span className="text-[10px] text-muted-foreground">(convidado)</span>}
+                    {t.goleiro.isConvidado && (
+                      <span className="text-[10px] text-muted-foreground">(convidado)</span>
+                    )}
                   </li>
                 )}
                 {t.linha.map((j, idx) => (
@@ -431,7 +445,9 @@ function SorteioPage() {
                     <span className="w-5 font-display text-gold">{idx + 1}</span>
                     <User className="size-3.5 text-muted-foreground" />
                     <span className="text-foreground">{j.nome}</span>
-                    {j.isConvidado && <span className="text-[10px] text-muted-foreground">(convidado)</span>}
+                    {j.isConvidado && (
+                      <span className="text-[10px] text-muted-foreground">(convidado)</span>
+                    )}
                   </li>
                 ))}
               </ul>
