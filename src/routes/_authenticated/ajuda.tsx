@@ -45,6 +45,10 @@ const secoes = [
         "Pode, enquanto a lista estiver aberta. Depois que ela fecha, a desistência precisa ser resolvida com a diretoria.",
       ],
       [
+        "Como sei se a lista já abriu ou fechou?",
+        "Na Home há um banner com o status em tempo real: “Abre em Xh”, “Fecha em Xh” ou “Lista encerrada”, além dos horários exatos de abertura e fechamento.",
+      ],
+      [
         "Por que meu check-in está bloqueado?",
         "Ou a lista ainda não abriu / já fechou, ou a mensalidade está em aberto depois do dia 10, ou você está cumprindo suspensão por cartão vermelho.",
       ],
@@ -65,6 +69,10 @@ const secoes = [
       [
         "Quando o convidado é confirmado?",
         "Assim que o PIX é aprovado, o status muda de “Aguardando pagamento” para “Confirmado”.",
+      ],
+      [
+        "A janela da lista vale para convidados?",
+        "Sim. A lista abre às 22h do dia anterior e fecha 3h antes do jogo — para associados e convidados.",
       ],
       [
         "Como viro associado?",
@@ -146,6 +154,10 @@ const secoes = [
       [
         "Cartão vermelho, e agora?",
         "Suspensão automática de 1 baba: você fica fora do próximo jogo e aparece no mural de punições.",
+      ],
+      [
+        "Onde vejo punições e avisos?",
+        "O mural de punições fica na página do Baba. Avisos (aprovação de convidado, pagamento confirmado, suspensão, abertura/fechamento da lista) chegam pelo sino de notificações no topo.",
       ],
       [
         "Como funciona o sorteio?",
