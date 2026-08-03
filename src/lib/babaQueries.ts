@@ -36,16 +36,51 @@ export const proximaSessaoQuery = () =>
   queryOptions({
     queryKey: ["proxima-sessao"],
     queryFn: async () => {
-      const agora = new Date().toISOString();
+      // Janela: o baba "atual" continua visível até 1h após o início (check-in GPS segue aberto).
+      const inicioJanela = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from("sessoes_baba")
         .select("*")
-        .gte("data_horario", agora)
+        .gte("data_horario", inicioJanela)
         .order("data_horario", { ascending: true })
         .limit(1)
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+  });
+
+/** Próximos babas (a partir da janela atual) em ordem crescente. */
+export const proximasSessoesQuery = () =>
+  queryOptions({
+    queryKey: ["sessoes-proximas"],
+    queryFn: async () => {
+      const inicioJanela = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("sessoes_baba")
+        .select("*")
+        .gte("data_horario", inicioJanela)
+        .order("data_horario", { ascending: true })
+        .limit(10);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/** Babas passados (fora da janela de check-in) em ordem decrescente. */
+export const sessoesPassadasQuery = () =>
+  queryOptions({
+    queryKey: ["sessoes-passadas"],
+    queryFn: async () => {
+      const inicioJanela = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("sessoes_baba")
+        .select("*")
+        .lt("data_horario", inicioJanela)
+        .order("data_horario", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -101,6 +136,20 @@ export const todasSessoesQuery = () =>
         .select("*")
         .order("data_horario", { ascending: false })
         .limit(50);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/** Locais fixos de baba (endereços reutilizáveis). */
+export const locaisBabaQuery = () =>
+  queryOptions({
+    queryKey: ["locais-baba"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("locais_baba")
+        .select("*")
+        .order("nome", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },

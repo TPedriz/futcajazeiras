@@ -3,6 +3,8 @@ import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import {
   perfilAtualQuery,
   proximaSessaoQuery,
+  proximasSessoesQuery,
+  sessoesPassadasQuery,
   presencasDaSessaoQuery,
   fechamentoEfetivo,
   aberturaEfetivo,
@@ -69,6 +71,9 @@ function InicioPage() {
   const { data: perfilData } = useSuspenseQuery(perfilAtualQuery());
   const { data: proxSessao } = useSuspenseQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(proxSessao?.id));
+  const { data: proximasBruto } = useQuery(proximasSessoesQuery());
+  const { data: passados } = useQuery(sessoesPassadasQuery());
+  const proximas = (proximasBruto ?? []).filter((s) => s.id !== proxSessao?.id);
 
   const nome = perfilData?.perfil?.nome ?? "Atleta";
   const emDia = perfilData?.perfil?.status_pagamento === "pago";
@@ -179,6 +184,52 @@ function InicioPage() {
           </Button>
         </Link>
       </div>
+
+      {proximas.length > 0 && (
+        <div className="card-premium p-5">
+          <p className="text-xs uppercase tracking-widest text-gold">Próximos babas</p>
+          <ul className="mt-3 space-y-2">
+            {proximas.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface p-3"
+              >
+                <Calendar className="size-4 shrink-0 text-gold" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">
+                    {format(new Date(s.data_horario), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {format(new Date(s.data_horario), "HH:mm", { locale: ptBR })} • {s.local}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {passados.length > 0 && (
+        <div className="card-premium p-5">
+          <p className="text-xs uppercase tracking-widest text-gold">Babas passados</p>
+          <ul className="mt-3 space-y-2">
+            {passados.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface p-3 opacity-80"
+              >
+                <Calendar className="size-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-muted-foreground">
+                    {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">{s.local}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <RankingMensal />
     </div>

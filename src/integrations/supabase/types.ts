@@ -494,6 +494,36 @@ export type Database = {
           },
         ];
       };
+      locais_baba: {
+        Row: {
+          atualizado_em: string;
+          criado_em: string;
+          id: string;
+          latitude: number;
+          longitude: number;
+          nome: string;
+          raio_metros: number;
+        };
+        Insert: {
+          atualizado_em?: string;
+          criado_em?: string;
+          id?: string;
+          latitude: number;
+          longitude: number;
+          nome: string;
+          raio_metros?: number;
+        };
+        Update: {
+          atualizado_em?: string;
+          criado_em?: string;
+          id?: string;
+          latitude?: number;
+          longitude?: number;
+          nome?: string;
+          raio_metros?: number;
+        };
+        Relationships: [];
+      };
       sessoes_baba: {
         Row: {
           abertura_lista: string | null;
