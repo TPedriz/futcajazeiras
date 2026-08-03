@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, MapPin, Lock, Unlock, Trash2, Eye, EyeOff, Navigation } from "lucide-react";
+import { Calendar, MapPin, Lock, Unlock, Trash2, Eye, EyeOff, Navigation, Pencil } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(todasSessoesQuery()),
@@ -25,6 +25,55 @@ function AdminSessoes() {
   const [lat, setLat] = useState("-12.9088");
   const [lng, setLng] = useState("-38.4142");
   const [raio, setRaio] = useState("1000");
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    data_horario: "",
+    local: "",
+    lat: "",
+    lng: "",
+    raio: "",
+    abertura: "",
+    fechamento: "",
+  });
+
+  const iniciarEdicao = (s: (typeof sessoes)[number]) => {
+    setEditingId(s.id);
+    setEditForm({
+      data_horario: format(new Date(s.data_horario), "yyyy-MM-dd'T'HH:mm"),
+      local: s.local,
+      lat: String(s.latitude ?? ""),
+      lng: String(s.longitude ?? ""),
+      raio: String(s.raio_metros ?? ""),
+      abertura: format(aberturaEfetivo(s), "yyyy-MM-dd'T'HH:mm"),
+      fechamento: format(fechamentoEfetivo(s), "yyyy-MM-dd'T'HH:mm"),
+    });
+  };
+
+  const salvarEdicao = useMutation({
+    mutationFn: async (id: string) => {
+      if (!editForm.data_horario) throw new Error("Informe data e horário");
+      const { error } = await supabase
+        .from("sessoes_baba")
+        .update({
+          data_horario: new Date(editForm.data_horario).toISOString(),
+          local: editForm.local,
+          latitude: Number(editForm.lat),
+          longitude: Number(editForm.lng),
+          raio_metros: Math.max(100, Number(editForm.raio) || 1000),
+          abertura_lista: editForm.abertura ? new Date(editForm.abertura).toISOString() : null,
+          fechamento_lista: editForm.fechamento ? new Date(editForm.fechamento).toISOString() : null,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Baba atualizado!");
+      setEditingId(null);
+      invalidar();
+    },
+    onError: (e: Error) => toast.error("Erro ao salvar", { description: e.message }),
+  });
 
   const invalidar = () => {
     qc.invalidateQueries({ queryKey: ["sessoes-todas"] });
@@ -180,6 +229,97 @@ function AdminSessoes() {
           <ul className="space-y-2">
             {sessoes.map((s) => (
               <li key={s.id} className="card-premium p-4">
+                {editingId === s.id ? (
+                  <div className="space-y-3">
+                    <p className="font-display text-lg">Editando baba</p>
+                    <div>
+                      <Label htmlFor={`e-dt-${s.id}`}>Data e horário</Label>
+                      <Input
+                        id={`e-dt-${s.id}`}
+                        type="datetime-local"
+                        className="h-10"
+                        value={editForm.data_horario}
+                        onChange={(e) => setEditForm({ ...editForm, data_horario: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`e-loc-${s.id}`}>Local</Label>
+                      <Input
+                        id={`e-loc-${s.id}`}
+                        className="h-10"
+                        value={editForm.local}
+                        onChange={(e) => setEditForm({ ...editForm, local: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor={`e-lat-${s.id}`}>Latitude</Label>
+                        <Input
+                          id={`e-lat-${s.id}`}
+                          className="h-10"
+                          inputMode="decimal"
+                          value={editForm.lat}
+                          onChange={(e) => setEditForm({ ...editForm, lat: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`e-lng-${s.id}`}>Longitude</Label>
+                        <Input
+                          id={`e-lng-${s.id}`}
+                          className="h-10"
+                          inputMode="decimal"
+                          value={editForm.lng}
+                          onChange={(e) => setEditForm({ ...editForm, lng: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor={`e-raio-${s.id}`}>Raio do check-in (metros)</Label>
+                      <Input
+                        id={`e-raio-${s.id}`}
+                        className="h-10"
+                        inputMode="numeric"
+                        value={editForm.raio}
+                        onChange={(e) => setEditForm({ ...editForm, raio: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor={`e-abert-${s.id}`}>Abertura da lista</Label>
+                        <Input
+                          id={`e-abert-${s.id}`}
+                          type="datetime-local"
+                          className="h-10"
+                          value={editForm.abertura}
+                          onChange={(e) => setEditForm({ ...editForm, abertura: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`e-fech-${s.id}`}>Fechamento da lista</Label>
+                        <Input
+                          id={`e-fech-${s.id}`}
+                          type="datetime-local"
+                          className="h-10"
+                          value={editForm.fechamento}
+                          onChange={(e) => setEditForm({ ...editForm, fechamento: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        variant="hero"
+                        className="flex-1"
+                        disabled={salvarEdicao.isPending}
+                        onClick={() => salvarEdicao.mutate(s.id)}
+                      >
+                        Salvar
+                      </Button>
+                      <Button variant="ghost" onClick={() => setEditingId(null)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 text-sm text-foreground">
@@ -234,6 +374,14 @@ function AdminSessoes() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Editar baba"
+                      onClick={() => iniciarEdicao(s)}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       aria-label={s.mostrar_lista_chegada ? "Ocultar lista de chegada" : "Mostrar lista de chegada"}
                       onClick={() => toggleLista.mutate({ id: s.id, mostrar: !s.mostrar_lista_chegada })}
                     >
@@ -263,6 +411,7 @@ function AdminSessoes() {
                   </div>
 
                 </div>
+                )}
               </li>
             ))}
           </ul>
