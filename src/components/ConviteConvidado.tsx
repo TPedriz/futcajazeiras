@@ -116,8 +116,9 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
         <div className="flex-1">
           <p className="font-display text-lg">Ir como convidado</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Convidados não entram direto na lista: peça a um associado para te levar. Se ele aceitar,
-            você paga a taxa de <strong className="text-gold">R$ 5,00</strong> via PIX e entra na lista.
+            Convidados não entram direto na lista: peça a um associado para te levar. Se ele
+            aceitar, você paga a taxa de <strong className="text-gold">R$ 5,00</strong> via PIX e
+            entra na lista.
           </p>
 
           {ativa ? (
@@ -133,9 +134,13 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
                         : "Convite aceito"}
                 </p>
                 {ativa.status === "pendente" ? (
-                  <Badge variant="outline" className="border-gold/40 text-gold">Pendente</Badge>
+                  <Badge variant="outline" className="border-gold/40 text-gold">
+                    Pendente
+                  </Badge>
                 ) : aguardandoDiretoria ? (
-                  <Badge variant="outline" className="border-gold/40 text-gold">Diretoria</Badge>
+                  <Badge variant="outline" className="border-gold/40 text-gold">
+                    Diretoria
+                  </Badge>
                 ) : (
                   <Badge className="bg-success text-success-foreground">Aceito</Badge>
                 )}

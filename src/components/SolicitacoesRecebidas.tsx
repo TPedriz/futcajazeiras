@@ -23,7 +23,10 @@ export function SolicitacoesRecebidas({ babaId, userId }: { babaId: string; user
             : "Convite aceito! O PIX já foi gerado para o convidado."
           : "Solicitação recusada",
         vars.aceitar && r.aguardandoDiretoria
-          ? { description: "Convidado novo vai para a aprovação da diretoria. Depois gere o PIX em 'Levar convidado'." }
+          ? {
+              description:
+                "Convidado novo vai para a aprovação da diretoria. Depois gere o PIX em 'Levar convidado'.",
+            }
           : undefined,
       );
       qc.invalidateQueries({ queryKey: ["solicitacoes-recebidas"] });
@@ -47,10 +50,15 @@ export function SolicitacoesRecebidas({ babaId, userId }: { babaId: string; user
       </p>
       <ul className="mt-3 space-y-2">
         {pendentes.map((s) => (
-          <li key={s.id} className="flex items-center gap-2 rounded-lg border border-border bg-surface p-3">
+          <li
+            key={s.id}
+            className="flex items-center gap-2 rounded-lg border border-border bg-surface p-3"
+          >
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{s.nomeSolicitante}</p>
-              <Badge variant="outline" className="mt-1 border-gold/40 text-gold">Aguardando você</Badge>
+              <Badge variant="outline" className="mt-1 border-gold/40 text-gold">
+                Aguardando você
+              </Badge>
             </div>
             <Button
               variant="success"
