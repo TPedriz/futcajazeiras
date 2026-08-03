@@ -44,7 +44,10 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
     return () => clearInterval(id);
   }, []);
 
-  const { abertura, limite } = useMemo(() => janelaChegada(sessao.data_horario), [sessao.data_horario]);
+  const { abertura, limite } = useMemo(
+    () => janelaChegada(sessao.data_horario),
+    [sessao.data_horario],
+  );
   const aberto = agora >= abertura.getTime() && agora <= limite.getTime();
 
   const chegados = useMemo(
@@ -59,7 +62,8 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
 
   const marcar = useMutation({
     mutationFn: async ({ lat, lng }: { lat: number; lng: number }) => {
-      if (!minhaPresencaId) throw new Error("Confirme sua presença na lista antes de marcar a chegada.");
+      if (!minhaPresencaId)
+        throw new Error("Confirme sua presença na lista antes de marcar a chegada.");
 
       const { data, error } = await supabase.rpc("marcar_chegada", {
         _presenca_id: minhaPresencaId,
@@ -105,9 +109,13 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
               "Permissão de localização negada. No iPhone: Ajustes > Safari > Localização > “Ao usar o app”. Depois tente de novo.",
             );
           } else if (err.code === err.POSITION_UNAVAILABLE) {
-            setErroGps("Não conseguimos pegar sua localização. Tente de novo, de preferência ao ar livre.");
+            setErroGps(
+              "Não conseguimos pegar sua localização. Tente de novo, de preferência ao ar livre.",
+            );
           } else {
-            setErroGps("A localização demorou demais. Toque em “Cheguei à Arena” para tentar de novo.");
+            setErroGps(
+              "A localização demorou demais. Toque em “Cheguei à Arena” para tentar de novo.",
+            );
           }
         },
         { enableHighAccuracy: altaPrecisao, timeout: altaPrecisao ? 10000 : 15000, maximumAge: 0 },
@@ -142,8 +150,8 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
           <div className="flex-1">
             <p className="font-display text-lg">Cheguei à Arena</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Abre às {hora(abertura)} e encerra às {hora(limite)}. Você precisa estar a menos de 1 km da arena —
-              validamos pelo GPS do celular.
+              Abre às {hora(abertura)} e encerra às {hora(limite)}. Você precisa estar a menos de 1
+              km da arena — validamos pelo GPS do celular.
             </p>
 
             {jaChegou ? (
@@ -160,7 +168,11 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
                   onClick={obterPosicao}
                 >
                   <Navigation className="size-4" />
-                  {marcar.isPending ? "Validando localização…" : aberto ? "Cheguei à Arena" : `Abre às ${hora(abertura)}`}
+                  {marcar.isPending
+                    ? "Validando localização…"
+                    : aberto
+                      ? "Cheguei à Arena"
+                      : `Abre às ${hora(abertura)}`}
                 </Button>
                 {erroGps && (
                   <p className="mt-2 rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive">
@@ -199,17 +211,31 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
           ) : (
             <ul className="space-y-1.5">
               {chegados.map((p) => (
-                <li key={p.id} className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface p-2">
+                <li
+                  key={p.id}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface p-2"
+                >
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gold/10 font-display text-xs text-gold">
                     {p.ordem_chegada}
                   </span>
-                  <AvatarJogador caminho={p.perfis?.avatar_url} nome={p.nome_convidado ?? p.perfis?.nome} size="sm" />
+                  <AvatarJogador
+                    caminho={p.perfis?.avatar_url}
+                    nome={p.nome_convidado ?? p.perfis?.nome}
+                    size="sm"
+                  />
                   <span className="min-w-0 flex-1 truncate text-sm">
                     {p.nome_convidado ?? p.perfis?.nome ?? "Jogador"}
-                    {p.nome_convidado && <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>}
+                    {p.nome_convidado && (
+                      <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>
+                    )}
                   </span>
                   <span className="text-[11px] text-muted-foreground">
-                    {p.chegou_em ? new Date(p.chegou_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}
+                    {p.chegou_em
+                      ? new Date(p.chegou_em).toLocaleTimeString("pt-BR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : ""}
                   </span>
                   {isAdmin && (
                     <Button
