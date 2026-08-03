@@ -379,6 +379,7 @@ export type Database = {
           convidado_cadastro_id: string | null
           convidado_user_id: string | null
           id: string
+          is_goleiro_fixo: boolean
           mp_status: string | null
           nome_convidado: string | null
           ordem_chegada: number | null
@@ -396,6 +397,7 @@ export type Database = {
           convidado_cadastro_id?: string | null
           convidado_user_id?: string | null
           id?: string
+          is_goleiro_fixo?: boolean
           mp_status?: string | null
           nome_convidado?: string | null
           ordem_chegada?: number | null
@@ -413,6 +415,7 @@ export type Database = {
           convidado_cadastro_id?: string | null
           convidado_user_id?: string | null
           id?: string
+          is_goleiro_fixo?: boolean
           mp_status?: string | null
           nome_convidado?: string | null
           ordem_chegada?: number | null
