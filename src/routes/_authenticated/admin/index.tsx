@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { todasSessoesQuery, fechamentoPadrao, fechamentoEfetivo } from "@/lib/babaQueries";
+import { todasSessoesQuery, fechamentoPadrao, fechamentoEfetivo, aberturaPadrao, aberturaEfetivo } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,10 +49,12 @@ function AdminSessoes() {
       if (!dataHorario) throw new Error("Informe data e horário");
       const jogo = new Date(dataHorario);
       const fechamento = fechamentoPadrao(jogo);
+      const abertura = aberturaPadrao(jogo);
       const { error } = await supabase.from("sessoes_baba").insert({
         data_horario: jogo.toISOString(),
         local,
         fechamento_lista: fechamento.toISOString(),
+        abertura_lista: abertura.toISOString(),
         latitude: Number(lat),
         longitude: Number(lng),
         raio_metros: Math.max(100, Number(raio) || 1000),
@@ -106,6 +108,18 @@ function AdminSessoes() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
+  const alterarAbertura = useMutation({
+    mutationFn: async ({ id, valor }: { id: string; valor: string }) => {
+      const { error } = await supabase.from("sessoes_baba").update({ abertura_lista: valor }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Abertura da lista atualizado");
+      invalidar();
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
   const excluir = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("sessoes_baba").delete().eq("id", id);
@@ -148,9 +162,9 @@ function AdminSessoes() {
           <Navigation className="size-4" /> Usar minha localização atual
         </Button>
         <p className="text-xs text-muted-foreground">
-          A lista fecha por padrão às 22h do dia anterior ou 3h antes do jogo — o que vier primeiro —
-          e pode ser ajustada no histórico. O check-in presencial abre 30 min antes, encerra 1h após o
-          início e só funciona dentro do raio definido.
+          A lista abre às 22h do dia anterior e fecha 3h antes do jogo — e pode ser ajustada no
+          histórico. O check-in presencial abre 30 min antes, encerra 1h após o início e só funciona
+          dentro do raio definido.
         </p>
         <Button variant="hero" size="lg" className="w-full" onClick={() => criar.mutate()} disabled={criar.isPending}>
           Criar baba
@@ -174,6 +188,21 @@ function AdminSessoes() {
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                       <MapPin className="size-3" /> {s.local}
+                    </div>
+                    <div className="mt-2">
+                      <Label htmlFor={`abert-${s.id}`} className="text-[11px] text-muted-foreground">
+                        Abertura da lista
+                      </Label>
+                      <Input
+                        id={`abert-${s.id}`}
+                        type="datetime-local"
+                        className="h-10"
+                        defaultValue={format(aberturaEfetivo(s), "yyyy-MM-dd'T'HH:mm")}
+                        onBlur={(e) =>
+                          e.target.value &&
+                          alterarAbertura.mutate({ id: s.id, valor: new Date(e.target.value).toISOString() })
+                        }
+                      />
                     </div>
                     <div className="mt-2">
                       <Label htmlFor={`fech-${s.id}`} className="text-[11px] text-muted-foreground">

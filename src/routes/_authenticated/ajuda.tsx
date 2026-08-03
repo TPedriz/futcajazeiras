@@ -33,9 +33,9 @@ const secoes = [
     titulo: "Como jogar / confirmar presença",
     itens: [
       ["Onde confirmo minha presença?", "Na aba Baba, toque em “Confirmar presença”. Sua vaga entra na lista oficial na hora."],
-      ["Até quando posso confirmar?", "A lista fecha automaticamente 3 horas antes do horário do jogo."],
-      ["Posso cancelar?", "Pode, enquanto a lista estiver aberta. Cancelou, libera a vaga para outro."],
-      ["Por que meu check-in está bloqueado?", "Ou a mensalidade está em aberto depois do dia 10, ou você está cumprindo suspensão por cartão vermelho."],
+      ["Até quando posso confirmar?", "A lista abre às 22h do dia anterior e fecha automaticamente 3 horas antes do horário do jogo."],
+      ["Posso cancelar?", "Pode, enquanto a lista estiver aberta. Depois que ela fecha, a desistência precisa ser resolvida com a diretoria."],
+      ["Por que meu check-in está bloqueado?", "Ou a lista ainda não abriu / já fechou, ou a mensalidade está em aberto depois do dia 10, ou você está cumprindo suspensão por cartão vermelho."],
     ],
   },
   {

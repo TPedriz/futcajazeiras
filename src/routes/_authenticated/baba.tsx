@@ -8,6 +8,7 @@ import {
   situacaoCheckinQuery,
   DIA_VENCIMENTO,
   fechamentoEfetivo,
+  aberturaEfetivo,
 } from "@/lib/babaQueries";
 import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
@@ -80,7 +81,11 @@ function BabaPage() {
   const minhaPresenca = presencas?.find((p) => p.usuario_id === userId && !p.nome_convidado);
 
   const fechamento = sessao ? fechamentoEfetivo(sessao) : null;
-  const listaFechada = sessao?.esta_fechado || (!!fechamento && fechamento <= new Date());
+  const abertura = sessao ? aberturaEfetivo(sessao) : null;
+  const antesDeAbrir = !!abertura && new Date() < abertura;
+  const listaFechada = sessao
+    ? sessao.esta_fechado || antesDeAbrir || (!!fechamento && new Date() >= fechamento)
+    : true;
 
 
   const invalidar = () => {
@@ -180,15 +185,19 @@ function BabaPage() {
             <span className="truncate">{sessao.local}</span>
           </div>
         </div>
-        <ContadorFechamento fechamento={(fechamento ?? new Date()).toISOString()} fechado={sessao.esta_fechado} />
+        <ContadorFechamento
+          fechamento={(fechamento ?? new Date()).toISOString()}
+          abertura={abertura?.toISOString()}
+          fechado={sessao.esta_fechado}
+        />
       </div>
 
       {/* Ações */}
       {listaFechada ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center">
-          <p className="font-semibold text-destructive">Lista encerrada</p>
+          <p className="font-semibold text-destructive">{antesDeAbrir ? "Lista ainda não abriu" : "Lista encerrada"}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            A lista fecha às 22h do dia anterior ou 3 horas antes do jogo — o que vier primeiro.
+            A lista abre às 22h do dia anterior e fecha 3 horas antes do jogo.
           </p>
 
         </div>
@@ -310,27 +319,47 @@ function BabaPage() {
   );
 }
 
-function ContadorFechamento({ fechamento, fechado }: { fechamento: string; fechado: boolean }) {
+function ContadorFechamento({
+  fechamento,
+  abertura,
+  fechado,
+}: {
+  fechamento: string;
+  abertura?: string;
+  fechado: boolean;
+}) {
   const [txt, setTxt] = useState("");
+  const [modo, setModo] = useState<"abre" | "fecha" | "encerrada">("fecha");
   useEffect(() => {
-    const t = new Date(fechamento).getTime();
+    const fim = new Date(fechamento).getTime();
+    const ini = abertura ? new Date(abertura).getTime() : -Infinity;
     const upd = () => {
-      const d = t - Date.now();
-      if (d <= 0) return setTxt("encerrada");
+      const agora = Date.now();
+      if (agora < ini) {
+        const d = ini - agora;
+        const h = Math.floor(d / 3600000);
+        const m = Math.floor((d / 60000) % 60);
+        setModo("abre");
+        setTxt(`${h}h ${m}m`);
+        return;
+      }
+      const d = fim - agora;
+      if (d <= 0) return setModo("encerrada");
       const h = Math.floor(d / 3600000);
       const m = Math.floor((d / 60000) % 60);
+      setModo("fecha");
       setTxt(`${h}h ${m}m`);
     };
     upd();
     const id = setInterval(upd, 30000);
     return () => clearInterval(id);
-  }, [fechamento]);
+  }, [fechamento, abertura]);
 
-  const off = fechado || txt === "encerrada";
+  const off = fechado || modo === "encerrada";
   return (
     <div className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-widest ${off ? "bg-destructive/10 text-destructive" : "bg-gold/10 text-gold"}`}>
       <Clock className="size-4" />
-      {off ? "Lista encerrada" : `Fecha em ${txt}`}
+      {off ? "Lista encerrada" : modo === "abre" ? `Abre em ${txt}` : `Fecha em ${txt}`}
     </div>
   );
 }

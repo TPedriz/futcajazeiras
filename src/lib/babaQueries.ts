@@ -435,13 +435,9 @@ export const valorMensalidadeQuery = () =>
     },
   });
 
-/** Fechamento padrão da lista: 22h do dia anterior ou 3h antes do baba — o que vier primeiro. */
+/** Fechamento padrão da lista: 3 horas antes do início do baba. */
 export function fechamentoPadrao(dataHorario: Date) {
-  const tresHorasAntes = new Date(dataHorario.getTime() - 3 * 60 * 60 * 1000);
-  const vespera = new Date(dataHorario);
-  vespera.setDate(vespera.getDate() - 1);
-  vespera.setHours(22, 0, 0, 0);
-  return tresHorasAntes < vespera ? tresHorasAntes : vespera;
+  return new Date(dataHorario.getTime() - 3 * 60 * 60 * 1000);
 }
 
 /** Data efetiva de fechamento (usa o padrão quando a diretoria não definiu). */
@@ -449,6 +445,30 @@ export function fechamentoEfetivo(sessao: { data_horario: string; fechamento_lis
   return sessao.fechamento_lista
     ? new Date(sessao.fechamento_lista)
     : fechamentoPadrao(new Date(sessao.data_horario));
+}
+
+/**
+ * Abertura padrão da lista: 22h do dia anterior ao baba, no fuso America/Bahia
+ * (UTC-3 fixo, sem DST). Usa a data local do jogo em Salvador para o cálculo,
+ * então o resultado é o mesmo instante independente do fuso do aparelho.
+ */
+export function aberturaPadrao(dataHorario: Date) {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bahia",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(dataHorario);
+  const pega = (tipo: string) => Number(partes.find((p) => p.type === tipo)?.value);
+  // 22h do dia anterior em UTC-3 == 01h UTC do dia do jogo
+  return new Date(Date.UTC(pega("year"), pega("month") - 1, pega("day"), 1, 0, 0));
+}
+
+/** Data efetiva de abertura (usa o padrão quando a diretoria não definiu). */
+export function aberturaEfetivo(sessao: { data_horario: string; abertura_lista: string | null }) {
+  return sessao.abertura_lista
+    ? new Date(sessao.abertura_lista)
+    : aberturaPadrao(new Date(sessao.data_horario));
 }
 
 /** Convidados "da casa": já aprovados pela diretoria e sem bloqueio. */
