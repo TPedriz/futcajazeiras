@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, redirect } from "@tanstack/react-router";
 import { perfilAtualQuery } from "@/lib/babaQueries";
-import { CalendarPlus, Wallet, Shuffle, ChevronLeft, Trophy, UserCog, Users } from "lucide-react";
+import { CalendarPlus, Wallet, Shuffle, ChevronLeft, Trophy, UserCog, Users, BookOpen } from "lucide-react";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -30,13 +30,14 @@ function AdminLayout() {
         <p className="text-xs uppercase tracking-widest text-gold">Diretoria</p>
         <h1 className="font-display text-4xl">Painel Admin</h1>
       </div>
-      <nav className="grid grid-cols-3 gap-2">
+      <nav className="grid grid-cols-4 gap-2">
         <AdminTab to="/admin" label="Sessões" Icon={CalendarPlus} />
         <AdminTab to="/admin/financeiro" label="Financeiro" Icon={Wallet} />
         <AdminTab to="/admin/sorteio" label="Sorteio" Icon={Shuffle} />
         <AdminTab to="/admin/resultados" label="Resultados" Icon={Trophy} />
         <AdminTab to="/admin/cargos" label="Cargos" Icon={UserCog} />
         <AdminTab to="/admin/usuarios" label="Usuários" Icon={Users} />
+        <AdminTab to="/admin/ajuda" label="Ajuda" Icon={BookOpen} />
 
       </nav>
 
