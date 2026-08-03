@@ -47,7 +47,7 @@ export function AprovacoesConvidados() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{p.convidados_cadastro?.nome ?? "Convidado"}</p>
                 <p className="truncate text-[11px] text-muted-foreground">
-                  {p.convidados_cadastro?.telefone} • indicado por {p.nomeAnfitriao}
+                  {p.telefoneConvidado ?? "WhatsApp restrito"} • indicado por {p.nomeAnfitriao}
                 </p>
               </div>
               <Button
