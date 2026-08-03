@@ -49,9 +49,7 @@ export const solicitarConvite = createServerFn({ method: "POST" })
 export const responderSolicitacao = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z
-      .object({ solicitacaoId: z.string().uuid(), aceitar: z.boolean() })
-      .parse(d),
+    z.object({ solicitacaoId: z.string().uuid(), aceitar: z.boolean() }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -147,10 +145,7 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
         .single();
       if (erroPedido) throw erroPedido;
 
-      await supabase
-        .from("solicitacoes_convidado")
-        .update({ status: "aprovado" })
-        .eq("id", sol.id);
+      await supabase.from("solicitacoes_convidado").update({ status: "aprovado" }).eq("id", sol.id);
 
       // Avisa a diretoria (fila de aprovações em AprovacoesConvidados).
       const { data: admins } = await supabaseAdmin
@@ -188,10 +183,14 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
     if (perfilSolicitante?.telefone) {
       await supabaseAdmin
         .from("presencas_contato")
-        .upsert({ presenca_id: presenca.id, telefone: perfilSolicitante.telefone }, { onConflict: "presenca_id" });
+        .upsert(
+          { presenca_id: presenca.id, telefone: perfilSolicitante.telefone },
+          { onConflict: "presenca_id" },
+        );
     }
 
-    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } = await import("@/lib/mercadopago.server");
+    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } =
+      await import("@/lib/mercadopago.server");
     const pix = await criarPagamentoPix({
       valor: VALOR_CONVIDADO,
       descricao: `Taxa de convidado — ${perfilSolicitante?.nome ?? "Convidado"}`,
@@ -212,7 +211,6 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
       },
       { onConflict: "presenca_id" },
     );
-
 
     await supabase
       .from("solicitacoes_convidado")
@@ -279,9 +277,16 @@ export const pixDaSolicitacao = createServerFn({ method: "POST" })
         .select("id, status, presenca_id")
         .eq("solicitacao_id", sol.id)
         .maybeSingle();
-      if (!pedido) return { pago: false, status: "sem_cobranca", qrCode: null, qrBase64: null, valor: 5 };
+      if (!pedido)
+        return { pago: false, status: "sem_cobranca", qrCode: null, qrBase64: null, valor: 5 };
       if (pedido.status === "pendente") {
-        return { pago: false, status: "aguardando_diretoria", qrCode: null, qrBase64: null, valor: 5 };
+        return {
+          pago: false,
+          status: "aguardando_diretoria",
+          qrCode: null,
+          qrBase64: null,
+          valor: 5,
+        };
       }
       if (pedido.presenca_id) return await statusDaPresenca(pedido.presenca_id);
       return { pago: false, status: "sem_cobranca", qrCode: null, qrBase64: null, valor: 5 };
@@ -356,7 +361,8 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
       .eq("id", data.pedidoId)
       .maybeSingle();
     if (!pedido || pedido.anfitriao_id !== userId) throw new Error("Pedido não encontrado");
-    if (pedido.status !== "aprovado") throw new Error("Esse convidado ainda aguarda a aprovação da diretoria");
+    if (pedido.status !== "aprovado")
+      throw new Error("Esse convidado ainda aguarda a aprovação da diretoria");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cad } = await supabaseAdmin
@@ -384,7 +390,10 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
         .single();
       if (erroPresenca) throw erroPresenca;
       presencaId = presenca.id;
-      await supabaseAdmin.from("pedidos_convidado").update({ presenca_id: presencaId }).eq("id", pedido.id);
+      await supabaseAdmin
+        .from("pedidos_convidado")
+        .update({ presenca_id: presencaId })
+        .eq("id", pedido.id);
       await supabaseAdmin
         .from("presencas_contato")
         .upsert({ presenca_id: presencaId, telefone: cad.telefone }, { onConflict: "presenca_id" });
@@ -433,7 +442,8 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
       .eq("id", userId)
       .maybeSingle();
 
-    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } = await import("@/lib/mercadopago.server");
+    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } =
+      await import("@/lib/mercadopago.server");
     const pix = await criarPagamentoPix({
       valor: VALOR_CONVIDADO,
       descricao: `Diária de convidado — ${cad.nome}`,
