@@ -1,21 +1,61 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { perfilAtualQuery, proximaSessaoQuery, presencasDaSessaoQuery, fechamentoEfetivo } from "@/lib/babaQueries";
+import {
+  perfilAtualQuery,
+  proximaSessaoQuery,
+  presencasDaSessaoQuery,
+  fechamentoEfetivo,
+  aberturaEfetivo,
+} from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Calendar, MapPin, Users, ArrowRight, Clock } from "lucide-react";
+import {
+  CheckCircle2,
+  AlertCircle,
+  Calendar,
+  MapPin,
+  Users,
+  ArrowRight,
+  Clock,
+  Hourglass,
+  Lock,
+  CalendarClock,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { RankingMensal } from "@/components/RankingMensal";
 import { tempoDeAssociado } from "@/lib/associado";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+type ListaModo = "abre" | "fecha" | "encerrada" | "diretoria";
+
+/** Estado da lista num instante: aberta / ainda não abriu / encerrada / fechada pela diretoria. */
+function modoLista(
+  agora: number,
+  abertura: Date | null,
+  fechamento: Date | null,
+  fechadaPelaDiretoria: boolean,
+): ListaModo {
+  if (fechadaPelaDiretoria) return "diretoria";
+  if (!abertura || !fechamento) return "fecha";
+  if (agora < abertura.getTime()) return "abre";
+  if (agora >= fechamento.getTime()) return "encerrada";
+  return "fecha";
+}
+
 export const Route = createFileRoute("/_authenticated/inicio")({
   head: () => ({
     meta: [
       { title: "Início — Fut Cajazeiras" },
-      { name: "description", content: "Painel do associado: veja seu status de mensalidade, o próximo baba e faça check-in direto pelo celular." },
+      {
+        name: "description",
+        content:
+          "Painel do associado: veja seu status de mensalidade, o próximo baba e faça check-in direto pelo celular.",
+      },
       { property: "og:title", content: "Painel do Associado — Fut Cajazeiras" },
-      { property: "og:description", content: "Seu status financeiro e o próximo baba do Fut Cajazeiras em um só lugar." },
+      {
+        property: "og:description",
+        content: "Seu status financeiro e o próximo baba do Fut Cajazeiras em um só lugar.",
+      },
     ],
   }),
 
@@ -35,11 +75,18 @@ function InicioPage() {
   const totalConfirmados = presencas?.filter((p) => !p.nome_convidado).length ?? 0;
   const tempo = tempoDeAssociado(perfilData?.perfil?.criado_em);
 
+  const abertura = proxSessao ? aberturaEfetivo(proxSessao) : null;
+  const fechamento = proxSessao ? fechamentoEfetivo(proxSessao) : null;
+  const listaAberta =
+    modoLista(Date.now(), abertura, fechamento, !!proxSessao?.esta_fechado) === "fecha";
+
   return (
     <div className="space-y-5">
       <div>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Boa!</p>
-        <h1 className="font-display text-4xl leading-tight text-foreground">{nome.split(" ")[0]}</h1>
+        <h1 className="font-display text-4xl leading-tight text-foreground">
+          {nome.split(" ")[0]}
+        </h1>
         {tempo && (
           <p className="mt-1 text-sm text-muted-foreground">
             <span className="text-gold">{tempo.apelido}</span> — no baba há{" "}
@@ -57,7 +104,9 @@ function InicioPage() {
               {emDia ? "Em dia" : "Pendente"}
             </p>
           </div>
-          <div className={`flex size-14 items-center justify-center rounded-full ${emDia ? "bg-gold/10" : "bg-destructive/10"}`}>
+          <div
+            className={`flex size-14 items-center justify-center rounded-full ${emDia ? "bg-gold/10" : "bg-destructive/10"}`}
+          >
             {emDia ? (
               <CheckCircle2 className="size-7 text-gold" />
             ) : (
@@ -93,8 +142,21 @@ function InicioPage() {
                 <Users className="size-4 text-gold" />
                 <span>{totalConfirmados} associados confirmados</span>
               </div>
+              {abertura && fechamento && (
+                <div className="flex items-center gap-2">
+                  <CalendarClock className="size-4 text-gold" />
+                  <span>
+                    Abre {format(abertura, "dd/MM 'às' HH:mm", { locale: ptBR })} · Fecha{" "}
+                    {format(fechamento, "dd/MM 'às' HH:mm", { locale: ptBR })}
+                  </span>
+                </div>
+              )}
             </div>
-            <ContadorRegressivo fechamento={fechamentoEfetivo(proxSessao).toISOString()} />
+            <ListaStatus
+              abertura={abertura}
+              fechamento={fechamento}
+              fechadaPelaDiretoria={proxSessao.esta_fechado}
+            />
             <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-gold">
               Ver detalhes <ArrowRight className="size-4" />
             </div>
@@ -113,7 +175,7 @@ function InicioPage() {
       <div className="grid grid-cols-1 gap-3">
         <Link to="/baba">
           <Button variant="hero" size="xl" className="w-full">
-            Confirmar minha presença
+            {listaAberta ? "Confirmar minha presença" : "Ver detalhes do baba"}
           </Button>
         </Link>
       </div>
@@ -123,35 +185,65 @@ function InicioPage() {
   );
 }
 
-function ContadorRegressivo({ fechamento }: { fechamento: string }) {
-  const [restante, setRestante] = useState<string>("");
-  const [fechado, setFechado] = useState(false);
-
+function ListaStatus({
+  abertura,
+  fechamento,
+  fechadaPelaDiretoria,
+}: {
+  abertura: Date | null;
+  fechamento: Date | null;
+  fechadaPelaDiretoria: boolean;
+}) {
+  const [agora, setAgora] = useState(() => Date.now());
   useEffect(() => {
-    const alvo = new Date(fechamento).getTime();
-    const atualizar = () => {
-      const diff = alvo - Date.now();
-      if (diff <= 0) {
-        setFechado(true);
-        setRestante("Lista fechada");
-        return;
-      }
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff / (1000 * 60)) % 60);
-      const s = Math.floor((diff / 1000) % 60);
-      setRestante(`${h}h ${m}m ${s}s`);
-    };
-    atualizar();
-    const id = setInterval(atualizar, 1000);
+    const id = setInterval(() => setAgora(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [fechamento]);
+  }, []);
+
+  const modo = modoLista(agora, abertura, fechamento, fechadaPelaDiretoria);
+  const alvo = modo === "abre" ? abertura!.getTime() : fechamento!.getTime();
+  const diff = Math.max(0, alvo - agora);
+  const h = Math.floor(diff / (1000 * 60 * 60));
+  const m = Math.floor((diff / (1000 * 60)) % 60);
+  const s = Math.floor((diff / 1000) % 60);
+  const restante = `${h}h ${m}m ${s}s`;
+
+  const conf = {
+    abre: {
+      titulo: "A lista ainda não abriu",
+      detalhe: `Abre em ${restante}`,
+      icone: <Hourglass className="size-6" />,
+      classes: "bg-gold/10 text-gold",
+    },
+    fecha: {
+      titulo: "Lista aberta",
+      detalhe: `Fecha em ${restante}`,
+      icone: <Clock className="size-6" />,
+      classes: "bg-success/15 text-success",
+    },
+    encerrada: {
+      titulo: "Lista encerrada",
+      detalhe: "A lista já fechou — fale com a diretoria.",
+      icone: <Lock className="size-6" />,
+      classes: "bg-destructive/10 text-destructive",
+    },
+    diretoria: {
+      titulo: "Lista fechada pela diretoria",
+      detalhe: "Fale com a diretoria para entrar.",
+      icone: <Lock className="size-6" />,
+      classes: "bg-destructive/10 text-destructive",
+    },
+  }[modo];
 
   return (
-    <div className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 ${fechado ? "bg-destructive/10 text-destructive" : "bg-gold/10 text-gold"}`}>
-      <Clock className="size-4" />
-      <span className="text-xs font-semibold uppercase tracking-widest">
-        {fechado ? "Lista encerrada" : `Fecha em ${restante}`}
-      </span>
+    <div
+      className={`mt-4 flex items-center gap-3 rounded-xl border px-4 py-3 ${conf.classes} border-current/30`}
+    >
+      <span className="shrink-0">{conf.icone}</span>
+      <div className="min-w-0">
+        <p className="text-sm font-bold uppercase tracking-wide">{conf.titulo}</p>
+        <p className="text-xs font-semibold tabular-nums opacity-90">{conf.detalhe}</p>
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   situacaoCheckinQuery,
   DIA_VENCIMENTO,
   fechamentoEfetivo,
+  aberturaEfetivo,
 } from "@/lib/babaQueries";
 import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
@@ -28,30 +29,41 @@ import { ptBR } from "date-fns/locale";
 import { Calendar, MapPin, UserPlus, Clock, Check, Shield, HandMetal, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-
 export const Route = createFileRoute("/_authenticated/baba")({
   head: ({ loaderData }) => {
-    const sessao = loaderData as { id: string; data_horario: string; local: string } | null | undefined;
+    const sessao = loaderData as
+      | { id: string; data_horario: string; local: string }
+      | null
+      | undefined;
     const scripts = sessao
-      ? [{
-          type: "application/ld+json",
-          children: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SportsEvent",
-            name: `Baba Fut Cajazeiras — ${new Date(sessao.data_horario).toLocaleDateString("pt-BR")}`,
-            startDate: sessao.data_horario,
-            sport: "Soccer",
-            location: { "@type": "Place", name: sessao.local },
-            organizer: { "@type": "SportsOrganization", name: "Fut Cajazeiras" },
-          }),
-        }]
+      ? [
+          {
+            type: "application/ld+json",
+            children: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SportsEvent",
+              name: `Baba Fut Cajazeiras — ${new Date(sessao.data_horario).toLocaleDateString("pt-BR")}`,
+              startDate: sessao.data_horario,
+              sport: "Soccer",
+              location: { "@type": "Place", name: sessao.local },
+              organizer: { "@type": "SportsOrganization", name: "Fut Cajazeiras" },
+            }),
+          },
+        ]
       : undefined;
     return {
       meta: [
         { title: "Próximo Baba — Fut Cajazeiras" },
-        { name: "description", content: "Confirme sua presença, leve seu convidado e veja a lista de chamada do próximo baba do Fut Cajazeiras." },
+        {
+          name: "description",
+          content:
+            "Confirme sua presença, leve seu convidado e veja a lista de chamada do próximo baba do Fut Cajazeiras.",
+        },
         { property: "og:title", content: "Próximo Baba — Fut Cajazeiras" },
-        { property: "og:description", content: "Data, horário, local e lista de chamada do próximo baba do Fut Cajazeiras." },
+        {
+          property: "og:description",
+          content: "Data, horário, local e lista de chamada do próximo baba do Fut Cajazeiras.",
+        },
         { property: "og:type", content: "event" },
       ],
       ...(scripts ? { scripts } : {}),
@@ -63,14 +75,11 @@ export const Route = createFileRoute("/_authenticated/baba")({
   component: BabaPage,
 });
 
-
 function BabaPage() {
   const { data: perfilData } = useSuspenseQuery(perfilAtualQuery());
   const { data: sessao } = useSuspenseQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
-  const { data: situacao } = useQuery(
-    situacaoCheckinQuery(perfilData?.user.id, sessao?.id),
-  );
+  const { data: situacao } = useQuery(situacaoCheckinQuery(perfilData?.user.id, sessao?.id));
   const queryClient = useQueryClient();
 
   const userId = perfilData?.user.id;
@@ -80,17 +89,15 @@ function BabaPage() {
   const minhaPresenca = presencas?.find((p) => p.usuario_id === userId && !p.nome_convidado);
 
   const fechamento = sessao ? fechamentoEfetivo(sessao) : null;
-  const listaFechada = sessao?.esta_fechado || (!!fechamento && fechamento <= new Date());
-
+  const abertura = sessao ? aberturaEfetivo(sessao) : null;
+  const antesDeAbrir = !!abertura && new Date() < abertura;
+  const listaFechada = sessao
+    ? sessao.esta_fechado || antesDeAbrir || (!!fechamento && new Date() >= fechamento)
+    : true;
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ["presencas", sessao?.id] });
   };
-
-
-
-
-
 
   const confirmarPresenca = useMutation({
     mutationFn: async () => {
@@ -121,10 +128,6 @@ function BabaPage() {
     onError: (e: Error) => toast.error("Erro ao cancelar", { description: e.message }),
   });
 
-
-
-
-
   const removerPresenca = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("presencas").delete().eq("id", id);
@@ -139,7 +142,10 @@ function BabaPage() {
 
   const moderarConvidado = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: "aprovado" | "rejeitado" }) => {
-      const { error } = await supabase.from("presencas").update({ status_convidado: status }).eq("id", id);
+      const { error } = await supabase
+        .from("presencas")
+        .update({ status_convidado: status })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: (_data, vars) => {
@@ -154,7 +160,9 @@ function BabaPage() {
       <div className="card-premium p-8 text-center">
         <Calendar className="mx-auto size-12 text-muted-foreground/50" />
         <p className="mt-4 font-display text-2xl">Nenhum baba agendado</p>
-        <p className="mt-1 text-sm text-muted-foreground">Aguarde a diretoria marcar a próxima sessão.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Aguarde a diretoria marcar a próxima sessão.
+        </p>
       </div>
     );
   }
@@ -180,17 +188,22 @@ function BabaPage() {
             <span className="truncate">{sessao.local}</span>
           </div>
         </div>
-        <ContadorFechamento fechamento={(fechamento ?? new Date()).toISOString()} fechado={sessao.esta_fechado} />
+        <ContadorFechamento
+          fechamento={(fechamento ?? new Date()).toISOString()}
+          abertura={abertura?.toISOString()}
+          fechado={sessao.esta_fechado}
+        />
       </div>
 
       {/* Ações */}
       {listaFechada ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center">
-          <p className="font-semibold text-destructive">Lista encerrada</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            A lista fecha às 22h do dia anterior ou 3 horas antes do jogo — o que vier primeiro.
+          <p className="font-semibold text-destructive">
+            {antesDeAbrir ? "Lista ainda não abriu" : "Lista encerrada"}
           </p>
-
+          <p className="mt-1 text-xs text-muted-foreground">
+            A lista abre às 22h do dia anterior e fecha 3 horas antes do jogo.
+          </p>
         </div>
       ) : situacao?.suspenso ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center">
@@ -201,8 +214,8 @@ function BabaPage() {
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center">
           <p className="font-semibold text-destructive">Mensalidade em aberto</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            O vencimento é todo dia {DIA_VENCIMENTO}. Pague o PIX para liberar o check-in e os convidados
-            — a liberação é automática.
+            O vencimento é todo dia {DIA_VENCIMENTO}. Pague o PIX para liberar o check-in e os
+            convidados — a liberação é automática.
           </p>
           <Link to="/pagamentos">
             <Button variant="gold" size="sm" className="mt-3">
@@ -254,7 +267,6 @@ function BabaPage() {
         <LevarConvidado babaId={sessao.id} userId={userId} />
       )}
 
-
       {/* Lista de chamada */}
       <div>
         <div className="mb-3 flex items-center justify-between">
@@ -287,8 +299,16 @@ function BabaPage() {
                 tipo="convidado"
                 statusConvidado={p.status_convidado ?? undefined}
                 mpStatus={p.mp_status}
-                onApprove={isAdmin && p.status_convidado === "pendente" ? () => moderarConvidado.mutate({ id: p.id, status: "aprovado" }) : undefined}
-                onReject={isAdmin && p.status_convidado === "pendente" ? () => moderarConvidado.mutate({ id: p.id, status: "rejeitado" }) : undefined}
+                onApprove={
+                  isAdmin && p.status_convidado === "pendente"
+                    ? () => moderarConvidado.mutate({ id: p.id, status: "aprovado" })
+                    : undefined
+                }
+                onReject={
+                  isAdmin && p.status_convidado === "pendente"
+                    ? () => moderarConvidado.mutate({ id: p.id, status: "rejeitado" })
+                    : undefined
+                }
                 onRemove={isAdmin ? () => removerPresenca.mutate(p.id) : undefined}
               />
             ))}
@@ -305,42 +325,77 @@ function BabaPage() {
       />
 
       <MuralPunicoes />
-
     </div>
   );
 }
 
-function ContadorFechamento({ fechamento, fechado }: { fechamento: string; fechado: boolean }) {
+function ContadorFechamento({
+  fechamento,
+  abertura,
+  fechado,
+}: {
+  fechamento: string;
+  abertura?: string;
+  fechado: boolean;
+}) {
   const [txt, setTxt] = useState("");
+  const [modo, setModo] = useState<"abre" | "fecha" | "encerrada">("fecha");
   useEffect(() => {
-    const t = new Date(fechamento).getTime();
+    const fim = new Date(fechamento).getTime();
+    const ini = abertura ? new Date(abertura).getTime() : -Infinity;
     const upd = () => {
-      const d = t - Date.now();
-      if (d <= 0) return setTxt("encerrada");
+      const agora = Date.now();
+      if (agora < ini) {
+        const d = ini - agora;
+        const h = Math.floor(d / 3600000);
+        const m = Math.floor((d / 60000) % 60);
+        setModo("abre");
+        setTxt(`${h}h ${m}m`);
+        return;
+      }
+      const d = fim - agora;
+      if (d <= 0) return setModo("encerrada");
       const h = Math.floor(d / 3600000);
       const m = Math.floor((d / 60000) % 60);
+      setModo("fecha");
       setTxt(`${h}h ${m}m`);
     };
     upd();
     const id = setInterval(upd, 30000);
     return () => clearInterval(id);
-  }, [fechamento]);
+  }, [fechamento, abertura]);
 
-  const off = fechado || txt === "encerrada";
+  const off = fechado || modo === "encerrada";
   return (
-    <div className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-widest ${off ? "bg-destructive/10 text-destructive" : "bg-gold/10 text-gold"}`}>
+    <div
+      className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-widest ${off ? "bg-destructive/10 text-destructive" : "bg-gold/10 text-gold"}`}
+    >
       <Clock className="size-4" />
-      {off ? "Lista encerrada" : `Fecha em ${txt}`}
+      {off ? "Lista encerrada" : modo === "abre" ? `Abre em ${txt}` : `Fecha em ${txt}`}
     </div>
   );
 }
 
 function StatusConvidadoBadge({ status, mpStatus }: { status: string; mpStatus?: string | null }) {
-  if (status === "aprovado") return <Badge className="mt-1 bg-success text-success-foreground">Confirmado</Badge>;
-  if (status === "rejeitado") return <Badge variant="destructive" className="mt-1">Rejeitado</Badge>;
+  if (status === "aprovado")
+    return <Badge className="mt-1 bg-success text-success-foreground">Confirmado</Badge>;
+  if (status === "rejeitado")
+    return (
+      <Badge variant="destructive" className="mt-1">
+        Rejeitado
+      </Badge>
+    );
   if (mpStatus === "rejected" || mpStatus === "cancelled")
-    return <Badge variant="destructive" className="mt-1">Pagamento não concluído</Badge>;
-  return <Badge variant="outline" className="mt-1 border-gold/40 text-gold">Aguardando pagamento</Badge>;
+    return (
+      <Badge variant="destructive" className="mt-1">
+        Pagamento não concluído
+      </Badge>
+    );
+  return (
+    <Badge variant="outline" className="mt-1 border-gold/40 text-gold">
+      Aguardando pagamento
+    </Badge>
+  );
 }
 
 interface PresencaCardProps {
@@ -356,16 +411,34 @@ interface PresencaCardProps {
   onRemove?: () => void;
 }
 
-function PresencaCard({ numero, nome, avatar, posicao, tipo, statusConvidado, mpStatus, onApprove, onReject, onRemove }: PresencaCardProps) {
+function PresencaCard({
+  numero,
+  nome,
+  avatar,
+  posicao,
+  tipo,
+  statusConvidado,
+  mpStatus,
+  onApprove,
+  onReject,
+  onRemove,
+}: PresencaCardProps) {
   const isConvidado = tipo === "convidado";
   const pendente = isConvidado && statusConvidado === "pendente";
   const aguardandoPix = pendente && mpStatus !== "approved";
 
-
   return (
-    <li className={`flex items-center gap-3 rounded-lg border p-3 ${
-      isConvidado ? (statusConvidado === "aprovado" ? "border-success/30 bg-success/5" : statusConvidado === "rejeitado" ? "border-destructive/30 bg-destructive/5 opacity-60" : "border-border bg-surface") : "border-gold/20 bg-surface"
-    }`}>
+    <li
+      className={`flex items-center gap-3 rounded-lg border p-3 ${
+        isConvidado
+          ? statusConvidado === "aprovado"
+            ? "border-success/30 bg-success/5"
+            : statusConvidado === "rejeitado"
+              ? "border-destructive/30 bg-destructive/5 opacity-60"
+              : "border-border bg-surface"
+          : "border-gold/20 bg-surface"
+      }`}
+    >
       {numero && (
         <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gold/10 font-display text-sm text-gold">
           {numero}
@@ -378,9 +451,15 @@ function PresencaCard({ numero, nome, avatar, posicao, tipo, statusConvidado, mp
         <div className="mt-0.5 flex items-center gap-1.5">
           {isConvidado ? (
             <>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Convidado</span>
-              {aguardandoPix && <span className="text-[10px] text-gold">• aguardando pagamento</span>}
-              {statusConvidado === "rejeitado" && <span className="text-[10px] text-destructive">• rejeitado</span>}
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                Convidado
+              </span>
+              {aguardandoPix && (
+                <span className="text-[10px] text-gold">• aguardando pagamento</span>
+              )}
+              {statusConvidado === "rejeitado" && (
+                <span className="text-[10px] text-destructive">• rejeitado</span>
+              )}
             </>
           ) : posicao === "goleiro" ? (
             <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-primary">
@@ -395,20 +474,37 @@ function PresencaCard({ numero, nome, avatar, posicao, tipo, statusConvidado, mp
       </div>
       {pendente && onApprove && (
         <>
-          <Button variant="success" size="icon" className="size-9" onClick={onApprove} aria-label="Aprovar convidado">
+          <Button
+            variant="success"
+            size="icon"
+            className="size-9"
+            onClick={onApprove}
+            aria-label="Aprovar convidado"
+          >
             <Check className="size-4" />
           </Button>
-          <Button variant="destructive" size="icon" className="size-9" onClick={onReject} aria-label="Rejeitar convidado">
+          <Button
+            variant="destructive"
+            size="icon"
+            className="size-9"
+            onClick={onReject}
+            aria-label="Rejeitar convidado"
+          >
             <X className="size-4" />
           </Button>
         </>
       )}
       {!pendente && onRemove && (
-        <Button variant="ghost" size="icon" className="size-9 text-muted-foreground" onClick={onRemove} aria-label="Remover da lista">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9 text-muted-foreground"
+          onClick={onRemove}
+          aria-label="Remover da lista"
+        >
           <X className="size-4" />
         </Button>
       )}
-
     </li>
   );
 }
