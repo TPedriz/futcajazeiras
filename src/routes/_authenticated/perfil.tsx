@@ -38,7 +38,7 @@ import {
   Camera,
 } from "lucide-react";
 import { tempoDeAssociado } from "@/lib/associado";
-import { AvatarJogador } from "@/components/AvatarJogador";
+import { AvatarJogador, avatarUrlQuery } from "@/components/AvatarJogador";
 import { EditorFotoPerfil } from "@/components/EditorFotoPerfil";
 import { useState } from "react";
 import { formataTelefone } from "@/lib/telefone";
@@ -84,8 +84,9 @@ function PerfilPage() {
   const [editandoNome, setEditandoNome] = useState(false);
   const [nome, setNome] = useState("");
   const [enviandoFoto, setEnviandoFoto] = useState(false);
-  const [fotoSelecionada, setFotoSelecionada] = useState<File | null>(null);
+  const [origemFoto, setOrigemFoto] = useState<File | string | null>(null);
   const [editorAberto, setEditorAberto] = useState(false);
+  const { data: urlFotoAtual } = useQuery(avatarUrlQuery(perfil?.avatar_url));
 
   const enviarFoto = async (blob: Blob) => {
     if (!perfil) return;
@@ -221,17 +222,36 @@ function PerfilPage() {
                 toast.error("Foto muito grande", { description: "Envie uma imagem de até 5 MB." });
                 return;
               }
-              setFotoSelecionada(arquivo);
+              setOrigemFoto(arquivo);
               setEditorAberto(true);
             }}
           />
           <EditorFotoPerfil
-            arquivo={fotoSelecionada}
+            origem={origemFoto}
             aberto={editorAberto}
             onAbertoChange={setEditorAberto}
             onSalvar={enviarFoto}
           />
         </div>
+        {perfil?.avatar_url && (
+          <button
+            type="button"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/5 px-3 py-1.5 text-xs font-medium text-gold transition-colors hover:bg-gold/10"
+            disabled={enviandoFoto}
+            onClick={() => {
+              if (!urlFotoAtual) {
+                toast.error("Não foi possível carregar a foto", {
+                  description: "Tente novamente em instantes.",
+                });
+                return;
+              }
+              setOrigemFoto(urlFotoAtual);
+              setEditorAberto(true);
+            }}
+          >
+            <Pencil className="size-3.5" /> Ajustar foto
+          </button>
+        )}
         {enviandoFoto && <p className="mt-2 text-[11px] text-muted-foreground">Enviando foto…</p>}
         {editandoNome ? (
           <div className="mt-3 space-y-2 text-left">
