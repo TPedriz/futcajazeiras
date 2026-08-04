@@ -12,7 +12,9 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle2, AlertCircle, CalendarClock, Wallet, Heart, QrCode } from "lucide-react";
+import { CheckCircle2, AlertCircle, CalendarClock, Wallet, Heart, QrCode, MessageCircle } from "lucide-react";
+
+const GRUPO_WHATSAPP_URL = "https://chat.whatsapp.com/HtGUdc005Hd9NLqY8Bcg3W";
 
 export const Route = createFileRoute("/_authenticated/pagamentos")({
   head: () => ({
@@ -84,6 +86,8 @@ function PagamentosPage() {
   const tempo = tempoDeAssociado(perfilData?.perfil?.criado_em);
   const pagas = (mensalidades ?? []).filter((m) => m.status === "pago").length;
   const pendentes = (mensalidades ?? []).filter((m) => m.status === "pendente").length;
+  const emDia = perfilData?.perfil?.status_pagamento === "pago";
+  const mostraGrupo = !!perfilData?.isAssociado && (emDia || pagas > 0);
 
 
   return (
@@ -95,6 +99,28 @@ function PagamentosPage() {
           A mensalidade vira todo <strong className="text-foreground">último dia do mês</strong>.
         </p>
       </div>
+
+      {mostraGrupo && (
+        <div className="card-premium flex items-center gap-3 p-4">
+          <MessageCircle className="size-5 shrink-0 text-gold" />
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-lg">Você já faz parte do baba!</p>
+            <p className="text-xs text-muted-foreground">
+              Entre no grupo oficial do Fut Cajazeiras no WhatsApp para acompanhar tudo.
+            </p>
+          </div>
+          <a
+            href={GRUPO_WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0"
+          >
+            <Button variant="goldOutline" size="lg">
+              <MessageCircle className="size-4" /> Entrar no grupo
+            </Button>
+          </a>
+        </div>
+      )}
 
       {tempo && (
         <div className="card-vip flex items-center gap-3 p-4">
