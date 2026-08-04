@@ -4,6 +4,17 @@ const MP_API = "https://api.mercadopago.com";
 export const VALOR_MENSALIDADE = 15;
 export const VALOR_CONVIDADO = 5;
 
+/** Valor atual da diária de convidado definido pela diretoria (configuracoes). */
+export async function valorConvidadoAtual(): Promise<number> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("configuracoes")
+    .select("valor")
+    .eq("chave", "valor_convidado")
+    .maybeSingle();
+  return Number(data?.valor ?? VALOR_CONVIDADO);
+}
+
 function token() {
   const t = process.env.MERCADOPAGO_ACCESS_TOKEN;
   if (!t) throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado");

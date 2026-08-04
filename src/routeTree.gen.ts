@@ -24,6 +24,7 @@ import { Route as AuthenticatedAdminAjudaRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminCargosRouteImport } from './routes/_authenticated/admin/cargos'
 import { Route as AuthenticatedAdminFinanceiroRouteImport } from './routes/_authenticated/admin/financeiro'
 import { Route as AuthenticatedAdminResultadosRouteImport } from './routes/_authenticated/admin/resultados'
+import { Route as AuthenticatedAdminEstatisticasRouteImport } from './routes/_authenticated/admin/estatisticas'
 import { Route as AuthenticatedAdminSorteioRouteImport } from './routes/_authenticated/admin/sorteio'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin/usuarios'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago-webhook'
@@ -105,6 +106,12 @@ const AuthenticatedAdminResultadosRoute =
     path: '/resultados',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminEstatisticasRoute =
+  AuthenticatedAdminEstatisticasRouteImport.update({
+    id: '/estatisticas',
+    path: '/estatisticas',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminSorteioRoute =
   AuthenticatedAdminSorteioRouteImport.update({
     id: '/sorteio',
@@ -138,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/admin/cargos': typeof AuthenticatedAdminCargosRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/admin/resultados': typeof AuthenticatedAdminResultadosRoute
+  '/admin/estatisticas': typeof AuthenticatedAdminEstatisticasRoute
   '/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -156,6 +164,7 @@ export interface FileRoutesByTo {
   '/admin/cargos': typeof AuthenticatedAdminCargosRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/admin/resultados': typeof AuthenticatedAdminResultadosRoute
+  '/admin/estatisticas': typeof AuthenticatedAdminEstatisticasRoute
   '/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -177,6 +186,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/cargos': typeof AuthenticatedAdminCargosRoute
   '/_authenticated/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/_authenticated/admin/resultados': typeof AuthenticatedAdminResultadosRoute
+  '/_authenticated/admin/estatisticas': typeof AuthenticatedAdminEstatisticasRoute
   '/_authenticated/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/admin/cargos'
     | '/admin/financeiro'
     | '/admin/resultados'
+    | '/admin/estatisticas'
     | '/admin/sorteio'
     | '/admin/usuarios'
     | '/api/public/mercadopago-webhook'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/admin/cargos'
     | '/admin/financeiro'
     | '/admin/resultados'
+    | '/admin/estatisticas'
     | '/admin/sorteio'
     | '/admin/usuarios'
     | '/api/public/mercadopago-webhook'
@@ -236,6 +248,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/cargos'
     | '/_authenticated/admin/financeiro'
     | '/_authenticated/admin/resultados'
+    | '/_authenticated/admin/estatisticas'
     | '/_authenticated/admin/sorteio'
     | '/_authenticated/admin/usuarios'
     | '/api/public/mercadopago-webhook'
@@ -357,6 +370,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminResultadosRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/estatisticas': {
+      id: '/_authenticated/admin/estatisticas'
+      path: '/estatisticas'
+      fullPath: '/admin/estatisticas'
+      preLoaderRoute: typeof AuthenticatedAdminEstatisticasRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/sorteio': {
       id: '/_authenticated/admin/sorteio'
       path: '/sorteio'
@@ -386,6 +406,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCargosRoute: typeof AuthenticatedAdminCargosRoute
   AuthenticatedAdminFinanceiroRoute: typeof AuthenticatedAdminFinanceiroRoute
   AuthenticatedAdminResultadosRoute: typeof AuthenticatedAdminResultadosRoute
+  AuthenticatedAdminEstatisticasRoute: typeof AuthenticatedAdminEstatisticasRoute
   AuthenticatedAdminSorteioRoute: typeof AuthenticatedAdminSorteioRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -396,6 +417,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCargosRoute: AuthenticatedAdminCargosRoute,
   AuthenticatedAdminFinanceiroRoute: AuthenticatedAdminFinanceiroRoute,
   AuthenticatedAdminResultadosRoute: AuthenticatedAdminResultadosRoute,
+  AuthenticatedAdminEstatisticasRoute: AuthenticatedAdminEstatisticasRoute,
   AuthenticatedAdminSorteioRoute: AuthenticatedAdminSorteioRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,

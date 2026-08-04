@@ -22,12 +22,20 @@ export const criarPixMensalidade = createServerFn({ method: "POST" })
       .eq("id", data.mensalidadeId)
       .maybeSingle();
     if (error) throw error;
-    if (!mensalidade || mensalidade.usuario_id !== userId) throw new Error("Mensalidade não encontrada");
+    if (!mensalidade || mensalidade.usuario_id !== userId)
+      throw new Error("Mensalidade não encontrada");
 
     const valor = Number(mensalidade.valor) > 0 ? Number(mensalidade.valor) : 15;
 
     if (mensalidade.status === "pago") {
-      return { status: "approved", pago: true, qrCode: null, qrBase64: null, expiraEm: null, valor };
+      return {
+        status: "approved",
+        pago: true,
+        qrCode: null,
+        qrBase64: null,
+        expiraEm: null,
+        valor,
+      };
     }
 
     const aindaValido =
@@ -95,7 +103,8 @@ export const consultarPixMensalidade = createServerFn({ method: "POST" })
       .select("id, usuario_id, status, mp_payment_id")
       .eq("id", data.mensalidadeId)
       .maybeSingle();
-    if (!mensalidade || mensalidade.usuario_id !== userId) throw new Error("Mensalidade não encontrada");
+    if (!mensalidade || mensalidade.usuario_id !== userId)
+      throw new Error("Mensalidade não encontrada");
     if (mensalidade.status === "pago") return { pago: true, status: "approved" };
     if (!mensalidade.mp_payment_id) return { pago: false, status: "sem_cobranca" };
 
@@ -116,6 +125,10 @@ export const criarPixConvidado = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<PixResposta & { presencaId: string }> => {
     const { supabase, userId } = context;
 
+    const { criarPagamentoPix, emailPagador, valorConvidadoAtual } =
+      await import("@/lib/mercadopago.server");
+    const valor = await valorConvidadoAtual();
+
     const { data: existente } = await supabase
       .from("presencas")
       .select("id")
@@ -132,7 +145,7 @@ export const criarPixConvidado = createServerFn({ method: "POST" })
         usuario_id: userId,
         nome_convidado: data.nome,
         status_convidado: "pendente",
-        valor: 5,
+        valor,
       })
       .select("id")
       .single();
@@ -144,9 +157,8 @@ export const criarPixConvidado = createServerFn({ method: "POST" })
       .eq("id", userId)
       .maybeSingle();
 
-    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } = await import("@/lib/mercadopago.server");
     const pix = await criarPagamentoPix({
-      valor: VALOR_CONVIDADO,
+      valor,
       descricao: `Taxa de convidado — ${data.nome}`,
       email: emailPagador(perfil?.telefone, userId),
       nome: perfil?.nome ?? "Associado",
@@ -167,7 +179,6 @@ export const criarPixConvidado = createServerFn({ method: "POST" })
       { onConflict: "presenca_id" },
     );
 
-
     return {
       presencaId: presenca.id,
       status: pix.status,
@@ -175,7 +186,7 @@ export const criarPixConvidado = createServerFn({ method: "POST" })
       qrCode: pix.qrCode,
       qrBase64: pix.qrBase64,
       expiraEm: pix.expiraEm,
-      valor: VALOR_CONVIDADO,
+      valor,
     };
   });
 
@@ -215,33 +226,39 @@ export const consultarPixConvidado = createServerFn({ method: "POST" })
     await aplicarPagamento(`convidado:${presenca.id}`, pagamento.status);
 
     return { pago: pagamento.status === "approved", status: pagamento.status, ...pix };
-
   });
 
 /** Lista associados com mensalidade em aberto (para presentear). */
 export const listarMensalidadesPendentes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ mensalidadeId: string; nome: string; referencia: string; valor: number }[]> => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: pendentes } = await supabaseAdmin
-      .from("mensalidades")
-      .select("id, usuario_id, referencia, valor")
-      .eq("status", "pendente")
-      .order("referencia", { ascending: false });
+  .handler(
+    async ({
+      context,
+    }): Promise<{ mensalidadeId: string; nome: string; referencia: string; valor: number }[]> => {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: pendentes } = await supabaseAdmin
+        .from("mensalidades")
+        .select("id, usuario_id, referencia, valor")
+        .eq("status", "pendente")
+        .order("referencia", { ascending: false });
 
-    const outras = (pendentes ?? []).filter((m) => m.usuario_id !== context.userId);
-    const ids = Array.from(new Set(outras.map((m) => m.usuario_id)));
-    if (ids.length === 0) return [];
-    const { data: perfis } = await supabaseAdmin.from("perfis_publicos").select("id, nome").in("id", ids);
-    const nomes = new Map((perfis ?? []).map((p) => [p.id, p.nome]));
+      const outras = (pendentes ?? []).filter((m) => m.usuario_id !== context.userId);
+      const ids = Array.from(new Set(outras.map((m) => m.usuario_id)));
+      if (ids.length === 0) return [];
+      const { data: perfis } = await supabaseAdmin
+        .from("perfis_publicos")
+        .select("id, nome")
+        .in("id", ids);
+      const nomes = new Map((perfis ?? []).map((p) => [p.id, p.nome]));
 
-    return outras.map((m) => ({
-      mensalidadeId: m.id,
-      nome: nomes.get(m.usuario_id) ?? "Associado",
-      referencia: m.referencia,
-      valor: Number(m.valor) > 0 ? Number(m.valor) : 15,
-    }));
-  });
+      return outras.map((m) => ({
+        mensalidadeId: m.id,
+        nome: nomes.get(m.usuario_id) ?? "Associado",
+        referencia: m.referencia,
+        valor: Number(m.valor) > 0 ? Number(m.valor) : 15,
+      }));
+    },
+  );
 
 /** Gera um PIX para pagar a mensalidade de outra pessoa. */
 export const criarPixPresente = createServerFn({ method: "POST" })
@@ -266,7 +283,15 @@ export const criarPixPresente = createServerFn({ method: "POST" })
     const valor = Number(mensalidade.valor) > 0 ? Number(mensalidade.valor) : 15;
 
     if (mensalidade.status === "pago") {
-      return { status: "approved", pago: true, qrCode: null, qrBase64: null, expiraEm: null, valor, nome };
+      return {
+        status: "approved",
+        pago: true,
+        qrCode: null,
+        qrBase64: null,
+        expiraEm: null,
+        valor,
+        nome,
+      };
     }
 
     const { data: pagador } = await supabaseAdmin
