@@ -54,6 +54,10 @@ const secoes = [
         "O que são os “Locais de baba”?",
         "Endereços fixos (nome, GPS e raio) salvos para reutilizar ao criar babas. Ex.: Arena Cajazeiras. Em Sessões, escolha um local salvo para preencher nome, coordenadas e raio automaticamente.",
       ],
+      [
+        "Removi alguém da lista sem querer. E agora?",
+        "Na página do Baba (como admin), use “Adicionar” na Lista de presença: o jogador volta para a lista e o check-in do campo é marcado, a qualquer momento — mesmo após o fechamento.",
+      ],
     ],
   },
   {
@@ -151,6 +155,10 @@ const secoes = [
       [
         "Onde aprovo convidados novos?",
         "Na aba Usuários, na fila “Aprovações de convidados”. Nenhum PIX é gerado antes da aprovação; aprovado uma vez, o convidado vira “da casa” e entra direto nos próximos babas.",
+      ],
+      [
+        "Como aplico ou removo uma punição?",
+        "Em Usuários → Punições: escolha o usuário (qualquer cargo), o baba a bloquear e o motivo. A punição bloqueia o check-in dele nesse baba e aparece no mural. Use o X para remover.",
       ],
     ],
   },

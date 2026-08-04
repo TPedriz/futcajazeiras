@@ -6,6 +6,7 @@ import {
   proximaSessaoQuery,
   presencasDaSessaoQuery,
   situacaoCheckinQuery,
+  todosAssociadosQuery,
   DIA_VENCIMENTO,
   fechamentoEfetivo,
   aberturaEfetivo,
@@ -28,6 +29,13 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar, MapPin, UserPlus, Clock, Check, Shield, HandMetal, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/baba")({
   head: ({ loaderData }) => {
@@ -57,12 +65,12 @@ export const Route = createFileRoute("/_authenticated/baba")({
         {
           name: "description",
           content:
-            "Confirme sua presença, leve seu convidado e veja a lista de chamada do próximo baba do Fut Cajazeiras.",
+            "Confirme sua presença, leve seu convidado e veja a lista de presença do próximo baba do Fut Cajazeiras.",
         },
         { property: "og:title", content: "Próximo Baba — Fut Cajazeiras" },
         {
           property: "og:description",
-          content: "Data, horário, local e lista de chamada do próximo baba do Fut Cajazeiras.",
+          content: "Data, horário, local e lista de presença do próximo baba do Fut Cajazeiras.",
         },
         { property: "og:type", content: "event" },
       ],
@@ -79,6 +87,7 @@ function BabaPage() {
   const { data: perfilData } = useSuspenseQuery(perfilAtualQuery());
   const { data: sessao } = useSuspenseQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
+  const { data: todos } = useQuery(todosAssociadosQuery());
   const { data: situacao } = useQuery(situacaoCheckinQuery(perfilData?.user.id, sessao?.id));
   const queryClient = useQueryClient();
 
@@ -87,6 +96,12 @@ function BabaPage() {
   const isConvidado = perfilData?.isConvidado ?? false;
 
   const minhaPresenca = presencas?.find((p) => p.usuario_id === userId && !p.nome_convidado);
+
+  const [adicionarAberto, setAdicionarAberto] = useState(false);
+  const [novoJogadorId, setNovoJogadorId] = useState("");
+  const disponiveis = (todos ?? []).filter(
+    (u) => !(presencas ?? []).some((p) => p.usuario_id === u.id && !p.nome_convidado),
+  );
 
   const fechamento = sessao ? fechamentoEfetivo(sessao) : null;
   const abertura = sessao ? aberturaEfetivo(sessao) : null;
@@ -153,6 +168,50 @@ function BabaPage() {
       invalidar();
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  // Admin: marca o check-in presencial de qualquer presença (sem GPS/janela).
+  const marcarChegadaAdmin = useMutation({
+    mutationFn: async (presencaId: string) => {
+      const { data, error } = await supabase.rpc("marcar_chegada", {
+        _presenca_id: presencaId,
+        _lat: 0,
+        _lng: 0,
+      });
+      if (error) throw new Error(error.message);
+      return Number(data ?? 0);
+    },
+    onSuccess: (ordem) => {
+      toast.success("Check-in marcado!", { description: `Ordem de chegada ${ordem}.` });
+      invalidar();
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  // Admin: adiciona um jogador de volta à lista e marca o check-in (a qualquer momento).
+  const adicionarPresencaAdmin = useMutation({
+    mutationFn: async (usuarioId: string) => {
+      if (!sessao) throw new Error("Sem sessão");
+      const { data: presenca, error } = await supabase
+        .from("presencas")
+        .insert({ baba_id: sessao.id, usuario_id: usuarioId })
+        .select("id")
+        .single();
+      if (error) throw error;
+      const { error: e2 } = await supabase.rpc("marcar_chegada", {
+        _presenca_id: presenca.id,
+        _lat: 0,
+        _lng: 0,
+      });
+      if (e2) throw new Error(e2.message);
+    },
+    onSuccess: () => {
+      toast.success("Jogador adicionado à lista com check-in!");
+      setAdicionarAberto(false);
+      setNovoJogadorId("");
+      invalidar();
+    },
+    onError: (e: Error) => toast.error("Erro ao adicionar", { description: e.message }),
   });
 
   if (!sessao) {
@@ -267,14 +326,61 @@ function BabaPage() {
         <LevarConvidado babaId={sessao.id} userId={userId} />
       )}
 
-      {/* Lista de chamada */}
+      {/* Lista de presença (participantes do baba) */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-2xl">Lista de chamada</h2>
-          <Badge variant="outline" className="border-gold/40 text-gold">
-            {membros.length} + {convidados.filter((c) => c.status_convidado === "aprovado").length}
-          </Badge>
+          <h2 className="font-display text-2xl">Lista de presença</h2>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button
+                variant="goldOutline"
+                size="sm"
+                onClick={() => setAdicionarAberto((v) => !v)}
+              >
+                <UserPlus className="size-4" /> Adicionar
+              </Button>
+            )}
+            <Badge variant="outline" className="border-gold/40 text-gold">
+              {membros.length} + {convidados.filter((c) => c.status_convidado === "aprovado").length}
+            </Badge>
+          </div>
         </div>
+
+        {isAdmin && adicionarAberto && (
+          <div className="mb-3 space-y-2 rounded-lg border border-border bg-surface p-3">
+            <p className="text-xs text-muted-foreground">
+              Adicione um jogador à lista de presença e ao check-in do campo (válido mesmo após o
+              fechamento).
+            </p>
+            <div className="flex gap-2">
+              <Select value={novoJogadorId} onValueChange={setNovoJogadorId}>
+                <SelectTrigger className="h-10 flex-1">
+                  <SelectValue placeholder="Escolha o jogador" />
+                </SelectTrigger>
+                <SelectContent>
+                  {disponiveis.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="hero"
+                className="h-10"
+                disabled={!novoJogadorId || adicionarPresencaAdmin.isPending}
+                onClick={() => adicionarPresencaAdmin.mutate(novoJogadorId)}
+              >
+                <UserPlus className="size-4" /> Adicionar
+              </Button>
+            </div>
+            {disponiveis.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Todos os jogadores já estão na lista.
+              </p>
+            )}
+          </div>
+        )}
 
         {presencas?.length === 0 ? (
           <p className="text-sm text-muted-foreground">Ninguém confirmou ainda. Seja o primeiro!</p>
@@ -288,6 +394,11 @@ function BabaPage() {
                 avatar={p.perfis?.avatar_url}
                 posicao={p.perfis?.posicao ?? "linha"}
                 tipo="membro"
+                onMarcarChegada={
+                  isAdmin && p.ordem_chegada == null
+                    ? () => marcarChegadaAdmin.mutate(p.id)
+                    : undefined
+                }
                 onRemove={isAdmin ? () => removerPresenca.mutate(p.id) : undefined}
               />
             ))}
@@ -307,6 +418,11 @@ function BabaPage() {
                 onReject={
                   isAdmin && p.status_convidado === "pendente"
                     ? () => moderarConvidado.mutate({ id: p.id, status: "rejeitado" })
+                    : undefined
+                }
+                onMarcarChegada={
+                  isAdmin && p.ordem_chegada == null
+                    ? () => marcarChegadaAdmin.mutate(p.id)
                     : undefined
                 }
                 onRemove={isAdmin ? () => removerPresenca.mutate(p.id) : undefined}
@@ -408,6 +524,7 @@ interface PresencaCardProps {
   mpStatus?: string | null;
   onApprove?: () => void;
   onReject?: () => void;
+  onMarcarChegada?: () => void;
   onRemove?: () => void;
 }
 
@@ -421,6 +538,7 @@ function PresencaCard({
   mpStatus,
   onApprove,
   onReject,
+  onMarcarChegada,
   onRemove,
 }: PresencaCardProps) {
   const isConvidado = tipo === "convidado";
@@ -493,6 +611,17 @@ function PresencaCard({
             <X className="size-4" />
           </Button>
         </>
+      )}
+      {onMarcarChegada && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9 text-gold"
+          onClick={onMarcarChegada}
+          aria-label="Marcar check-in no campo"
+        >
+          <MapPin className="size-4" />
+        </Button>
       )}
       {!pendente && onRemove && (
         <Button

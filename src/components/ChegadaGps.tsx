@@ -195,7 +195,7 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="size-4 text-gold" />
-              <p className="font-display text-lg">Presentes até o momento</p>
+              <p className="font-display text-lg">Check-in</p>
             </div>
             <Badge variant="outline" className="border-gold/40 text-gold">
               {chegados.length}
