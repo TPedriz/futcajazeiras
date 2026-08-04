@@ -103,7 +103,7 @@ function ResultadosPage() {
       delta,
     }: {
       usuarioId: string;
-      campo: "gols" | "assistencias" | "cartoes_amarelos" | "cartoes_azuis" | "cartoes_vermelhos";
+      campo: "gols" | "assistencias" | "penaltis_defendidos" | "cartoes_amarelos" | "cartoes_azuis" | "cartoes_vermelhos";
       delta: number;
     }) => {
       if (!babaId) throw new Error("Selecione um baba");
@@ -111,6 +111,7 @@ function ResultadosPage() {
       const base = {
         gols: atual?.gols ?? 0,
         assistencias: atual?.assistencias ?? 0,
+        penaltis_defendidos: atual?.penaltis_defendidos ?? 0,
         cartoes_amarelos: atual?.cartoes_amarelos ?? 0,
         cartoes_azuis: atual?.cartoes_azuis ?? 0,
         cartoes_vermelhos: atual?.cartoes_vermelhos ?? 0,
@@ -244,13 +245,16 @@ function ResultadosPage() {
                     )}
                   </div>
                   {j.usuario_id && (
-                    <div className="mt-2 grid grid-cols-5 gap-1">
+                    <div className="mt-2 grid grid-cols-6 gap-1">
                       <StatBtn label="Gol" valor={s?.gols ?? 0} cor="bg-gold/15 text-gold"
                         onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "gols", delta: 1 })}
                         onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "gols", delta: -1 })} />
                       <StatBtn label="Assist." valor={s?.assistencias ?? 0} cor="bg-success/15 text-success"
                         onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "assistencias", delta: 1 })}
                         onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "assistencias", delta: -1 })} />
+                      <StatBtn label="Def. pênalti" valor={s?.penaltis_defendidos ?? 0} cor="bg-violet-500/15 text-violet-400"
+                        onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "penaltis_defendidos", delta: 1 })}
+                        onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "penaltis_defendidos", delta: -1 })} />
                       <StatBtn label="Amar." valor={s?.cartoes_amarelos ?? 0} cor="bg-yellow-500/15 text-yellow-400"
                         onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "cartoes_amarelos", delta: 1 })}
                         onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "cartoes_amarelos", delta: -1 })} />

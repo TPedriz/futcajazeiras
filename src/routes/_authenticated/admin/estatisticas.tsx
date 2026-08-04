@@ -31,11 +31,18 @@ export const Route = createFileRoute("/_authenticated/admin/estatisticas")({
   component: EstatisticasPage,
 });
 
-type Campo = "gols" | "assistencias" | "cartoes_amarelos" | "cartoes_azuis" | "cartoes_vermelhos";
+type Campo =
+  | "gols"
+  | "assistencias"
+  | "penaltis_defendidos"
+  | "cartoes_amarelos"
+  | "cartoes_azuis"
+  | "cartoes_vermelhos";
 
 const CAMPOS: { campo: Campo; rotulo: string; icone: typeof Goal; cor: string }[] = [
   { campo: "gols", rotulo: "Gols", icone: Goal, cor: "text-gold" },
   { campo: "assistencias", rotulo: "Assistências", icone: Handshake, cor: "text-success" },
+  { campo: "penaltis_defendidos", rotulo: "Def. pênalti", icone: Trophy, cor: "text-violet-400" },
   { campo: "cartoes_amarelos", rotulo: "Amarelos", icone: Trophy, cor: "text-yellow-400" },
   { campo: "cartoes_azuis", rotulo: "Azuis", icone: Trophy, cor: "text-blue-400" },
   { campo: "cartoes_vermelhos", rotulo: "Vermelhos", icone: Trophy, cor: "text-destructive" },
@@ -55,6 +62,7 @@ function EstatisticasPage() {
   const [form, setForm] = useState({
     gols: 0,
     assistencias: 0,
+    penaltis_defendidos: 0,
     cartoes_amarelos: 0,
     cartoes_azuis: 0,
     cartoes_vermelhos: 0,
@@ -66,6 +74,7 @@ function EstatisticasPage() {
     setForm({
       gols: s?.gols ?? 0,
       assistencias: s?.assistencias ?? 0,
+      penaltis_defendidos: s?.penaltis_defendidos ?? 0,
       cartoes_amarelos: s?.cartoes_amarelos ?? 0,
       cartoes_azuis: s?.cartoes_azuis ?? 0,
       cartoes_vermelhos: s?.cartoes_vermelhos ?? 0,
@@ -111,6 +120,7 @@ function EstatisticasPage() {
       setForm({
         gols: 0,
         assistencias: 0,
+        penaltis_defendidos: 0,
         cartoes_amarelos: 0,
         cartoes_azuis: 0,
         cartoes_vermelhos: 0,
@@ -180,7 +190,7 @@ function EstatisticasPage() {
                 <span className="ml-2 text-[11px] text-muted-foreground">(já tem lançamento)</span>
               )}
             </p>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-6 gap-2">
               {CAMPOS.map(({ campo, rotulo, icone, cor }) => (
                 <div key={campo} className="rounded-md bg-background p-2 text-center">
                   <p
