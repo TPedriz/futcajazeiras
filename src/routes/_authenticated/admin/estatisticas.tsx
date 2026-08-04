@@ -31,12 +31,7 @@ export const Route = createFileRoute("/_authenticated/admin/estatisticas")({
   component: EstatisticasPage,
 });
 
-type Campo =
-  | "gols"
-  | "assistencias"
-  | "cartoes_amarelos"
-  | "cartoes_azuis"
-  | "cartoes_vermelhos";
+type Campo = "gols" | "assistencias" | "cartoes_amarelos" | "cartoes_azuis" | "cartoes_vermelhos";
 
 const CAMPOS: { campo: Campo; rotulo: string; icone: typeof Goal; cor: string }[] = [
   { campo: "gols", rotulo: "Gols", icone: Goal, cor: "text-gold" },
@@ -87,7 +82,10 @@ function EstatisticasPage() {
       if (!babaId || !usuarioId) throw new Error("Selecione o baba e o usuário");
       const { error } = await supabase
         .from("estatisticas_baba")
-        .upsert({ baba_id: babaId, usuario_id: usuarioId, ...form }, { onConflict: "baba_id,usuario_id" });
+        .upsert(
+          { baba_id: babaId, usuario_id: usuarioId, ...form },
+          { onConflict: "baba_id,usuario_id" },
+        );
       if (error) throw error;
     },
     onSuccess: () => {
@@ -110,7 +108,13 @@ function EstatisticasPage() {
     onSuccess: () => {
       toast.success("Estatísticas removidas");
       setUsuarioId("");
-      setForm({ gols: 0, assistencias: 0, cartoes_amarelos: 0, cartoes_azuis: 0, cartoes_vermelhos: 0 });
+      setForm({
+        gols: 0,
+        assistencias: 0,
+        cartoes_amarelos: 0,
+        cartoes_azuis: 0,
+        cartoes_vermelhos: 0,
+      });
       invalidar();
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
@@ -131,14 +135,21 @@ function EstatisticasPage() {
 
         <div className="space-y-1">
           <Label className="text-xs uppercase tracking-widest text-muted-foreground">Baba</Label>
-          <Select value={babaId} onValueChange={(v) => { setBabaId(v); setUsuarioId(""); }}>
+          <Select
+            value={babaId}
+            onValueChange={(v) => {
+              setBabaId(v);
+              setUsuarioId("");
+            }}
+          >
             <SelectTrigger className="h-12">
               <SelectValue placeholder="Selecione o baba" />
             </SelectTrigger>
             <SelectContent>
               {sessoes.map((s) => (
                 <SelectItem key={s.id} value={s.id}>
-                  {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} — {s.local}
+                  {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} —{" "}
+                  {s.local}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -172,7 +183,9 @@ function EstatisticasPage() {
             <div className="grid grid-cols-5 gap-2">
               {CAMPOS.map(({ campo, rotulo, icone, cor }) => (
                 <div key={campo} className="rounded-md bg-background p-2 text-center">
-                  <p className={`flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest ${cor}`}>
+                  <p
+                    className={`flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest ${cor}`}
+                  >
                     <icone className="size-3" /> {rotulo}
                   </p>
                   <div className="mt-1 flex items-center justify-center gap-1">
@@ -190,7 +203,10 @@ function EstatisticasPage() {
                       className="h-8 w-10 px-0 text-center font-display"
                       value={form[campo]}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, [campo]: Math.max(0, Number(e.target.value) || 0) }))
+                        setForm((f) => ({
+                          ...f,
+                          [campo]: Math.max(0, Number(e.target.value) || 0),
+                        }))
                       }
                     />
                     <button
@@ -206,7 +222,13 @@ function EstatisticasPage() {
               ))}
             </div>
             <div className="flex gap-2">
-              <Button variant="gold" size="lg" className="flex-1" disabled={salvar.isPending} onClick={() => salvar.mutate()}>
+              <Button
+                variant="gold"
+                size="lg"
+                className="flex-1"
+                disabled={salvar.isPending}
+                onClick={() => salvar.mutate()}
+              >
                 <Save className="size-4" /> Salvar
               </Button>
               {statDoUsuario && (
@@ -215,7 +237,8 @@ function EstatisticasPage() {
                   size="lg"
                   disabled={remover.isPending}
                   onClick={() => {
-                    if (confirm("Remover as estatísticas desse usuário nesse baba?")) remover.mutate();
+                    if (confirm("Remover as estatísticas desse usuário nesse baba?"))
+                      remover.mutate();
                   }}
                 >
                   <Trash2 className="size-4" /> Remover
@@ -248,8 +271,8 @@ function EstatisticasPage() {
                     {nomes.get(s.usuario_id) ?? "Jogador"}
                   </span>
                   <span className="text-[11px] text-muted-foreground">
-                    ⚽ {s.gols} • 🅰️ {s.assistencias} • 🟨 {s.cartoes_amarelos} • 🟦 {s.cartoes_azuis} • 🟥{" "}
-                    {s.cartoes_vermelhos}
+                    ⚽ {s.gols} • 🅰️ {s.assistencias} • 🟨 {s.cartoes_amarelos} • 🟦{" "}
+                    {s.cartoes_azuis} • 🟥 {s.cartoes_vermelhos}
                   </span>
                 </button>
               </li>
