@@ -15,9 +15,19 @@ export function SolicitacoesRecebidas({ babaId, userId }: { babaId: string; user
   const acao = useMutation({
     mutationFn: async ({ id, aceitar }: { id: string; aceitar: boolean }) =>
       await responder({ data: { solicitacaoId: id, aceitar } }),
-    onSuccess: (_r, vars) => {
+    onSuccess: (r, vars) => {
       toast.success(
-        vars.aceitar ? "Convite aceito! O PIX já foi gerado para o convidado." : "Solicitação recusada",
+        vars.aceitar
+          ? r.aguardandoDiretoria
+            ? "Convite aceito — aguardando a diretoria"
+            : "Convite aceito! O PIX já foi gerado para o convidado."
+          : "Solicitação recusada",
+        vars.aceitar && r.aguardandoDiretoria
+          ? {
+              description:
+                "Convidado novo vai para a aprovação da diretoria. Depois gere o PIX em 'Levar convidado'.",
+            }
+          : undefined,
       );
       qc.invalidateQueries({ queryKey: ["solicitacoes-recebidas"] });
       qc.invalidateQueries({ queryKey: ["presencas", babaId] });
@@ -35,14 +45,20 @@ export function SolicitacoesRecebidas({ babaId, userId }: { babaId: string; user
         <p className="font-display text-lg">Pedidos de convidados</p>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Ao aceitar, o convidado fica vinculado a você e recebe o PIX de R$ 5,00.
+        Convidado da casa libera o PIX na hora; convidado novo passa pela aprovação da diretoria
+        antes de qualquer cobrança.
       </p>
       <ul className="mt-3 space-y-2">
         {pendentes.map((s) => (
-          <li key={s.id} className="flex items-center gap-2 rounded-lg border border-border bg-surface p-3">
+          <li
+            key={s.id}
+            className="flex items-center gap-2 rounded-lg border border-border bg-surface p-3"
+          >
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{s.nomeSolicitante}</p>
-              <Badge variant="outline" className="mt-1 border-gold/40 text-gold">Aguardando você</Badge>
+              <Badge variant="outline" className="mt-1 border-gold/40 text-gold">
+                Aguardando você
+              </Badge>
             </div>
             <Button
               variant="success"

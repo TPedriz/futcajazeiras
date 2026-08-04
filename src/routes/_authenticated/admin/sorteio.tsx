@@ -241,7 +241,7 @@ function SorteioPage() {
 
       <div className="card-premium p-5">
         <p className="text-xs uppercase tracking-widest text-gold">Modo do sorteio</p>
-        <div className="mt-3 grid gap-2">
+        <div className="mt-4 flex flex-col gap-3">
           {(
             [
               { v: "aleatorio", t: "Aleatório", d: "Sorteio embaralhado entre todos da lista." },
@@ -257,7 +257,7 @@ function SorteioPage() {
               key={m.v}
               variant={modo === m.v ? "gold" : "outline"}
               size="lg"
-              className="h-auto flex-col items-start py-3 text-left"
+              className="h-auto w-full flex-col items-start py-3 text-left"
               onClick={() => {
                 setModo(m.v);
                 setResultado(null);
