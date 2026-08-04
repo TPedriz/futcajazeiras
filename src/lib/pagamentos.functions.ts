@@ -116,6 +116,9 @@ export const criarPixConvidado = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<PixResposta & { presencaId: string }> => {
     const { supabase, userId } = context;
 
+    const { criarPagamentoPix, emailPagador, valorConvidadoAtual } = await import("@/lib/mercadopago.server");
+    const valor = await valorConvidadoAtual();
+
     const { data: existente } = await supabase
       .from("presencas")
       .select("id")
@@ -132,7 +135,7 @@ export const criarPixConvidado = createServerFn({ method: "POST" })
         usuario_id: userId,
         nome_convidado: data.nome,
         status_convidado: "pendente",
-        valor: 5,
+        valor,
       })
       .select("id")
       .single();
@@ -144,9 +147,8 @@ export const criarPixConvidado = createServerFn({ method: "POST" })
       .eq("id", userId)
       .maybeSingle();
 
-    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } = await import("@/lib/mercadopago.server");
     const pix = await criarPagamentoPix({
-      valor: VALOR_CONVIDADO,
+      valor,
       descricao: `Taxa de convidado — ${data.nome}`,
       email: emailPagador(perfil?.telefone, userId),
       nome: perfil?.nome ?? "Associado",
@@ -175,7 +177,7 @@ export const criarPixConvidado = createServerFn({ method: "POST" })
       qrCode: pix.qrCode,
       qrBase64: pix.qrBase64,
       expiraEm: pix.expiraEm,
-      valor: VALOR_CONVIDADO,
+      valor,
     };
   });
 

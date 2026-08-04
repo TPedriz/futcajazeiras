@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
 import { listarAnfitrioes, solicitarConvite, pixDaSolicitacao } from "@/lib/convidados.functions";
-import { minhasSolicitacoesQuery } from "@/lib/babaQueries";
+import { minhasSolicitacoesQuery, valorConvidadoQuery } from "@/lib/babaQueries";
 import { HandHeart, QrCode, MessageCircle } from "lucide-react";
 
 const GRUPO_WHATSAPP_URL = "https://chat.whatsapp.com/HtGUdc005Hd9NLqY8Bcg3W";
@@ -23,6 +23,7 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
   const buscarAnfitrioes = useServerFn(listarAnfitrioes);
   const pedir = useServerFn(solicitarConvite);
   const verPix = useServerFn(pixDaSolicitacao);
+  const { data: valorConvidado } = useQuery(valorConvidadoQuery());
 
   const [anfitriao, setAnfitriao] = useState<string>("");
   const [pixAberto, setPixAberto] = useState(false);
@@ -119,8 +120,11 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
           <p className="font-display text-lg">Ir como convidado</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Convidados não entram direto na lista: peça a um associado para te levar. Se ele
-            aceitar, você paga a taxa de <strong className="text-gold">R$ 5,00</strong> via PIX e
-            entra na lista.
+            aceitar, você paga a taxa de{" "}
+            <strong className="text-gold">
+              R$ {Number(valorConvidado ?? 5).toFixed(2).replace(".", ",")}
+            </strong>{" "}
+            via PIX e entra na lista.
           </p>
 
           {ativa ? (
