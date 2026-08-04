@@ -100,6 +100,10 @@ const secoes = [
         "Posso pagar por outra pessoa?",
         "Pode. Em Pagamentos use “Presentear mensalidade” e escolha quem está com o mês em aberto.",
       ],
+      [
+        "Quando entro no grupo do WhatsApp?",
+        "O grupo oficial é só para associados. Quando sua associação é aprovada pela diretoria e você paga a mensalidade, aparece o botão “Entrar no grupo” na tela de Pagamentos. Enquanto for convidado, o link não aparece.",
+      ],
     ],
   },
   {
@@ -127,7 +131,7 @@ const secoes = [
     itens: [
       [
         "Como coloco minha foto?",
-        "No Perfil, toque no ícone de câmera sobre o avatar e escolha uma imagem de até 5 MB.",
+        "No Perfil, toque no ícone de câmera sobre o avatar e escolha uma imagem de até 5 MB. Abre um editor: arraste para reposicionar e use o controle de zoom, com pré-visualização em tempo real do círculo. Toque em “Salvar foto” para aplicar.",
       ],
       [
         "Posso mudar meu nome?",
@@ -145,11 +149,15 @@ const secoes = [
     itens: [
       [
         "Como funciona o ranking?",
-        "Top 5 do mês por gols e assistências, com vitórias e derrotas contadas pelos times marcados como vencedores ou perdedores.",
+        "Top 5 do mês por categoria: Gols, Assistências, Pênaltis defendidos e Cartões. Na Home você alterna entre as categorias. Cartões só contam para a própria categoria de cartões — não colocam ninguém no ranking de gols, assistências ou pênaltis.",
+      ],
+      [
+        "Pênaltis defendidos vale para todos?",
+        "Sim. Qualquer jogador (linha ou goleiro) pode ter pênaltis defendidos registrados — já que jogador de linha também vai pro gol quando não há goleiro.",
       ],
       [
         "Quem lança as estatísticas?",
-        "Somente a diretoria, pela aba Resultados. Gols, assistências e cartões podem ser corrigidos retroativamente em qualquer baba do histórico.",
+        "Somente a diretoria, pelas abas Resultados e Estatísticas. Gols, assistências, pênaltis defendidos e cartões podem ser lançados ou corrigidos em qualquer baba do histórico.",
       ],
       [
         "Cartão vermelho, e agora?",
