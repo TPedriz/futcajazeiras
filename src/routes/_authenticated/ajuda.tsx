@@ -131,7 +131,7 @@ const secoes = [
     itens: [
       [
         "Como coloco minha foto?",
-        "No Perfil, toque no ícone de câmera sobre o avatar e escolha uma imagem de até 5 MB. Abre um editor: arraste para reposicionar e use o controle de zoom, com pré-visualização em tempo real do círculo. Toque em “Salvar foto” para aplicar.",
+        "No Perfil, toque no ícone de câmera sobre o avatar e escolha uma imagem de até 5 MB. Abre um editor: arraste para reposicionar e use o controle de zoom, com pré-visualização em tempo real do círculo. Toque em “Salvar foto” para aplicar. Já tem foto? Use o botão “Ajustar foto” abaixo do avatar para reposicionar, dar zoom ou recortar a foto atual sem precisar enviar outra.",
       ],
       [
         "Posso mudar meu nome?",
