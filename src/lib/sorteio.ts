@@ -260,7 +260,7 @@ export function sortearSegundoChegada(
   );
 
   // Ninguém fica de fora: retardatário que ainda não entrou em time vira linha.
-  const idsTmp = new Set(coletar(finalTmp));
+  const idsTmp = new Set(coletarAlocados(finalTmp));
   const restantes = novos
     .filter((n) => !idsTmp.has(n.id))
     .map((n) => ({ ...n, posicao: "linha" as const }));
