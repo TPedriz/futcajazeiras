@@ -13,12 +13,33 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { LogOut, HandMetal, Shield, Phone, User, Wallet, Heart, Pencil, Save, LifeBuoy, Trophy, ShieldCheck, Camera } from "lucide-react";
+import {
+  LogOut,
+  HandMetal,
+  Shield,
+  Phone,
+  User,
+  Wallet,
+  Heart,
+  Pencil,
+  Save,
+  LifeBuoy,
+  Trophy,
+  ShieldCheck,
+  Camera,
+} from "lucide-react";
 import { tempoDeAssociado } from "@/lib/associado";
 import { AvatarJogador } from "@/components/AvatarJogador";
+import { EditorFotoPerfil } from "@/components/EditorFotoPerfil";
 import { useState } from "react";
 import { formataTelefone } from "@/lib/telefone";
 
@@ -26,9 +47,16 @@ export const Route = createFileRoute("/_authenticated/perfil")({
   head: () => ({
     meta: [
       { title: "Perfil — Fut Cajazeiras" },
-      { name: "description", content: "Gerencie seu perfil no Fut Cajazeiras: WhatsApp cadastrado, posição preferida, time do coração e status da mensalidade." },
+      {
+        name: "description",
+        content:
+          "Gerencie seu perfil no Fut Cajazeiras: WhatsApp cadastrado, posição preferida, time do coração e status da mensalidade.",
+      },
       { property: "og:title", content: "Seu Perfil — Fut Cajazeiras" },
-      { property: "og:description", content: "Atualize sua posição preferida e acompanhe sua mensalidade no Fut Cajazeiras." },
+      {
+        property: "og:description",
+        content: "Atualize sua posição preferida e acompanhe sua mensalidade no Fut Cajazeiras.",
+      },
     ],
   }),
   component: PerfilPage,
@@ -56,26 +84,31 @@ function PerfilPage() {
   const [editandoNome, setEditandoNome] = useState(false);
   const [nome, setNome] = useState("");
   const [enviandoFoto, setEnviandoFoto] = useState(false);
+  const [fotoSelecionada, setFotoSelecionada] = useState<File | null>(null);
+  const [editorAberto, setEditorAberto] = useState(false);
 
-  const enviarFoto = async (arquivo: File) => {
+  const enviarFoto = async (blob: Blob) => {
     if (!perfil) return;
-    if (arquivo.size > 5 * 1024 * 1024) {
+    if (blob.size > 5 * 1024 * 1024) {
       toast.error("Foto muito grande", { description: "Envie uma imagem de até 5 MB." });
       return;
     }
     setEnviandoFoto(true);
-    const extensao = arquivo.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const extensao = "jpg";
     const caminho = `${perfil.id}/avatar-${Date.now()}.${extensao}`;
     const { error: erroUpload } = await supabase.storage
       .from("avatares")
-      .upload(caminho, arquivo, { upsert: true, contentType: arquivo.type });
+      .upload(caminho, blob, { upsert: true, contentType: "image/jpeg" });
     if (erroUpload) {
       setEnviandoFoto(false);
       toast.error("Não foi possível enviar a foto", { description: erroUpload.message });
       return;
     }
     const anterior = perfil.avatar_url;
-    const { error } = await supabase.from("perfis").update({ avatar_url: caminho }).eq("id", perfil.id);
+    const { error } = await supabase
+      .from("perfis")
+      .update({ avatar_url: caminho })
+      .eq("id", perfil.id);
     setEnviandoFoto(false);
     if (error) {
       toast.error("Não foi possível salvar a foto.");
@@ -94,7 +127,10 @@ function PerfilPage() {
       return;
     }
     setSalvando(true);
-    const { error } = await supabase.from("perfis").update({ nome: nome.trim() }).eq("id", perfil.id);
+    const { error } = await supabase
+      .from("perfis")
+      .update({ nome: nome.trim() })
+      .eq("id", perfil.id);
     setSalvando(false);
     if (error) {
       toast.error("Não foi possível salvar o nome.");
@@ -122,7 +158,10 @@ function PerfilPage() {
   const definirTimeCoracao = async (time: "bahia" | "vitoria") => {
     if (!perfil || perfil.time_coracao) return;
     setSalvando(true);
-    const { error } = await supabase.from("perfis").update({ time_coracao: time }).eq("id", perfil.id);
+    const { error } = await supabase
+      .from("perfis")
+      .update({ time_coracao: time })
+      .eq("id", perfil.id);
     setSalvando(false);
     if (error) {
       toast.error("Não foi possível salvar o time do coração.");
@@ -177,19 +216,45 @@ function PerfilPage() {
             onChange={(e) => {
               const arquivo = e.target.files?.[0];
               e.target.value = "";
-              if (arquivo) enviarFoto(arquivo);
+              if (!arquivo) return;
+              if (arquivo.size > 5 * 1024 * 1024) {
+                toast.error("Foto muito grande", { description: "Envie uma imagem de até 5 MB." });
+                return;
+              }
+              setFotoSelecionada(arquivo);
+              setEditorAberto(true);
             }}
+          />
+          <EditorFotoPerfil
+            arquivo={fotoSelecionada}
+            aberto={editorAberto}
+            onAbertoChange={setEditorAberto}
+            onSalvar={enviarFoto}
           />
         </div>
         {enviandoFoto && <p className="mt-2 text-[11px] text-muted-foreground">Enviando foto…</p>}
         {editandoNome ? (
           <div className="mt-3 space-y-2 text-left">
-            <Label htmlFor="nome-perfil" className="text-xs uppercase tracking-widest text-muted-foreground">
+            <Label
+              htmlFor="nome-perfil"
+              className="text-xs uppercase tracking-widest text-muted-foreground"
+            >
               Nome completo
             </Label>
-            <Input id="nome-perfil" value={nome} onChange={(e) => setNome(e.target.value)} className="h-12" />
+            <Input
+              id="nome-perfil"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              className="h-12"
+            />
             <div className="flex gap-2">
-              <Button variant="gold" size="sm" className="flex-1" disabled={salvando} onClick={salvarNome}>
+              <Button
+                variant="gold"
+                size="sm"
+                className="flex-1"
+                disabled={salvando}
+                onClick={salvarNome}
+              >
                 <Save className="size-4" /> Salvar
               </Button>
               <Button variant="outline" size="sm" onClick={() => setEditandoNome(false)}>
@@ -213,7 +278,9 @@ function PerfilPage() {
         )}
         <p className="mt-1 text-xs uppercase tracking-widest text-gold">{data?.rotuloPapel}</p>
         {perfil?.ativo === false && (
-          <Badge variant="destructive" className="mt-2">Conta desativada</Badge>
+          <Badge variant="destructive" className="mt-2">
+            Conta desativada
+          </Badge>
         )}
 
         {isConvidado && (
@@ -229,7 +296,8 @@ function PerfilPage() {
             </p>
             <Progress value={(jogados / META_CONVIDADO) * 100} className="mt-2 h-2" />
             <p className="mt-2 text-[11px] text-muted-foreground">
-              Só conta baba com a taxa de convidado confirmada. Convite cancelado ou não pago não entra.
+              Só conta baba com a taxa de convidado confirmada. Convite cancelado ou não pago não
+              entra.
             </p>
 
             {solicitacao?.status === "pendente" ? (
@@ -265,7 +333,8 @@ function PerfilPage() {
               <Heart className="size-4" /> {tempo.apelido}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Você faz parte do Fut Cajazeiras há <strong className="text-foreground">{tempo.texto}</strong>
+              Você faz parte do Fut Cajazeiras há{" "}
+              <strong className="text-foreground">{tempo.texto}</strong>
             </p>
             <p className="mt-0.5 text-[11px] capitalize text-muted-foreground">
               desde {tempo.desdeFormatado} • {tempo.dias} dias de camisa
@@ -275,7 +344,11 @@ function PerfilPage() {
       </div>
 
       <div className="card-premium divide-y divide-border">
-        <InfoRow Icon={Phone} label="WhatsApp" value={perfil?.telefone ? formataTelefone(perfil.telefone) : "—"} />
+        <InfoRow
+          Icon={Phone}
+          label="WhatsApp"
+          value={perfil?.telefone ? formataTelefone(perfil.telefone) : "—"}
+        />
         <InfoRow
           Icon={Shield}
           label="Mensalidade"
@@ -295,10 +368,20 @@ function PerfilPage() {
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" size="lg" disabled={salvando} onClick={() => definirTimeCoracao("bahia")}>
+            <Button
+              variant="outline"
+              size="lg"
+              disabled={salvando}
+              onClick={() => definirTimeCoracao("bahia")}
+            >
               Bahia
             </Button>
-            <Button variant="outline" size="lg" disabled={salvando} onClick={() => definirTimeCoracao("vitoria")}>
+            <Button
+              variant="outline"
+              size="lg"
+              disabled={salvando}
+              onClick={() => definirTimeCoracao("vitoria")}
+            >
               Vitória
             </Button>
           </div>
@@ -309,8 +392,15 @@ function PerfilPage() {
       </div>
 
       <div className="card-premium space-y-3 p-4">
-        <Label htmlFor="posicao-perfil" className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-          {perfil?.posicao === "goleiro" ? <HandMetal className="size-4" /> : <User className="size-4" />}
+        <Label
+          htmlFor="posicao-perfil"
+          className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"
+        >
+          {perfil?.posicao === "goleiro" ? (
+            <HandMetal className="size-4" />
+          ) : (
+            <User className="size-4" />
+          )}
           Posição preferida
         </Label>
         <Select
@@ -347,13 +437,25 @@ function PerfilPage() {
   );
 }
 
-function InfoRow({ Icon, label, value, highlight }: { Icon: typeof Phone; label: string; value: string; highlight?: "gold" | "destructive" }) {
+function InfoRow({
+  Icon,
+  label,
+  value,
+  highlight,
+}: {
+  Icon: typeof Phone;
+  label: string;
+  value: string;
+  highlight?: "gold" | "destructive";
+}) {
   return (
     <div className="flex items-center gap-3 p-4">
       <Icon className="size-4 text-muted-foreground" />
       <div className="flex-1">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
-        <p className={`text-sm font-semibold ${highlight === "gold" ? "text-gold" : highlight === "destructive" ? "text-destructive" : "text-foreground"}`}>
+        <p
+          className={`text-sm font-semibold ${highlight === "gold" ? "text-gold" : highlight === "destructive" ? "text-destructive" : "text-foreground"}`}
+        >
           {value}
         </p>
       </div>
