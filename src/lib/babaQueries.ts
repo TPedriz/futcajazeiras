@@ -494,6 +494,21 @@ export const valorMensalidadeQuery = () =>
     },
   });
 
+/** Valor atual da diária de convidado definido pela diretoria. */
+export const valorConvidadoQuery = () =>
+  queryOptions({
+    queryKey: ["valor-convidado"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("configuracoes")
+        .select("valor")
+        .eq("chave", "valor_convidado")
+        .maybeSingle();
+      if (error) throw error;
+      return Number(data?.valor ?? 5);
+    },
+  });
+
 /** Fechamento padrão da lista: 3 horas antes do início do baba. */
 export function fechamentoPadrao(dataHorario: Date) {
   return new Date(dataHorario.getTime() - 3 * 60 * 60 * 1000);

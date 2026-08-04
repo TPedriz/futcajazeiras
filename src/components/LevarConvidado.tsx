@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
-import { convidadosDaCasaQuery, meusPedidosConvidadoQuery } from "@/lib/babaQueries";
+import { convidadosDaCasaQuery, meusPedidosConvidadoQuery, valorConvidadoQuery } from "@/lib/babaQueries";
 import { criarPedidoConvidado, gerarPixPedido } from "@/lib/convidados.functions";
 import { formataTelefone } from "@/lib/telefone";
 import { UserPlus, Sparkles, Home, QrCode, Clock } from "lucide-react";
@@ -37,6 +37,7 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
 
   const { data: convidadosCasa } = useQuery(convidadosDaCasaQuery());
   const { data: pedidos } = useQuery(meusPedidosConvidadoQuery(userId, babaId));
+  const { data: valorConvidado } = useQuery(valorConvidadoQuery());
   const pedidoAtivo = (pedidos ?? []).find((p) => p.status !== "rejeitado");
 
   const invalidar = () => {
@@ -96,7 +97,11 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
           <p className="font-display text-lg">Levar convidado</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Você pode levar 1 convidado por baba. Convidado novo passa pela aprovação da diretoria;
-            convidado da casa já libera o PIX de <strong className="text-gold">R$ 5,00</strong> na hora.
+            convidado da casa já libera o PIX de{" "}
+            <strong className="text-gold">
+              R$ {Number(valorConvidado ?? 5).toFixed(2).replace(".", ",")}
+            </strong>{" "}
+            na hora.
           </p>
 
           {pedidoAtivo ? (
