@@ -49,9 +49,7 @@ export const solicitarConvite = createServerFn({ method: "POST" })
 export const responderSolicitacao = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z
-      .object({ solicitacaoId: z.string().uuid(), aceitar: z.boolean() })
-      .parse(d),
+    z.object({ solicitacaoId: z.string().uuid(), aceitar: z.boolean() }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -88,6 +86,86 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
       .eq("id", sol.solicitante_id)
       .maybeSingle();
 
+    // Convidado "da casa"? (já aprovado pela diretoria em algum momento)
+    const { data: cad } = await supabaseAdmin
+      .from("convidados_cadastro")
+      .select("id, nome, telefone, aprovado, bloqueado")
+      .eq("user_id", sol.solicitante_id)
+      .maybeSingle();
+    if (cad?.bloqueado) throw new Error("Esse convidado está bloqueado pela diretoria");
+    const daCasa = !!cad?.aprovado;
+
+    if (!daCasa) {
+      // Convidado NOVO: o anfitrião aceitou, mas a diretoria precisa aprovar antes de qualquer PIX.
+      let convidadoId = cad?.id ?? null;
+      if (!convidadoId) {
+        const tel = perfilSolicitante?.telefone ?? "";
+        const { data: porTel } = await supabaseAdmin
+          .from("convidados_cadastro")
+          .select("id, bloqueado")
+          .eq("telefone", tel)
+          .maybeSingle();
+        if (porTel?.bloqueado) throw new Error("Esse convidado está bloqueado pela diretoria");
+        convidadoId = porTel?.id ?? null;
+      }
+      if (!convidadoId) {
+        const { data: novo, error: erroCad } = await supabaseAdmin
+          .from("convidados_cadastro")
+          .insert({
+            nome: perfilSolicitante?.nome ?? "Convidado",
+            telefone: perfilSolicitante?.telefone ?? "",
+            criado_por: userId,
+            user_id: sol.solicitante_id,
+          })
+          .select("id")
+          .single();
+        if (erroCad) throw erroCad;
+        convidadoId = novo.id;
+      }
+
+      const { data: outroPedido } = await supabaseAdmin
+        .from("pedidos_convidado")
+        .select("id")
+        .eq("baba_id", sol.baba_id)
+        .eq("anfitriao_id", userId)
+        .neq("status", "rejeitado")
+        .maybeSingle();
+      if (outroPedido) throw new Error("Você já tem um convidado nesse baba");
+
+      const { data: pedido, error: erroPedido } = await supabaseAdmin
+        .from("pedidos_convidado")
+        .insert({
+          baba_id: sol.baba_id,
+          anfitriao_id: userId,
+          convidado_id: convidadoId,
+          solicitacao_id: sol.id,
+          status: "pendente",
+        })
+        .select("id")
+        .single();
+      if (erroPedido) throw erroPedido;
+
+      await supabase.from("solicitacoes_convidado").update({ status: "aprovado" }).eq("id", sol.id);
+
+      // Avisa a diretoria (fila de aprovações em AprovacoesConvidados).
+      const { data: admins } = await supabaseAdmin
+        .from("papeis_usuario")
+        .select("user_id")
+        .eq("papel", "administrador");
+      const msg = `${perfilSolicitante?.nome ?? "Um convidado"} pediu para entrar no baba e aguarda a aprovação da diretoria.`;
+      for (const a of admins ?? []) {
+        await supabaseAdmin.from("notificacoes").insert({
+          usuario_id: a.user_id,
+          titulo: "Novo convidado aguardando aprovação",
+          mensagem: msg,
+          link: "/admin/usuarios",
+        });
+      }
+
+      return { aceito: true, aguardandoDiretoria: true, pedidoId: pedido.id };
+    }
+
+    // ---- Convidado da casa: libera presença + PIX direto (já foi aprovado pela diretoria). ----
     const { data: presenca, error: erroPresenca } = await supabase
       .from("presencas")
       .insert({
@@ -105,10 +183,14 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
     if (perfilSolicitante?.telefone) {
       await supabaseAdmin
         .from("presencas_contato")
-        .upsert({ presenca_id: presenca.id, telefone: perfilSolicitante.telefone }, { onConflict: "presenca_id" });
+        .upsert(
+          { presenca_id: presenca.id, telefone: perfilSolicitante.telefone },
+          { onConflict: "presenca_id" },
+        );
     }
 
-    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } = await import("@/lib/mercadopago.server");
+    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } =
+      await import("@/lib/mercadopago.server");
     const pix = await criarPagamentoPix({
       valor: VALOR_CONVIDADO,
       descricao: `Taxa de convidado — ${perfilSolicitante?.nome ?? "Convidado"}`,
@@ -130,7 +212,6 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
       { onConflict: "presenca_id" },
     );
 
-
     await supabase
       .from("solicitacoes_convidado")
       .update({ status: "aprovado", presenca_id: presenca.id })
@@ -138,6 +219,39 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
 
     return { aceito: true, presencaId: presenca.id };
   });
+
+/** Status de uma presença de convidado (PIX) — consulta a API do Mercado Pago para confirmar. */
+async function statusDaPresenca(presencaId: string): Promise<PixConvite> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: presenca } = await supabaseAdmin
+    .from("presencas")
+    .select("id, status_convidado, valor")
+    .eq("id", presencaId)
+    .maybeSingle();
+  if (!presenca) throw new Error("Cobrança não encontrada");
+
+  const { data: cobranca } = await supabaseAdmin
+    .from("presencas_pagamento")
+    .select("mp_payment_id, pix_qr_code, pix_qr_base64")
+    .eq("presenca_id", presenca.id)
+    .maybeSingle();
+
+  const base = {
+    qrCode: cobranca?.pix_qr_code ?? null,
+    qrBase64: cobranca?.pix_qr_base64 ?? null,
+    valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : 5,
+  };
+
+  if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...base };
+  if (!cobranca?.mp_payment_id) return { pago: false, status: "sem_cobranca", ...base };
+
+  const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
+  const pagamento = await consultarPagamentoMp(cobranca.mp_payment_id);
+  const { aplicarPagamento } = await import("@/lib/pagamentos.server");
+  await aplicarPagamento(`convidado:${presenca.id}`, pagamento.status);
+
+  return { pago: pagamento.status === "approved", status: pagamento.status, ...base };
+}
 
 /** PIX da solicitação — acessível ao convidado solicitante e ao anfitrião. */
 export const pixDaSolicitacao = createServerFn({ method: "POST" })
@@ -153,38 +267,32 @@ export const pixDaSolicitacao = createServerFn({ method: "POST" })
     if (!sol || (sol.solicitante_id !== userId && sol.anfitriao_id !== userId)) {
       throw new Error("Solicitação não encontrada");
     }
-    if (!sol.presenca_id) throw new Error("Ainda não há cobrança gerada");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: presenca } = await supabaseAdmin
-      .from("presencas")
-      .select("id, status_convidado, valor")
-      .eq("id", sol.presenca_id)
-      .maybeSingle();
-    if (!presenca) throw new Error("Cobrança não encontrada");
+    // Fluxo novo (roteado pela diretoria): a solicitação não tem presença própria;
+    // o PIX nasce do pedido aprovado pelo admin.
+    if (!sol.presenca_id) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: pedido } = await supabaseAdmin
+        .from("pedidos_convidado")
+        .select("id, status, presenca_id")
+        .eq("solicitacao_id", sol.id)
+        .maybeSingle();
+      if (!pedido)
+        return { pago: false, status: "sem_cobranca", qrCode: null, qrBase64: null, valor: 5 };
+      if (pedido.status === "pendente") {
+        return {
+          pago: false,
+          status: "aguardando_diretoria",
+          qrCode: null,
+          qrBase64: null,
+          valor: 5,
+        };
+      }
+      if (pedido.presenca_id) return await statusDaPresenca(pedido.presenca_id);
+      return { pago: false, status: "sem_cobranca", qrCode: null, qrBase64: null, valor: 5 };
+    }
 
-    const { data: cobranca } = await supabaseAdmin
-      .from("presencas_pagamento")
-      .select("mp_payment_id, pix_qr_code, pix_qr_base64")
-      .eq("presenca_id", presenca.id)
-      .maybeSingle();
-
-    const base = {
-      qrCode: cobranca?.pix_qr_code ?? null,
-      qrBase64: cobranca?.pix_qr_base64 ?? null,
-      valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : 5,
-    };
-
-    if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...base };
-    if (!cobranca?.mp_payment_id) return { pago: false, status: "sem_cobranca", ...base };
-
-    const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
-    const pagamento = await consultarPagamentoMp(cobranca.mp_payment_id);
-    const { aplicarPagamento } = await import("@/lib/pagamentos.server");
-    await aplicarPagamento(`convidado:${presenca.id}`, pagamento.status);
-
-    return { pago: pagamento.status === "approved", status: pagamento.status, ...base };
-
+    return await statusDaPresenca(sol.presenca_id);
   });
 
 /* ===================== Novo fluxo de convidados ===================== */
@@ -253,7 +361,8 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
       .eq("id", data.pedidoId)
       .maybeSingle();
     if (!pedido || pedido.anfitriao_id !== userId) throw new Error("Pedido não encontrado");
-    if (pedido.status !== "aprovado") throw new Error("Esse convidado ainda aguarda a aprovação da diretoria");
+    if (pedido.status !== "aprovado")
+      throw new Error("Esse convidado ainda aguarda a aprovação da diretoria");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cad } = await supabaseAdmin
@@ -281,7 +390,10 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
         .single();
       if (erroPresenca) throw erroPresenca;
       presencaId = presenca.id;
-      await supabaseAdmin.from("pedidos_convidado").update({ presenca_id: presencaId }).eq("id", pedido.id);
+      await supabaseAdmin
+        .from("pedidos_convidado")
+        .update({ presenca_id: presencaId })
+        .eq("id", pedido.id);
       await supabaseAdmin
         .from("presencas_contato")
         .upsert({ presenca_id: presencaId, telefone: cad.telefone }, { onConflict: "presenca_id" });
@@ -330,7 +442,8 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
       .eq("id", userId)
       .maybeSingle();
 
-    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } = await import("@/lib/mercadopago.server");
+    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } =
+      await import("@/lib/mercadopago.server");
     const pix = await criarPagamentoPix({
       valor: VALOR_CONVIDADO,
       descricao: `Diária de convidado — ${cad.nome}`,

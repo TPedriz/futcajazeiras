@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   todasSessoesQuery,
+  locaisBabaQuery,
   fechamentoPadrao,
   fechamentoEfetivo,
   aberturaPadrao,
@@ -11,6 +12,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -25,6 +33,9 @@ import {
   EyeOff,
   Navigation,
   Pencil,
+  Plus,
+  Save,
+  X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
@@ -34,13 +45,29 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 
 function AdminSessoes() {
   const { data: sessoes } = useSuspenseQuery(todasSessoesQuery());
+  const { data: locais } = useQuery(locaisBabaQuery());
   const qc = useQueryClient();
 
   const [dataHorario, setDataHorario] = useState("");
   const [local, setLocal] = useState("Arena Cajazeiras");
-  const [lat, setLat] = useState("-12.9088");
-  const [lng, setLng] = useState("-38.4142");
+  const [lat, setLat] = useState("-12.898243032071784");
+  const [lng, setLng] = useState("-38.39820393037823");
   const [raio, setRaio] = useState("1000");
+
+  const [mostrarNovoLocal, setMostrarNovoLocal] = useState(false);
+  const [novoLocal, setNovoLocal] = useState({
+    nome: "",
+    latitude: "",
+    longitude: "",
+    raio: "1000",
+  });
+  const [editLocalId, setEditLocalId] = useState<string | null>(null);
+  const [editLocal, setEditLocal] = useState({
+    nome: "",
+    latitude: "",
+    longitude: "",
+    raio: "1000",
+  });
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
@@ -92,6 +119,82 @@ function AdminSessoes() {
     },
     onError: (e: Error) => toast.error("Erro ao salvar", { description: e.message }),
   });
+
+  const invalidarLocais = () => qc.invalidateQueries({ queryKey: ["locais-baba"] });
+
+  const criarLocal = useMutation({
+    mutationFn: async () => {
+      if (!novoLocal.nome.trim()) throw new Error("Informe o nome do local");
+      const { error } = await supabase.from("locais_baba").insert({
+        nome: novoLocal.nome.trim(),
+        latitude: Number(novoLocal.latitude),
+        longitude: Number(novoLocal.longitude),
+        raio_metros: Math.max(100, Number(novoLocal.raio) || 1000),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Local salvo!");
+      setNovoLocal({ nome: "", latitude: "", longitude: "", raio: "1000" });
+      setMostrarNovoLocal(false);
+      invalidarLocais();
+    },
+    onError: (e: Error) => toast.error("Erro ao salvar local", { description: e.message }),
+  });
+
+  const iniciarEdicaoLocal = (l: NonNullable<typeof locais>[number]) => {
+    setEditLocalId(l.id);
+    setEditLocal({
+      nome: l.nome,
+      latitude: String(l.latitude),
+      longitude: String(l.longitude),
+      raio: String(l.raio_metros),
+    });
+  };
+
+  const atualizarLocal = useMutation({
+    mutationFn: async (id: string) => {
+      if (!editLocal.nome.trim()) throw new Error("Informe o nome do local");
+      const { error } = await supabase
+        .from("locais_baba")
+        .update({
+          nome: editLocal.nome.trim(),
+          latitude: Number(editLocal.latitude),
+          longitude: Number(editLocal.longitude),
+          raio_metros: Math.max(100, Number(editLocal.raio) || 1000),
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Local atualizado!");
+      setEditLocalId(null);
+      invalidarLocais();
+    },
+    onError: (e: Error) => toast.error("Erro ao atualizar local", { description: e.message }),
+  });
+
+  const excluirLocal = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("locais_baba").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Local excluído");
+      invalidarLocais();
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  /** Aplica um local salvo nos campos do baba (nome, GPS e raio). */
+  const aplicarLocal = (id: string) => {
+    const l = (locais ?? []).find((x) => x.id === id);
+    if (!l) return;
+    setLocal(l.nome);
+    setLat(String(l.latitude));
+    setLng(String(l.longitude));
+    setRaio(String(l.raio_metros));
+  };
 
   const invalidar = () => {
     qc.invalidateQueries({ queryKey: ["sessoes-todas"] });
@@ -224,6 +327,21 @@ function AdminSessoes() {
           />
         </div>
         <div>
+          <Label htmlFor="loc-salvo">Local salvo</Label>
+          <Select onValueChange={aplicarLocal}>
+            <SelectTrigger id="loc-salvo" className="h-12">
+              <SelectValue placeholder="Escolher endereço salvo…" />
+            </SelectTrigger>
+            <SelectContent>
+              {(locais ?? []).map((l) => (
+                <SelectItem key={l.id} value={l.id}>
+                  {l.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
           <Label htmlFor="loc">Local</Label>
           <Input
             id="loc"
@@ -281,6 +399,141 @@ function AdminSessoes() {
         >
           Criar baba
         </Button>
+      </div>
+
+      <div className="card-premium p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="font-display text-xl">Locais de baba</p>
+          <Button variant="goldOutline" size="sm" onClick={() => setMostrarNovoLocal((v) => !v)}>
+            <Plus className="size-4" /> Novo local
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Endereços fixos (GPS + raio) para reutilizar ao criar um baba.
+        </p>
+        {mostrarNovoLocal && (
+          <div className="space-y-2 rounded-lg border border-border bg-surface p-3">
+            <Input
+              placeholder="Nome (ex.: Arena Cajazeiras)"
+              value={novoLocal.nome}
+              onChange={(e) => setNovoLocal({ ...novoLocal, nome: e.target.value })}
+              className="h-10"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                placeholder="Latitude"
+                inputMode="decimal"
+                value={novoLocal.latitude}
+                onChange={(e) => setNovoLocal({ ...novoLocal, latitude: e.target.value })}
+                className="h-10"
+              />
+              <Input
+                placeholder="Longitude"
+                inputMode="decimal"
+                value={novoLocal.longitude}
+                onChange={(e) => setNovoLocal({ ...novoLocal, longitude: e.target.value })}
+                className="h-10"
+              />
+            </div>
+            <Input
+              placeholder="Raio (metros)"
+              inputMode="numeric"
+              value={novoLocal.raio}
+              onChange={(e) => setNovoLocal({ ...novoLocal, raio: e.target.value })}
+              className="h-10"
+            />
+            <Button
+              variant="hero"
+              className="w-full"
+              disabled={criarLocal.isPending}
+              onClick={() => criarLocal.mutate()}
+            >
+              <Save className="size-4" /> Salvar local
+            </Button>
+          </div>
+        )}
+        {(locais ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum local salvo ainda.</p>
+        ) : (
+          <ul className="space-y-2">
+            {(locais ?? []).map((l) => (
+              <li key={l.id} className="rounded-lg border border-border bg-surface p-3">
+                {editLocalId === l.id ? (
+                  <div className="space-y-2">
+                    <Input
+                      value={editLocal.nome}
+                      onChange={(e) => setEditLocal({ ...editLocal, nome: e.target.value })}
+                      className="h-10"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        inputMode="decimal"
+                        value={editLocal.latitude}
+                        onChange={(e) => setEditLocal({ ...editLocal, latitude: e.target.value })}
+                        className="h-10"
+                      />
+                      <Input
+                        inputMode="decimal"
+                        value={editLocal.longitude}
+                        onChange={(e) => setEditLocal({ ...editLocal, longitude: e.target.value })}
+                        className="h-10"
+                      />
+                    </div>
+                    <Input
+                      inputMode="numeric"
+                      value={editLocal.raio}
+                      onChange={(e) => setEditLocal({ ...editLocal, raio: e.target.value })}
+                      className="h-10"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="hero"
+                        size="sm"
+                        className="flex-1"
+                        disabled={atualizarLocal.isPending}
+                        onClick={() => atualizarLocal.mutate(l.id)}
+                      >
+                        <Save className="size-4" /> Salvar
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setEditLocalId(null)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <MapPin className="size-4 shrink-0 text-gold" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{l.nome}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {l.latitude.toFixed(6)}, {l.longitude.toFixed(6)} • raio {l.raio_metros} m
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Editar local"
+                      onClick={() => iniciarEdicaoLocal(l)}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive"
+                      aria-label="Excluir local"
+                      onClick={() => {
+                        if (confirm(`Excluir o local "${l.nome}"?`)) excluirLocal.mutate(l.id);
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div>

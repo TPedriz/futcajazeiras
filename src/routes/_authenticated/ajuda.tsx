@@ -64,7 +64,7 @@ const secoes = [
       ],
       [
         "Sou convidado, como entro?",
-        "Convidado não entra direto: escolha um associado e envie uma solicitação. Se ele aceitar, o PIX é gerado para você pagar.",
+        "Convidado não entra direto: escolha um associado e envie uma solicitação. Ele aceita e, se você for convidado novo, a diretoria aprova antes de qualquer PIX. Aprovado, o PIX é gerado para você pagar.",
       ],
       [
         "Quando o convidado é confirmado?",
