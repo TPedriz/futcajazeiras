@@ -122,6 +122,36 @@ export type Database = {
           },
         ]
       }
+      locais_baba: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          id: string
+          latitude: number
+          longitude: number
+          nome: string
+          raio_metros: number
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          latitude: number
+          longitude: number
+          nome: string
+          raio_metros?: number
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          nome?: string
+          raio_metros?: number
+        }
+        Relationships: []
+      }
       mensalidades: {
         Row: {
           atualizado_em: string
@@ -245,6 +275,7 @@ export type Database = {
           decidido_por: string | null
           id: string
           presenca_id: string | null
+          solicitacao_id: string | null
           status: Database["public"]["Enums"]["status_convidado"]
         }
         Insert: {
@@ -256,6 +287,7 @@ export type Database = {
           decidido_por?: string | null
           id?: string
           presenca_id?: string | null
+          solicitacao_id?: string | null
           status?: Database["public"]["Enums"]["status_convidado"]
         }
         Update: {
@@ -267,6 +299,7 @@ export type Database = {
           decidido_por?: string | null
           id?: string
           presenca_id?: string | null
+          solicitacao_id?: string | null
           status?: Database["public"]["Enums"]["status_convidado"]
         }
         Relationships: [
@@ -289,6 +322,13 @@ export type Database = {
             columns: ["presenca_id"]
             isOneToOne: false
             referencedRelation: "presencas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_convidado_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "solicitacoes_convidado"
             referencedColumns: ["id"]
           },
         ]
