@@ -77,7 +77,7 @@ export function SinoNotificacoes({ userId }: { userId: string | undefined }) {
             </Button>
           )}
         </div>
-        <ScrollArea className="max-h-80">
+        <ScrollArea type="always" className="max-h-[70vh] min-h-24">
           {(notificacoes ?? []).length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">Nenhum aviso por aqui ainda.</p>
           ) : (
