@@ -449,7 +449,7 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const { criarPagamentoPix, emailPagador } = await import("@/lib/mercadopago.server");
-    const valorPix = Number(presencaAtual?.valor) > 0 ? Number(presencaAtual.valor) : 5;
+    const valorPix = Number(presencaAtual?.valor) > 0 ? Number(presencaAtual?.valor) : 5;
     const pix = await criarPagamentoPix({
       valor: valorPix,
       descricao: `Diária de convidado — ${cad.nome}`,
