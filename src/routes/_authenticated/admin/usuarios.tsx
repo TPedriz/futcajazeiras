@@ -1,19 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { todosAssociadosQuery, papeisTodosQuery, proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
+import {
+  todosAssociadosQuery,
+  papeisTodosQuery,
+  proximaSessaoQuery,
+  presencasDaSessaoQuery,
+  todasSessoesQuery,
+  suspensoesQuery,
+} from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
 import { AprovacoesConvidados } from "@/components/AprovacoesConvidados";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formataTelefone, normalizaTelefone } from "@/lib/telefone";
-import { Pencil, UserMinus, Save, X, Power } from "lucide-react";
-
+import { Pencil, UserMinus, Save, X, Power, Gavel } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/_authenticated/admin/usuarios")({
   component: UsuariosPage,
@@ -24,6 +38,8 @@ function UsuariosPage() {
   const { data: papeis } = useQuery(papeisTodosQuery());
   const { data: sessao } = useQuery(proximaSessaoQuery());
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
+  const { data: suspensoes } = useQuery(suspensoesQuery());
+  const { data: todas } = useQuery(todasSessoesQuery());
   const qc = useQueryClient();
 
   const [editando, setEditando] = useState<string | null>(null);
@@ -31,6 +47,21 @@ function UsuariosPage() {
   const [telefone, setTelefone] = useState("");
   const [posicao, setPosicao] = useState<"linha" | "goleiro">("linha");
   const [filtro, setFiltro] = useState<FiltroPapel>("todos");
+  const [aplicandoPunicao, setAplicandoPunicao] = useState(false);
+  const [punicaoUserId, setPunicaoUserId] = useState("");
+  const [punicaoBabaId, setPunicaoBabaId] = useState("");
+  const [punicaoMotivo, setPunicaoMotivo] = useState("");
+
+  const babasFuturos = (todas ?? [])
+    .filter((b) => new Date(b.data_horario).getTime() > Date.now())
+    .sort((a, b) => new Date(a.data_horario).getTime() - new Date(b.data_horario).getTime());
+  const nomesUsuarios = new Map((todos ?? []).map((u) => [u.id, u.nome]));
+  const nomesBabas = new Map(
+    (todas ?? []).map((b) => [
+      b.id,
+      format(new Date(b.data_horario), "dd/MM 'às' HH:mm", { locale: ptBR }),
+    ]),
+  );
 
   const papelDe = (id: string) => {
     const meus = (papeis ?? []).filter((p) => p.user_id === id).map((p) => p.papel);
@@ -39,7 +70,6 @@ function UsuariosPage() {
     return "convidado";
   };
   const perfis = todos.filter((p) => filtro === "todos" || papelDe(p.id) === filtro);
-
 
   const salvar = useMutation({
     mutationFn: async (id: string) => {
@@ -87,6 +117,39 @@ function UsuariosPage() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
+  const aplicarPunicao = useMutation({
+    mutationFn: async () => {
+      if (!punicaoUserId || !punicaoBabaId) throw new Error("Escolha usuário e baba");
+      const { error } = await supabase.from("suspensoes").insert({
+        usuario_id: punicaoUserId,
+        baba_bloqueado_id: punicaoBabaId,
+        motivo: punicaoMotivo.trim() || "Punição da diretoria",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Punição aplicada!");
+      setAplicandoPunicao(false);
+      setPunicaoUserId("");
+      setPunicaoBabaId("");
+      setPunicaoMotivo("");
+      qc.invalidateQueries({ queryKey: ["suspensoes"] });
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  const removerPunicao = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("suspensoes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Punição removida");
+      qc.invalidateQueries({ queryKey: ["suspensoes"] });
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
   const naLista = (id: string) =>
     (presencas ?? []).some((p) => p.usuario_id === id && !p.nome_convidado);
 
@@ -103,10 +166,98 @@ function UsuariosPage() {
 
       <AprovacoesConvidados />
 
+      <div className="card-premium p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="font-display text-xl">Punições</p>
+          <Button variant="goldOutline" size="sm" onClick={() => setAplicandoPunicao((v) => !v)}>
+            <Gavel className="size-4" /> Aplicar punição
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Suspenda qualquer usuário (de qualquer cargo) de um baba, a qualquer momento. A punição
+          bloqueia o check-in dele nesse baba e aparece no mural.
+        </p>
+
+        {aplicandoPunicao && (
+          <div className="space-y-2 rounded-lg border border-border bg-surface p-3">
+            <Select value={punicaoUserId} onValueChange={setPunicaoUserId}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Escolha o usuário" />
+              </SelectTrigger>
+              <SelectContent>
+                {todos.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={punicaoBabaId} onValueChange={setPunicaoBabaId}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Bloquear em qual baba?" />
+              </SelectTrigger>
+              <SelectContent>
+                {babasFuturos.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {format(new Date(b.data_horario), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="Motivo (ex.: comportamento, atraso…)"
+              value={punicaoMotivo}
+              onChange={(e) => setPunicaoMotivo(e.target.value)}
+              className="h-11"
+            />
+            <Button
+              variant="hero"
+              className="w-full"
+              disabled={!punicaoUserId || !punicaoBabaId || aplicarPunicao.isPending}
+              onClick={() => aplicarPunicao.mutate()}
+            >
+              <Gavel className="size-4" /> Aplicar punição
+            </Button>
+          </div>
+        )}
+
+        {(suspensoes ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma punição ativa.</p>
+        ) : (
+          <ul className="space-y-2">
+            {(suspensoes ?? []).map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">
+                    {nomesUsuarios.get(s.usuario_id) ?? "Jogador"}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    Bloqueado em{" "}
+                    {s.baba_bloqueado_id ? nomesBabas.get(s.baba_bloqueado_id) : "próximo baba"} •{" "}
+                    {s.motivo}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive"
+                  aria-label="Remover punição"
+                  onClick={() => removerPunicao.mutate(s.id)}
+                >
+                  <X className="size-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <FiltroCargo valor={filtro} onChange={setFiltro} total={perfis.length} />
 
       <ul className="space-y-2">
-
         {perfis.map((p) => {
           const emEdicao = editando === p.id;
           return (
@@ -115,15 +266,28 @@ function UsuariosPage() {
                 <div className="space-y-3">
                   <div className="space-y-1">
                     <Label htmlFor={`nome-${p.id}`}>Nome completo</Label>
-                    <Input id={`nome-${p.id}`} value={nome} onChange={(e) => setNome(e.target.value)} className="h-11" />
+                    <Input
+                      id={`nome-${p.id}`}
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      className="h-11"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor={`tel-${p.id}`}>WhatsApp</Label>
-                    <Input id={`tel-${p.id}`} value={telefone} onChange={(e) => setTelefone(e.target.value)} className="h-11" />
+                    <Input
+                      id={`tel-${p.id}`}
+                      value={telefone}
+                      onChange={(e) => setTelefone(e.target.value)}
+                      className="h-11"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor={`pos-${p.id}`}>Posição</Label>
-                    <Select value={posicao} onValueChange={(v) => setPosicao(v as "linha" | "goleiro")}>
+                    <Select
+                      value={posicao}
+                      onValueChange={(v) => setPosicao(v as "linha" | "goleiro")}
+                    >
                       <SelectTrigger id={`pos-${p.id}`} className="h-11">
                         <SelectValue />
                       </SelectTrigger>
@@ -134,7 +298,13 @@ function UsuariosPage() {
                     </Select>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="gold" size="sm" className="flex-1" disabled={salvar.isPending} onClick={() => salvar.mutate(p.id)}>
+                    <Button
+                      variant="gold"
+                      size="sm"
+                      className="flex-1"
+                      disabled={salvar.isPending}
+                      onClick={() => salvar.mutate(p.id)}
+                    >
                       <Save className="size-4" /> Salvar
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setEditando(null)}>
@@ -145,11 +315,14 @@ function UsuariosPage() {
               ) : (
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className={`truncate font-semibold ${p.ativo ? "" : "text-muted-foreground line-through"}`}>
+                    <p
+                      className={`truncate font-semibold ${p.ativo ? "" : "text-muted-foreground line-through"}`}
+                    >
                       {p.nome}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {p.telefone ? formataTelefone(p.telefone) : "sem WhatsApp"} • {p.posicao === "goleiro" ? "Goleiro" : "Linha"}
+                      {p.telefone ? formataTelefone(p.telefone) : "sem WhatsApp"} •{" "}
+                      {p.posicao === "goleiro" ? "Goleiro" : "Linha"}
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1">
                       <Badge variant="outline" className="border-gold/40 text-gold capitalize">
@@ -190,7 +363,6 @@ function UsuariosPage() {
                     <UserMinus className="size-4" />
                   </Button>
                 </div>
-
               )}
             </li>
           );
