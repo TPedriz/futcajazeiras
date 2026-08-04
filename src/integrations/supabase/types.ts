@@ -836,26 +836,16 @@ export type Database = {
         Args: { _lat: number; _lng: number; _presenca_id: string }
         Returns: number
       }
-      notifica:
-        | {
-            Args: {
-              _mensagem: string
-              _tipo: string
-              _titulo: string
-              _usuario_id: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              _link?: string
-              _mensagem: string
-              _tipo: string
-              _titulo: string
-              _usuario_id: string
-            }
-            Returns: undefined
-          }
+      notifica: {
+        Args: {
+          _link?: string
+          _mensagem: string
+          _tipo: string
+          _titulo: string
+          _usuario_id: string
+        }
+        Returns: undefined
+      }
       notifica_admins: {
         Args: {
           _link?: string
