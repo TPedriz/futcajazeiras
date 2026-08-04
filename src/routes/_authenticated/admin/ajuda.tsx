@@ -69,6 +69,18 @@ const secoes = [
         "Defina o novo valor no campo de valor da mensalidade. As próximas cobranças já saem com o novo valor.",
       ],
       [
+        "Como reajusto a diária do convidado?",
+        "No campo “Valor da diária de convidado”, defina o novo valor (mesmo esquema da mensalidade, com dupla confirmação). Os próximos PIX de convidado já saem com o novo valor.",
+      ],
+      [
+        "Como filtro pagos/pendentes?",
+        "Use os botões Todos / Pagos / Pendentes no topo da lista para ver só quem já pagou ou quem está em aberto no mês.",
+      ],
+      [
+        "Onde vejo quantos associados temos?",
+        "No card “Associados cadastrados”: mostra o total ativo em relação ao limite de 50, com barra de progresso e o número de vagas livres.",
+      ],
+      [
         "Como marco pago/pendente?",
         "Alterne o status do associado no mês. Pagamento confirmado libera o check-in e notifica o jogador.",
       ],
@@ -91,6 +103,10 @@ const secoes = [
         "Aleatório, Ordem de chegada (quem chegou antes entra nos times A/B) e BAxVI (divide Bahia e Vitória).",
       ],
       [
+        "O que é goleiro fixo?",
+        "É o jogador marcado como goleiro fixo (na página do Baba). O sorteio distribui os goleiros entre os times automaticamente e, quando falta goleiro, promove um jogador de linha e avisa.",
+      ],
+      [
         "Preciso salvar os times?",
         "Sim. “Salvar times” grava os times; só depois eles aparecem na aba Resultados.",
       ],
@@ -106,7 +122,7 @@ const secoes = [
       ],
       [
         "Como lanço as estatísticas?",
-        "Botões +/− por jogador: Gol, Assistência, Amarelo, Azul e Vermelho.",
+        "Botões +/− por jogador: Gol, Assistência, Pênalti defendido, Amarelo, Azul e Vermelho. (Pênalti defendido vale para qualquer jogador, não só goleiro.)",
       ],
       [
         "Cartão vermelho suspende?",
@@ -115,6 +131,32 @@ const secoes = [
       [
         "Posso corrigir depois?",
         "Sim, em qualquer baba do histórico. “Zerar mês” limpa um mês; “Zerar tudo” limpa todo o histórico.",
+      ],
+    ],
+  },
+  {
+    id: "estatisticas",
+    titulo: "Estatísticas (lançamento manual)",
+    itens: [
+      [
+        "Para que serve essa aba?",
+        "Lançar ou corrigir estatísticas de qualquer usuário em qualquer baba do histórico — mesmo quando o sorteio falhou e os times não foram salvos.",
+      ],
+      [
+        "O que consigo lançar?",
+        "Gols, assistências, pênaltis defendidos, amarelos, azuis e vermelhos.",
+      ],
+      [
+        "Como uso?",
+        "Escolha o baba e o usuário, ajuste os números e toque em Salvar. O ranking do mês recalcula na hora. Há também o botão Remover para apagar o lançamento.",
+      ],
+      [
+        "Pênaltis defendidos é só para goleiros?",
+        "Não. Qualquer jogador pode ir pro gol quando não há goleiro, então o campo está disponível para todos.",
+      ],
+      [
+        "Qual a diferença para a aba Resultados?",
+        "Resultados lança os números dos jogadores que estão nos times salvos daquele baba. Estatísticas permite lançar para qualquer usuário, mesmo sem times salvos.",
       ],
     ],
   },
