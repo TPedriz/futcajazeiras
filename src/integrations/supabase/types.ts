@@ -79,6 +79,7 @@ export type Database = {
           criado_em: string
           gols: number
           id: string
+          penaltis_defendidos: number
           usuario_id: string
         }
         Insert: {
@@ -91,6 +92,7 @@ export type Database = {
           criado_em?: string
           gols?: number
           id?: string
+          penaltis_defendidos?: number
           usuario_id: string
         }
         Update: {
@@ -103,6 +105,7 @@ export type Database = {
           criado_em?: string
           gols?: number
           id?: string
+          penaltis_defendidos?: number
           usuario_id?: string
         }
         Relationships: [
@@ -412,53 +415,59 @@ export type Database = {
       }
       presencas: {
         Row: {
-          baba_id: string;
-          chegou_em: string | null;
-          compareceu: boolean | null;
-          confirmado_em: string;
-          convidado_cadastro_id: string | null;
-          convidado_user_id: string | null;
-          id: string;
-          is_goleiro_fixo: boolean;
-          mp_status: string | null;
-          nome_convidado: string | null;
-          ordem_chegada: number | null;
-          status_convidado: Database["public"]["Enums"]["status_convidado"] | null;
-          usuario_id: string;
-          valor: number;
-        };
+          baba_id: string
+          chegou_em: string | null
+          compareceu: boolean | null
+          confirmado_em: string
+          convidado_cadastro_id: string | null
+          convidado_user_id: string | null
+          id: string
+          is_goleiro_fixo: boolean
+          mp_status: string | null
+          nome_convidado: string | null
+          ordem_chegada: number | null
+          status_convidado:
+            | Database["public"]["Enums"]["status_convidado"]
+            | null
+          usuario_id: string
+          valor: number
+        }
         Insert: {
-          baba_id: string;
-          chegou_em?: string | null;
-          compareceu?: boolean | null;
-          confirmado_em?: string;
-          convidado_cadastro_id?: string | null;
-          convidado_user_id?: string | null;
-          id?: string;
-          is_goleiro_fixo?: boolean;
-          mp_status?: string | null;
-          nome_convidado?: string | null;
-          ordem_chegada?: number | null;
-          status_convidado?: Database["public"]["Enums"]["status_convidado"] | null;
-          usuario_id: string;
-          valor?: number;
-        };
+          baba_id: string
+          chegou_em?: string | null
+          compareceu?: boolean | null
+          confirmado_em?: string
+          convidado_cadastro_id?: string | null
+          convidado_user_id?: string | null
+          id?: string
+          is_goleiro_fixo?: boolean
+          mp_status?: string | null
+          nome_convidado?: string | null
+          ordem_chegada?: number | null
+          status_convidado?:
+            | Database["public"]["Enums"]["status_convidado"]
+            | null
+          usuario_id: string
+          valor?: number
+        }
         Update: {
-          baba_id?: string;
-          chegou_em?: string | null;
-          compareceu?: boolean | null;
-          confirmado_em?: string;
-          convidado_cadastro_id?: string | null;
-          convidado_user_id?: string | null;
-          id?: string;
-          is_goleiro_fixo?: boolean;
-          mp_status?: string | null;
-          nome_convidado?: string | null;
-          ordem_chegada?: number | null;
-          status_convidado?: Database["public"]["Enums"]["status_convidado"] | null;
-          usuario_id?: string;
-          valor?: number;
-        };
+          baba_id?: string
+          chegou_em?: string | null
+          compareceu?: boolean | null
+          confirmado_em?: string
+          convidado_cadastro_id?: string | null
+          convidado_user_id?: string | null
+          id?: string
+          is_goleiro_fixo?: boolean
+          mp_status?: string | null
+          nome_convidado?: string | null
+          ordem_chegada?: number | null
+          status_convidado?:
+            | Database["public"]["Enums"]["status_convidado"]
+            | null
+          usuario_id?: string
+          valor?: number
+        }
         Relationships: [
           {
             foreignKeyName: "presencas_baba_id_fkey"
@@ -795,6 +804,7 @@ export type Database = {
           gols: number | null
           mes: string | null
           nome: string | null
+          penaltis_defendidos: number | null
           posicao: Database["public"]["Enums"]["posicao_jogador"] | null
           usuario_id: string | null
           vitorias: number | null
