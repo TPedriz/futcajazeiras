@@ -79,6 +79,7 @@ export type Database = {
           criado_em: string
           gols: number
           id: string
+          penaltis_defendidos: number
           usuario_id: string
         }
         Insert: {
@@ -91,6 +92,7 @@ export type Database = {
           criado_em?: string
           gols?: number
           id?: string
+          penaltis_defendidos?: number
           usuario_id: string
         }
         Update: {
@@ -103,6 +105,7 @@ export type Database = {
           criado_em?: string
           gols?: number
           id?: string
+          penaltis_defendidos?: number
           usuario_id?: string
         }
         Relationships: [
@@ -801,6 +804,7 @@ export type Database = {
           gols: number | null
           mes: string | null
           nome: string | null
+          penaltis_defendidos: number | null
           posicao: Database["public"]["Enums"]["posicao_jogador"] | null
           usuario_id: string | null
           vitorias: number | null
