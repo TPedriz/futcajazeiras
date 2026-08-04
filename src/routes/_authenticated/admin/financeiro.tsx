@@ -16,7 +16,18 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle, HandMetal, User, CalendarClock, ChevronLeft, ChevronRight, Coins, Users, UserPlus } from "lucide-react";
+import {
+  CheckCircle2,
+  AlertCircle,
+  HandMetal,
+  User,
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  Coins,
+  Users,
+  UserPlus,
+} from "lucide-react";
 import { useState } from "react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -52,11 +63,19 @@ function FinanceiroPage() {
     const ok = porUsuario.get(a.id)?.status === "pago";
     return statusFiltro === "pago" ? ok : !ok;
   });
-  const ultimoDia = format(new Date(new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0)), "dd/MM/yyyy");
-
+  const ultimoDia = format(
+    new Date(new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0)),
+    "dd/MM/yyyy",
+  );
 
   const alterar = useMutation({
-    mutationFn: async ({ usuarioId, status }: { usuarioId: string; status: "pago" | "pendente" }) => {
+    mutationFn: async ({
+      usuarioId,
+      status,
+    }: {
+      usuarioId: string;
+      status: "pago" | "pendente";
+    }) => {
       const existente = porUsuario.get(usuarioId);
       if (existente) {
         const { error } = await supabase
@@ -85,7 +104,12 @@ function FinanceiroPage() {
   return (
     <div className="space-y-4">
       <div className="card-premium flex items-center justify-between p-3">
-        <Button variant="ghost" size="icon" aria-label="Mês anterior" onClick={() => setRefDate((d) => addMonths(d, -1))}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Mês anterior"
+          onClick={() => setRefDate((d) => addMonths(d, -1))}
+        >
           <ChevronLeft className="size-4" />
         </Button>
         <div className="text-center">
@@ -96,7 +120,12 @@ function FinanceiroPage() {
             <CalendarClock className="size-3" /> vence em {ultimoDia}
           </p>
         </div>
-        <Button variant="ghost" size="icon" aria-label="Próximo mês" onClick={() => setRefDate((d) => addMonths(d, 1))}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Próximo mês"
+          onClick={() => setRefDate((d) => addMonths(d, 1))}
+        >
           <ChevronRight className="size-4" />
         </Button>
       </div>
@@ -150,29 +179,43 @@ function FinanceiroPage() {
       <ValorMensalidadeCard />
       <ValorConvidadoCard />
 
-
-
-
-
       <ul className="space-y-2">
         {visiveis.map((a) => {
           const ok = porUsuario.get(a.id)?.status === "pago";
           return (
             <li key={a.id} className="card-premium flex items-center gap-3 p-3">
-              <div className={`flex size-9 items-center justify-center rounded-full ${ok ? "bg-gold/10 text-gold" : "bg-destructive/10 text-destructive"}`}>
-                {a.posicao === "goleiro" ? <HandMetal className="size-4" /> : <User className="size-4" />}
+              <div
+                className={`flex size-9 items-center justify-center rounded-full ${ok ? "bg-gold/10 text-gold" : "bg-destructive/10 text-destructive"}`}
+              >
+                {a.posicao === "goleiro" ? (
+                  <HandMetal className="size-4" />
+                ) : (
+                  <User className="size-4" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{a.nome}</p>
-                <p className="truncate text-[11px] text-muted-foreground">{a.telefone || a.email}</p>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {a.telefone || a.email}
+                </p>
               </div>
               <Button
                 variant={ok ? "goldOutline" : "success"}
                 size="sm"
                 disabled={alterar.isPending}
-                onClick={() => alterar.mutate({ usuarioId: a.id, status: ok ? "pendente" : "pago" })}
+                onClick={() =>
+                  alterar.mutate({ usuarioId: a.id, status: ok ? "pendente" : "pago" })
+                }
               >
-                {ok ? <><AlertCircle className="size-3" /> Pendente</> : <><CheckCircle2 className="size-3" /> Pago</>}
+                {ok ? (
+                  <>
+                    <AlertCircle className="size-3" /> Pendente
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="size-3" /> Pago
+                  </>
+                )}
               </Button>
             </li>
           );
@@ -192,10 +235,14 @@ function ValorMensalidadeCard() {
   const salvar = useMutation({
     mutationFn: async () => {
       const valor = Number(novo.replace(",", "."));
-      if (!Number.isFinite(valor) || valor <= 0) throw new Error("Informe um valor válido em reais.");
+      if (!Number.isFinite(valor) || valor <= 0)
+        throw new Error("Informe um valor válido em reais.");
       const { error } = await supabase
         .from("configuracoes")
-        .upsert({ chave: "valor_mensalidade", valor, atualizado_em: new Date().toISOString() }, { onConflict: "chave" });
+        .upsert(
+          { chave: "valor_mensalidade", valor, atualizado_em: new Date().toISOString() },
+          { onConflict: "chave" },
+        );
       if (error) throw error;
     },
     onSuccess: () => {
@@ -209,7 +256,8 @@ function ValorMensalidadeCard() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
-  const formatado = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const formatado = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
     <div className="card-premium space-y-3 p-4">
@@ -241,12 +289,13 @@ function ValorMensalidadeCard() {
       </div>
       {confirmando && (
         <p className="text-[11px] text-destructive">
-          Confirme novamente: a mensalidade passará a ser cobrada por {novo.replace(".", ",")} reais para todos os
-          associados. Toque em “Confirmar” para aplicar.
+          Confirme novamente: a mensalidade passará a ser cobrada por {novo.replace(".", ",")} reais
+          para todos os associados. Toque em “Confirmar” para aplicar.
         </p>
       )}
       <p className="text-[11px] text-muted-foreground">
-        O reajuste vale para as próximas cobranças geradas. Mensalidades já emitidas mantêm o valor original.
+        O reajuste vale para as próximas cobranças geradas. Mensalidades já emitidas mantêm o valor
+        original.
       </p>
     </div>
   );
@@ -262,10 +311,14 @@ function ValorConvidadoCard() {
   const salvar = useMutation({
     mutationFn: async () => {
       const valor = Number(novo.replace(",", "."));
-      if (!Number.isFinite(valor) || valor <= 0) throw new Error("Informe um valor válido em reais.");
+      if (!Number.isFinite(valor) || valor <= 0)
+        throw new Error("Informe um valor válido em reais.");
       const { error } = await supabase
         .from("configuracoes")
-        .upsert({ chave: "valor_convidado", valor, atualizado_em: new Date().toISOString() }, { onConflict: "chave" });
+        .upsert(
+          { chave: "valor_convidado", valor, atualizado_em: new Date().toISOString() },
+          { onConflict: "chave" },
+        );
       if (error) throw error;
     },
     onSuccess: () => {
@@ -279,7 +332,8 @@ function ValorConvidadoCard() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
-  const formatado = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const formatado = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
     <div className="card-premium space-y-3 p-4">
@@ -311,8 +365,8 @@ function ValorConvidadoCard() {
       </div>
       {confirmando && (
         <p className="text-[11px] text-destructive">
-          Confirme novamente: a diária do convidado passará a ser cobrada por {novo.replace(".", ",")} reais para todos
-          os babas. Toque em “Confirmar” para aplicar.
+          Confirme novamente: a diária do convidado passará a ser cobrada por{" "}
+          {novo.replace(".", ",")} reais para todos os babas. Toque em “Confirmar” para aplicar.
         </p>
       )}
       <p className="text-[11px] text-muted-foreground">

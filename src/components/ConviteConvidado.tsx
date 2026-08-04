@@ -122,7 +122,10 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
             Convidados não entram direto na lista: peça a um associado para te levar. Se ele
             aceitar, você paga a taxa de{" "}
             <strong className="text-gold">
-              R$ {Number(valorConvidado ?? 5).toFixed(2).replace(".", ",")}
+              R${" "}
+              {Number(valorConvidado ?? 5)
+                .toFixed(2)
+                .replace(".", ",")}
             </strong>{" "}
             via PIX e entra na lista.
           </p>

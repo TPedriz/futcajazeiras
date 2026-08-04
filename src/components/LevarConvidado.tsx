@@ -14,7 +14,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
-import { convidadosDaCasaQuery, meusPedidosConvidadoQuery, valorConvidadoQuery } from "@/lib/babaQueries";
+import {
+  convidadosDaCasaQuery,
+  meusPedidosConvidadoQuery,
+  valorConvidadoQuery,
+} from "@/lib/babaQueries";
 import { criarPedidoConvidado, gerarPixPedido } from "@/lib/convidados.functions";
 import { formataTelefone } from "@/lib/telefone";
 import { UserPlus, Sparkles, Home, QrCode, Clock } from "lucide-react";
@@ -60,9 +64,13 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
       setDaCasa("");
       invalidar();
       if (r.status === "aprovado") {
-        toast.success("Convidado liberado!", { description: "Gere o PIX da diária para confirmar a vaga." });
+        toast.success("Convidado liberado!", {
+          description: "Gere o PIX da diária para confirmar a vaga.",
+        });
       } else {
-        toast.success("Solicitação enviada!", { description: "A diretoria vai analisar o convidado." });
+        toast.success("Solicitação enviada!", {
+          description: "A diretoria vai analisar o convidado.",
+        });
       }
     },
     onError: (e: Error) => toast.error("Não deu certo", { description: e.message }),
@@ -99,7 +107,10 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
             Você pode levar 1 convidado por baba. Convidado novo passa pela aprovação da diretoria;
             convidado da casa já libera o PIX de{" "}
             <strong className="text-gold">
-              R$ {Number(valorConvidado ?? 5).toFixed(2).replace(".", ",")}
+              R${" "}
+              {Number(valorConvidado ?? 5)
+                .toFixed(2)
+                .replace(".", ",")}
             </strong>{" "}
             na hora.
           </p>
@@ -118,7 +129,8 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
               </div>
               {pedidoAtivo.status === "pendente" ? (
                 <p className="text-xs text-muted-foreground">
-                  Nenhuma cobrança é gerada antes da diretoria aprovar. Você será avisado pelo sininho.
+                  Nenhuma cobrança é gerada antes da diretoria aprovar. Você será avisado pelo
+                  sininho.
                 </p>
               ) : (
                 <Button variant="hero" size="lg" className="w-full" onClick={abrirPix}>
@@ -159,11 +171,16 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
                 />
               </div>
               <p className="text-[11px] text-muted-foreground">
-                O histórico de babas pagos fica no WhatsApp dele. Quando criar conta com esse número,
-                tudo é vinculado ao perfil automaticamente.
+                O histórico de babas pagos fica no WhatsApp dele. Quando criar conta com esse
+                número, tudo é vinculado ao perfil automaticamente.
               </p>
               <div className="flex gap-2">
-                <Button variant="ghost" size="lg" className="flex-1" onClick={() => setModo("escolha")}>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => setModo("escolha")}
+                >
                   Voltar
                 </Button>
                 <Button
@@ -197,7 +214,12 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
                 </p>
               )}
               <div className="flex gap-2">
-                <Button variant="ghost" size="lg" className="flex-1" onClick={() => setModo("escolha")}>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => setModo("escolha")}
+                >
                   Voltar
                 </Button>
                 <Button
