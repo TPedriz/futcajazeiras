@@ -12,15 +12,32 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle2, AlertCircle, CalendarClock, Wallet, Heart, QrCode } from "lucide-react";
+import {
+  CheckCircle2,
+  AlertCircle,
+  CalendarClock,
+  Wallet,
+  Heart,
+  QrCode,
+  MessageCircle,
+} from "lucide-react";
+
+const GRUPO_WHATSAPP_URL = "https://chat.whatsapp.com/HtGUdc005Hd9NLqY8Bcg3W";
 
 export const Route = createFileRoute("/_authenticated/pagamentos")({
   head: () => ({
     meta: [
       { title: "Meus Pagamentos — Fut Cajazeiras" },
-      { name: "description", content: "Acompanhe o histórico de mensalidades do Fut Cajazeiras: meses pagos, pendentes e a data de vencimento, sempre no último dia de cada mês." },
+      {
+        name: "description",
+        content:
+          "Acompanhe o histórico de mensalidades do Fut Cajazeiras: meses pagos, pendentes e a data de vencimento, sempre no último dia de cada mês.",
+      },
       { property: "og:title", content: "Histórico de Mensalidades — Fut Cajazeiras" },
-      { property: "og:description", content: "Veja mês a mês suas mensalidades pagas e pendentes no Fut Cajazeiras." },
+      {
+        property: "og:description",
+        content: "Veja mês a mês suas mensalidades pagas e pendentes no Fut Cajazeiras.",
+      },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -84,7 +101,8 @@ function PagamentosPage() {
   const tempo = tempoDeAssociado(perfilData?.perfil?.criado_em);
   const pagas = (mensalidades ?? []).filter((m) => m.status === "pago").length;
   const pendentes = (mensalidades ?? []).filter((m) => m.status === "pendente").length;
-
+  const emDia = perfilData?.perfil?.status_pagamento === "pago";
+  const mostraGrupo = !!perfilData?.isAssociado && (emDia || pagas > 0);
 
   return (
     <div className="space-y-5">
@@ -96,11 +114,34 @@ function PagamentosPage() {
         </p>
       </div>
 
+      {mostraGrupo && (
+        <div className="card-premium flex items-center gap-3 p-4">
+          <MessageCircle className="size-5 shrink-0 text-gold" />
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-lg">Você já faz parte do baba!</p>
+            <p className="text-xs text-muted-foreground">
+              Entre no grupo oficial do Fut Cajazeiras no WhatsApp para acompanhar tudo.
+            </p>
+          </div>
+          <a
+            href={GRUPO_WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0"
+          >
+            <Button variant="goldOutline" size="lg">
+              <MessageCircle className="size-4" /> Entrar no grupo
+            </Button>
+          </a>
+        </div>
+      )}
+
       {tempo && (
         <div className="card-vip flex items-center gap-3 p-4">
           <Heart className="size-5 shrink-0 text-gold" />
           <p className="text-sm text-muted-foreground">
-            Você é do baba há <strong className="text-gold">{tempo.texto}</strong> — {pagas} {pagas === 1 ? "mensalidade paga" : "mensalidades pagas"} nessa caminhada.
+            Você é do baba há <strong className="text-gold">{tempo.texto}</strong> — {pagas}{" "}
+            {pagas === 1 ? "mensalidade paga" : "mensalidades pagas"} nessa caminhada.
           </p>
         </div>
       )}
@@ -120,14 +161,15 @@ function PagamentosPage() {
 
       {isLoading && <p className="text-sm text-muted-foreground">Carregando histórico...</p>}
 
-
       <ul className="space-y-2">
         {(mensalidades ?? []).map((m) => {
           const pago = m.status === "pago";
           const atrasado = !pago && new Date(m.vencimento) < new Date();
           return (
             <li key={m.id} className="card-premium flex flex-wrap items-center gap-3 p-4">
-              <div className={`flex size-10 items-center justify-center rounded-full ${pago ? "bg-gold/10 text-gold" : "bg-destructive/10 text-destructive"}`}>
+              <div
+                className={`flex size-10 items-center justify-center rounded-full ${pago ? "bg-gold/10 text-gold" : "bg-destructive/10 text-destructive"}`}
+              >
                 {pago ? <CheckCircle2 className="size-5" /> : <AlertCircle className="size-5" />}
               </div>
               <div className="min-w-0 flex-1">
@@ -142,7 +184,11 @@ function PagamentosPage() {
               </div>
               <span
                 className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-widest ${
-                  pago ? "bg-gold/10 text-gold" : atrasado ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+                  pago
+                    ? "bg-gold/10 text-gold"
+                    : atrasado
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-muted text-muted-foreground"
                 }`}
               >
                 {pago ? "Pago" : atrasado ? "Atrasado" : "Em aberto"}
@@ -155,7 +201,10 @@ function PagamentosPage() {
                   disabled={cobrar.isPending}
                   onClick={() => cobrar.mutate(m.id)}
                 >
-                  <QrCode className="size-4" /> Pagar com PIX — R$ {Number(m.valor || 15).toFixed(2).replace(".", ",")}
+                  <QrCode className="size-4" /> Pagar com PIX — R${" "}
+                  {Number(m.valor || 15)
+                    .toFixed(2)
+                    .replace(".", ",")}
                 </Button>
               )}
             </li>
@@ -163,12 +212,13 @@ function PagamentosPage() {
         })}
       </ul>
 
-
       {!isLoading && (mensalidades ?? []).length === 0 && (
         <div className="card-premium p-6 text-center">
           <Wallet className="mx-auto size-10 text-muted-foreground/50" />
           <p className="mt-3 font-display text-xl">Sem lançamentos ainda</p>
-          <p className="mt-1 text-sm text-muted-foreground">Assim que a diretoria abrir o mês, ele aparece aqui.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Assim que a diretoria abrir o mês, ele aparece aqui.
+          </p>
         </div>
       )}
 
@@ -182,6 +232,5 @@ function PagamentosPage() {
         pago={pago}
       />
     </div>
-
   );
 }
