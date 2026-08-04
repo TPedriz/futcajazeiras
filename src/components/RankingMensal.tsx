@@ -1,20 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
 import { rankingDoMesQuery, mesReferencia, perfisPublicosQuery } from "@/lib/babaQueries";
-import { Trophy, Goal, Medal, ImageDown } from "lucide-react";
+import { Trophy, Goal, Handshake, ShieldCheck, ImageDown, Medal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AvatarJogador } from "@/components/AvatarJogador";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useState } from "react";
 import escudoAsset from "@/assets/fut-cajazeiras-escudo.png.asset.json";
 
 const escudo = escudoAsset.url;
 
-interface LinhaRanking {
+type Categoria = "gols" | "assistencias" | "penaltis" | "cartoes";
+
+const CATEGORIAS: { id: Categoria; rotulo: string; Icone: typeof Goal; cor: string }[] = [
+  { id: "gols", rotulo: "Gols", Icone: Goal, cor: "text-gold" },
+  { id: "assistencias", rotulo: "Assistências", Icone: Handshake, cor: "text-success" },
+  { id: "penaltis", rotulo: "Pênaltis defendidos", Icone: ShieldCheck, cor: "text-violet-400" },
+  { id: "cartoes", rotulo: "Cartões", Icone: Medal, cor: "text-destructive" },
+];
+
+interface LinhaImagem {
   nome: string;
-  gols: number;
-  vitorias: number;
-  derrotas: number;
+  valor: string;
+  avatar: HTMLImageElement | null;
 }
 
 /** Desenha o ranking num canvas e devolve o PNG. */
@@ -28,7 +38,29 @@ function carregarEscudo(): Promise<HTMLImageElement | null> {
   });
 }
 
-async function desenharRanking(mes: string, linhas: LinhaRanking[]): Promise<Blob | null> {
+/** Carrega a foto de perfil (URL assinada) para desenhar no canvas. */
+async function carregarAvatar(caminho: string | null): Promise<HTMLImageElement | null> {
+  if (!caminho) return null;
+  try {
+    const { data } = await supabase.storage.from("avatares").createSignedUrl(caminho, 60 * 60);
+    if (!data?.signedUrl) return null;
+    return await new Promise<HTMLImageElement | null>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = data.signedUrl;
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function desenharRanking(
+  mes: string,
+  categoria: string,
+  linhas: LinhaImagem[],
+): Promise<Blob | null> {
   const L = 1080;
   const A = 1350;
   const canvas = document.createElement("canvas");
@@ -64,29 +96,56 @@ async function desenharRanking(mes: string, linhas: LinhaRanking[]): Promise<Blo
   ctx.font = "bold 84px Inter, system-ui, sans-serif";
   ctx.fillText("RANKING DO MÊS", L / 2, 272);
   ctx.fillStyle = "#c9a227";
-  ctx.font = "48px Inter, system-ui, sans-serif";
-  ctx.fillText(mes.toUpperCase(), L / 2, 338);
+  ctx.font = "44px Inter, system-ui, sans-serif";
+  ctx.fillText(`${mes.toUpperCase()} · ${categoria.toUpperCase()}`, L / 2, 334);
 
-  let y = 450;
+  let y = 452;
   ctx.textAlign = "left";
   linhas.forEach((r, i) => {
     ctx.fillStyle = i === 0 ? "rgba(201,162,39,0.14)" : "rgba(255,255,255,0.05)";
-    ctx.fillRect(80, y - 60, L - 160, 130);
+    ctx.fillRect(70, y - 62, L - 140, 135);
+
+    // Foto de perfil ao lado do nome (círculo).
+    if (r.avatar) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(172, y + 5, 46, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(r.avatar, 126, y - 41, 92, 92);
+      ctx.restore();
+      ctx.strokeStyle = "#c9a227";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(172, y + 5, 46, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = "rgba(201,162,39,0.18)";
+      ctx.beginPath();
+      ctx.arc(172, y + 5, 46, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#c9a227";
+      ctx.font = "bold 40px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(i === 0 ? "★" : String(i + 1), 172, y + 15);
+      ctx.textAlign = "left";
+    }
+
     ctx.fillStyle = i === 0 ? "#c9a227" : "#8c8c92";
     ctx.font = "bold 64px Inter, system-ui, sans-serif";
-    ctx.fillText(`${i + 1}`, 120, y + 20);
+    ctx.fillText(`${i + 1}`, 245, y + 20);
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 50px Inter, system-ui, sans-serif";
-    ctx.fillText(r.nome.slice(0, 20), 220, y + 5);
+    ctx.fillText(r.nome.slice(0, 20), 310, y + 5);
     ctx.fillStyle = "#8c8c92";
-    ctx.font = "34px Inter, system-ui, sans-serif";
-    ctx.fillText(`${r.vitorias}V · ${r.derrotas}D`, 220, y + 50);
+    ctx.font = "30px Inter, system-ui, sans-serif";
+    ctx.fillText(categoria, 310, y + 42);
     ctx.fillStyle = "#c9a227";
-    ctx.font = "bold 56px Inter, system-ui, sans-serif";
+    ctx.font = "bold 58px Inter, system-ui, sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText(`${r.gols} ⚽`, L - 120, y + 25);
+    ctx.fillText(r.valor, L - 110, y + 20);
     ctx.textAlign = "left";
-    y += 160;
+    y += 165;
   });
 
   ctx.textAlign = "center";
@@ -99,39 +158,66 @@ async function desenharRanking(mes: string, linhas: LinhaRanking[]): Promise<Blo
   return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
 }
 
+interface LinhaRanking {
+  usuario_id: string | null;
+  nome: string | null;
+  gols: number;
+  assistencias: number;
+  penaltis_defendidos: number;
+  vitorias: number;
+  derrotas: number;
+  cartoes_amarelos: number;
+  cartoes_azuis: number;
+  cartoes_vermelhos: number;
+}
+
 export function RankingMensal() {
   const referencia = mesReferencia();
   const { data, isLoading } = useQuery(rankingDoMesQuery(referencia));
   const { data: perfis } = useQuery(perfisPublicosQuery());
-  const avatarDe = (id: string | null) => (perfis ?? []).find((p) => p.id === id)?.avatar_url ?? null;
+  const [categoria, setCategoria] = useState<Categoria>("gols");
+  const avatarDe = (id: string | null) =>
+    (perfis ?? []).find((p) => p.id === id)?.avatar_url ?? null;
 
+  const totalCartoes = (r: LinhaRanking) =>
+    (r.cartoes_amarelos ?? 0) + (r.cartoes_azuis ?? 0) + (r.cartoes_vermelhos ?? 0);
+
+  const valorDe = (r: LinhaRanking): number => {
+    if (categoria === "gols") return r.gols ?? 0;
+    if (categoria === "assistencias") return r.assistencias ?? 0;
+    if (categoria === "penaltis") return r.penaltis_defendidos ?? 0;
+    return totalCartoes(r);
+  };
+
+  // Cartões sozinhos NÃO colocam ninguém no ranking das demais categorias:
+  // cada categoria exige valor > 0 na própria métrica.
   const top = [...(data ?? [])]
-    .sort(
-      (a, b) =>
-        (b.gols ?? 0) - (a.gols ?? 0) ||
-        (b.vitorias ?? 0) - (a.vitorias ?? 0) ||
-        (a.derrotas ?? 0) - (b.derrotas ?? 0),
-    )
+    .filter((r) => valorDe(r) > 0)
+    .sort((a, b) => valorDe(b) - valorDe(a) || (b.gols ?? 0) - (a.gols ?? 0))
     .slice(0, 5);
 
   const mesTexto = format(new Date(`${referencia}T12:00:00`), "MMMM 'de' yyyy", { locale: ptBR });
+  const categoriaAtual = CATEGORIAS.find((c) => c.id === categoria);
 
   const exportarImagem = async () => {
     if (top.length === 0) return;
-    const blob = await desenharRanking(
-      mesTexto,
-      top.map((r) => ({
+    const linhas: LinhaImagem[] = [];
+    for (const r of top) {
+      const avatar = await carregarAvatar(avatarDe(r.usuario_id));
+      linhas.push({
         nome: r.nome ?? "Jogador",
-        gols: r.gols ?? 0,
-        vitorias: r.vitorias ?? 0,
-        derrotas: r.derrotas ?? 0,
-      })),
-    );
+        valor: String(valorDe(r)),
+        avatar,
+      });
+    }
+    const blob = await desenharRanking(mesTexto, categoriaAtual?.rotulo ?? "Gols", linhas);
     if (!blob) {
       toast.error("Não foi possível gerar a imagem");
       return;
     }
-    const arquivo = new File([blob], `ranking-fut-cajazeiras-${referencia}.png`, { type: "image/png" });
+    const arquivo = new File([blob], `ranking-fut-cajazeiras-${referencia}-${categoria}.png`, {
+      type: "image/png",
+    });
     const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
     if (nav.canShare?.({ files: [arquivo] })) {
       try {
@@ -162,51 +248,70 @@ export function RankingMensal() {
         <Trophy className="size-6 text-gold" />
       </div>
 
-      {isLoading && <p className="mt-3 text-sm text-muted-foreground">Carregando ranking...</p>}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {CATEGORIAS.map(({ id, rotulo, Icone, cor }) => (
+          <Button
+            key={id}
+            variant={categoria === id ? "gold" : "outline"}
+            size="sm"
+            onClick={() => setCategoria(id)}
+          >
+            <Icone className={`size-4 ${categoria === id ? "" : cor}`} /> {rotulo}
+          </Button>
+        ))}
+      </div>
 
+      {isLoading && <p className="mt-3 text-sm text-muted-foreground">Carregando ranking...</p>}
 
       {!isLoading && top.length === 0 && (
         <p className="mt-3 text-sm text-muted-foreground">
-          Ainda não há gols nem resultados lançados neste mês.
+          Ainda não há dados lançados nesta categoria neste mês.
         </p>
       )}
 
       <ul className="mt-3 space-y-2">
-        {top.map((r, i) => (
-          <li key={r.usuario_id} className="flex items-center gap-3 rounded-lg border border-border/60 p-2.5">
-            <span
-              className={`flex size-7 shrink-0 items-center justify-center rounded-full font-display text-sm ${
-                i === 0 ? "bg-gold/15 text-gold" : "bg-muted text-muted-foreground"
-              }`}
+        {top.map((r, i) => {
+          const Icone = categoriaAtual?.Icone ?? Goal;
+          return (
+            <li
+              key={r.usuario_id}
+              className="flex items-center gap-3 rounded-lg border border-border/60 p-2.5"
             >
-              {i === 0 ? <Medal className="size-4" /> : i + 1}
-            </span>
-            <AvatarJogador caminho={avatarDe(r.usuario_id)} nome={r.nome} size="sm" />
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold">{r.nome}</span>
-            <span className="flex items-center gap-1 text-sm text-gold">
-              <Goal className="size-3.5" /> {r.gols ?? 0}
-            </span>
-            <span className="text-[11px] tabular-nums text-muted-foreground">
-              <strong className="text-foreground">{r.vitorias ?? 0}</strong>V ·{" "}
-              <strong className="text-foreground">{r.derrotas ?? 0}</strong>D
-            </span>
-            <span className="flex items-center gap-0.5">
-              {(r.cartoes_amarelos ?? 0) > 0 && (
-                <span className="rounded-sm bg-yellow-400 px-1 text-[9px] font-bold text-black">
-                  {r.cartoes_amarelos}
+              <span
+                className={`flex size-7 shrink-0 items-center justify-center rounded-full font-display text-sm ${
+                  i === 0 ? "bg-gold/15 text-gold" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {i === 0 ? <Medal className="size-4" /> : i + 1}
+              </span>
+              <AvatarJogador caminho={avatarDe(r.usuario_id)} nome={r.nome} size="sm" />
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold">{r.nome}</span>
+              {categoria === "cartoes" ? (
+                <span className="flex items-center gap-1">
+                  {(r.cartoes_amarelos ?? 0) > 0 && (
+                    <span className="rounded-sm bg-yellow-400 px-1 text-[9px] font-bold text-black">
+                      {r.cartoes_amarelos}
+                    </span>
+                  )}
+                  {(r.cartoes_azuis ?? 0) > 0 && (
+                    <span className="rounded-sm bg-blue-500 px-1 text-[9px] font-bold text-white">
+                      {r.cartoes_azuis}
+                    </span>
+                  )}
+                  {(r.cartoes_vermelhos ?? 0) > 0 && (
+                    <span className="rounded-sm bg-destructive px-1 text-[9px] font-bold text-white">
+                      {r.cartoes_vermelhos}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-sm text-gold">
+                  <Icone className="size-3.5" /> {valorDe(r)}
                 </span>
               )}
-              {(r.cartoes_azuis ?? 0) > 0 && (
-                <span className="rounded-sm bg-blue-500 px-1 text-[9px] font-bold text-white">{r.cartoes_azuis}</span>
-              )}
-              {(r.cartoes_vermelhos ?? 0) > 0 && (
-                <span className="rounded-sm bg-destructive px-1 text-[9px] font-bold text-white">
-                  {r.cartoes_vermelhos}
-                </span>
-              )}
-            </span>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
       {top.length > 0 && (
@@ -215,6 +320,5 @@ export function RankingMensal() {
         </Button>
       )}
     </section>
-
   );
 }

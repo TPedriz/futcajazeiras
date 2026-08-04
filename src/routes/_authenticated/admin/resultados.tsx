@@ -8,7 +8,13 @@ import {
 } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -70,7 +76,10 @@ function ResultadosPage() {
       if (ids.length === 0) return;
       const { error: e1 } = await supabase.from("estatisticas_baba").delete().in("baba_id", ids);
       if (e1) throw e1;
-      const { error: e2 } = await supabase.from("times_baba").update({ resultado: null }).in("baba_id", ids);
+      const { error: e2 } = await supabase
+        .from("times_baba")
+        .update({ resultado: null })
+        .in("baba_id", ids);
       if (e2) throw e2;
     },
     onSuccess: () => {
@@ -86,7 +95,10 @@ function ResultadosPage() {
       if (ids.length === 0) return;
       const { error: e1 } = await supabase.from("estatisticas_baba").delete().in("baba_id", ids);
       if (e1) throw e1;
-      const { error: e2 } = await supabase.from("times_baba").update({ resultado: null }).in("baba_id", ids);
+      const { error: e2 } = await supabase
+        .from("times_baba")
+        .update({ resultado: null })
+        .in("baba_id", ids);
       if (e2) throw e2;
     },
     onSuccess: () => {
@@ -103,7 +115,13 @@ function ResultadosPage() {
       delta,
     }: {
       usuarioId: string;
-      campo: "gols" | "assistencias" | "cartoes_amarelos" | "cartoes_azuis" | "cartoes_vermelhos";
+      campo:
+        | "gols"
+        | "assistencias"
+        | "penaltis_defendidos"
+        | "cartoes_amarelos"
+        | "cartoes_azuis"
+        | "cartoes_vermelhos";
       delta: number;
     }) => {
       if (!babaId) throw new Error("Selecione um baba");
@@ -111,6 +129,7 @@ function ResultadosPage() {
       const base = {
         gols: atual?.gols ?? 0,
         assistencias: atual?.assistencias ?? 0,
+        penaltis_defendidos: atual?.penaltis_defendidos ?? 0,
         cartoes_amarelos: atual?.cartoes_amarelos ?? 0,
         cartoes_azuis: atual?.cartoes_azuis ?? 0,
         cartoes_vermelhos: atual?.cartoes_vermelhos ?? 0,
@@ -118,7 +137,10 @@ function ResultadosPage() {
       const novo = { ...base, [campo]: Math.max(0, base[campo] + delta) };
       const { error } = await supabase
         .from("estatisticas_baba")
-        .upsert({ baba_id: babaId, usuario_id: usuarioId, ...novo }, { onConflict: "baba_id,usuario_id" });
+        .upsert(
+          { baba_id: babaId, usuario_id: usuarioId, ...novo },
+          { onConflict: "baba_id,usuario_id" },
+        );
       if (error) throw error;
     },
     onSuccess: () => {
@@ -139,14 +161,15 @@ function ResultadosPage() {
           <SelectContent>
             {sessoes.map((s) => (
               <SelectItem key={s.id} value={s.id}>
-                {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} — {s.local}
+                {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })} —{" "}
+                {s.local}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Escolha qualquer baba do histórico para lançar ou corrigir gols, assistências e cartões. As alterações
-          valem retroativamente e o ranking do mês é recalculado na hora.
+          Escolha qualquer baba do histórico para lançar ou corrigir gols, assistências e cartões.
+          As alterações valem retroativamente e o ranking do mês é recalculado na hora.
         </p>
       </div>
 
@@ -161,7 +184,11 @@ function ResultadosPage() {
             size="sm"
             disabled={zerarMes.isPending}
             onClick={() => {
-              if (confirm("Zerar o ranking deste mês? Gols, cartões e resultados do mês serão apagados."))
+              if (
+                confirm(
+                  "Zerar o ranking deste mês? Gols, cartões e resultados do mês serão apagados.",
+                )
+              )
                 zerarMes.mutate();
             }}
           >
@@ -180,7 +207,6 @@ function ResultadosPage() {
           </Button>
         </div>
       </div>
-
 
       {(times ?? []).length === 0 && (
         <div className="card-premium p-6 text-center">
@@ -205,21 +231,36 @@ function ResultadosPage() {
             <Button
               variant={t.resultado === "vitoria" ? "success" : "outline"}
               size="sm"
-              onClick={() => marcarResultado.mutate({ timeId: t.id, resultado: t.resultado === "vitoria" ? null : "vitoria" })}
+              onClick={() =>
+                marcarResultado.mutate({
+                  timeId: t.id,
+                  resultado: t.resultado === "vitoria" ? null : "vitoria",
+                })
+              }
             >
               <Trophy className="size-3" /> Venceu
             </Button>
             <Button
               variant={t.resultado === "empate" ? "gold" : "outline"}
               size="sm"
-              onClick={() => marcarResultado.mutate({ timeId: t.id, resultado: t.resultado === "empate" ? null : "empate" })}
+              onClick={() =>
+                marcarResultado.mutate({
+                  timeId: t.id,
+                  resultado: t.resultado === "empate" ? null : "empate",
+                })
+              }
             >
               <Minus className="size-3" /> Empate
             </Button>
             <Button
               variant={t.resultado === "derrota" ? "destructive" : "outline"}
               size="sm"
-              onClick={() => marcarResultado.mutate({ timeId: t.id, resultado: t.resultado === "derrota" ? null : "derrota" })}
+              onClick={() =>
+                marcarResultado.mutate({
+                  timeId: t.id,
+                  resultado: t.resultado === "derrota" ? null : "derrota",
+                })
+              }
             >
               <ShieldX className="size-3" /> Perdeu
             </Button>
@@ -228,13 +269,17 @@ function ResultadosPage() {
           <ul className="mt-3 space-y-2">
             {(t.times_jogadores ?? []).map((j) => {
               const s = j.usuario_id ? statMap.get(j.usuario_id) : undefined;
-              const nome = j.nome_convidado ?? (j.usuario_id ? nomes.get(j.usuario_id) ?? "Jogador" : "Jogador");
+              const nome =
+                j.nome_convidado ??
+                (j.usuario_id ? (nomes.get(j.usuario_id) ?? "Jogador") : "Jogador");
               return (
                 <li key={j.id} className="rounded-lg border border-border/60 p-2">
                   <div className="flex items-center justify-between">
                     <span className="truncate text-sm">
                       {nome}
-                      {j.nome_convidado && <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>}
+                      {j.nome_convidado && (
+                        <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>
+                      )}
                     </span>
                     {j.usuario_id && (
                       <span className="flex items-center gap-1 text-xs text-gold">
@@ -244,22 +289,121 @@ function ResultadosPage() {
                     )}
                   </div>
                   {j.usuario_id && (
-                    <div className="mt-2 grid grid-cols-5 gap-1">
-                      <StatBtn label="Gol" valor={s?.gols ?? 0} cor="bg-gold/15 text-gold"
-                        onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "gols", delta: 1 })}
-                        onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "gols", delta: -1 })} />
-                      <StatBtn label="Assist." valor={s?.assistencias ?? 0} cor="bg-success/15 text-success"
-                        onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "assistencias", delta: 1 })}
-                        onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "assistencias", delta: -1 })} />
-                      <StatBtn label="Amar." valor={s?.cartoes_amarelos ?? 0} cor="bg-yellow-500/15 text-yellow-400"
-                        onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "cartoes_amarelos", delta: 1 })}
-                        onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "cartoes_amarelos", delta: -1 })} />
-                      <StatBtn label="Azul" valor={s?.cartoes_azuis ?? 0} cor="bg-blue-500/15 text-blue-400"
-                        onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "cartoes_azuis", delta: 1 })}
-                        onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "cartoes_azuis", delta: -1 })} />
-                      <StatBtn label="Verm." valor={s?.cartoes_vermelhos ?? 0} cor="bg-destructive/15 text-destructive"
-                        onAdd={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "cartoes_vermelhos", delta: 1 })}
-                        onSub={() => lancarEstatistica.mutate({ usuarioId: j.usuario_id!, campo: "cartoes_vermelhos", delta: -1 })} />
+                    <div className="mt-2 grid grid-cols-6 gap-1">
+                      <StatBtn
+                        label="Gol"
+                        valor={s?.gols ?? 0}
+                        cor="bg-gold/15 text-gold"
+                        onAdd={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "gols",
+                            delta: 1,
+                          })
+                        }
+                        onSub={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "gols",
+                            delta: -1,
+                          })
+                        }
+                      />
+                      <StatBtn
+                        label="Assist."
+                        valor={s?.assistencias ?? 0}
+                        cor="bg-success/15 text-success"
+                        onAdd={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "assistencias",
+                            delta: 1,
+                          })
+                        }
+                        onSub={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "assistencias",
+                            delta: -1,
+                          })
+                        }
+                      />
+                      <StatBtn
+                        label="Def. pênalti"
+                        valor={s?.penaltis_defendidos ?? 0}
+                        cor="bg-violet-500/15 text-violet-400"
+                        onAdd={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "penaltis_defendidos",
+                            delta: 1,
+                          })
+                        }
+                        onSub={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "penaltis_defendidos",
+                            delta: -1,
+                          })
+                        }
+                      />
+                      <StatBtn
+                        label="Amar."
+                        valor={s?.cartoes_amarelos ?? 0}
+                        cor="bg-yellow-500/15 text-yellow-400"
+                        onAdd={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "cartoes_amarelos",
+                            delta: 1,
+                          })
+                        }
+                        onSub={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "cartoes_amarelos",
+                            delta: -1,
+                          })
+                        }
+                      />
+                      <StatBtn
+                        label="Azul"
+                        valor={s?.cartoes_azuis ?? 0}
+                        cor="bg-blue-500/15 text-blue-400"
+                        onAdd={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "cartoes_azuis",
+                            delta: 1,
+                          })
+                        }
+                        onSub={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "cartoes_azuis",
+                            delta: -1,
+                          })
+                        }
+                      />
+                      <StatBtn
+                        label="Verm."
+                        valor={s?.cartoes_vermelhos ?? 0}
+                        cor="bg-destructive/15 text-destructive"
+                        onAdd={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "cartoes_vermelhos",
+                            delta: 1,
+                          })
+                        }
+                        onSub={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "cartoes_vermelhos",
+                            delta: -1,
+                          })
+                        }
+                      />
                     </div>
                   )}
                 </li>
@@ -289,7 +433,12 @@ function StatBtn({
     <div className={`rounded-md p-1 text-center ${cor}`}>
       <p className="text-[9px] uppercase tracking-widest">{label}</p>
       <div className="flex items-center justify-center gap-1">
-        <button type="button" aria-label={`Diminuir ${label}`} onClick={onSub} className="px-1 text-sm opacity-70">
+        <button
+          type="button"
+          aria-label={`Diminuir ${label}`}
+          onClick={onSub}
+          className="px-1 text-sm opacity-70"
+        >
           −
         </button>
         <span className="font-display text-base">{valor}</span>
