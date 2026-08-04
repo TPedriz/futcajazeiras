@@ -190,13 +190,13 @@ function EstatisticasPage() {
                 <span className="ml-2 text-[11px] text-muted-foreground">(já tem lançamento)</span>
               )}
             </p>
-            <div className="grid grid-cols-6 gap-2">
-              {CAMPOS.map(({ campo, rotulo, icone, cor }) => (
+            <div className="grid grid-cols-5 gap-2">
+              {CAMPOS.map(({ campo, rotulo, icone: Icone, cor }) => (
                 <div key={campo} className="rounded-md bg-background p-2 text-center">
                   <p
                     className={`flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest ${cor}`}
                   >
-                    <icone className="size-3" /> {rotulo}
+                    <Icone className="size-3" /> {rotulo}
                   </p>
                   <div className="mt-1 flex items-center justify-center gap-1">
                     <button
