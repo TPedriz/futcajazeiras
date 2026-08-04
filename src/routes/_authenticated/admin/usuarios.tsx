@@ -12,7 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
 import { AprovacoesConvidados } from "@/components/AprovacoesConvidados";
@@ -22,7 +28,6 @@ import { formataTelefone, normalizaTelefone } from "@/lib/telefone";
 import { Pencil, UserMinus, Save, X, Power, Gavel } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
 
 export const Route = createFileRoute("/_authenticated/admin/usuarios")({
   component: UsuariosPage,
@@ -65,7 +70,6 @@ function UsuariosPage() {
     return "convidado";
   };
   const perfis = todos.filter((p) => filtro === "todos" || papelDe(p.id) === filtro);
-
 
   const salvar = useMutation({
     mutationFn: async (id: string) => {
@@ -165,11 +169,7 @@ function UsuariosPage() {
       <div className="card-premium p-5 space-y-3">
         <div className="flex items-center justify-between">
           <p className="font-display text-xl">Punições</p>
-          <Button
-            variant="goldOutline"
-            size="sm"
-            onClick={() => setAplicandoPunicao((v) => !v)}
-          >
+          <Button variant="goldOutline" size="sm" onClick={() => setAplicandoPunicao((v) => !v)}>
             <Gavel className="size-4" /> Aplicar punição
           </Button>
         </div>
@@ -213,9 +213,7 @@ function UsuariosPage() {
             <Button
               variant="hero"
               className="w-full"
-              disabled={
-                !punicaoUserId || !punicaoBabaId || aplicarPunicao.isPending
-              }
+              disabled={!punicaoUserId || !punicaoBabaId || aplicarPunicao.isPending}
               onClick={() => aplicarPunicao.mutate()}
             >
               <Gavel className="size-4" /> Aplicar punição
@@ -237,8 +235,9 @@ function UsuariosPage() {
                     {nomesUsuarios.get(s.usuario_id) ?? "Jogador"}
                   </p>
                   <p className="truncate text-[11px] text-muted-foreground">
-                    Bloqueado em {s.baba_bloqueado_id ? nomesBabas.get(s.baba_bloqueado_id) : "próximo baba"}{" "}
-                    • {s.motivo}
+                    Bloqueado em{" "}
+                    {s.baba_bloqueado_id ? nomesBabas.get(s.baba_bloqueado_id) : "próximo baba"} •{" "}
+                    {s.motivo}
                   </p>
                 </div>
                 <Button
@@ -259,7 +258,6 @@ function UsuariosPage() {
       <FiltroCargo valor={filtro} onChange={setFiltro} total={perfis.length} />
 
       <ul className="space-y-2">
-
         {perfis.map((p) => {
           const emEdicao = editando === p.id;
           return (
@@ -268,15 +266,28 @@ function UsuariosPage() {
                 <div className="space-y-3">
                   <div className="space-y-1">
                     <Label htmlFor={`nome-${p.id}`}>Nome completo</Label>
-                    <Input id={`nome-${p.id}`} value={nome} onChange={(e) => setNome(e.target.value)} className="h-11" />
+                    <Input
+                      id={`nome-${p.id}`}
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      className="h-11"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor={`tel-${p.id}`}>WhatsApp</Label>
-                    <Input id={`tel-${p.id}`} value={telefone} onChange={(e) => setTelefone(e.target.value)} className="h-11" />
+                    <Input
+                      id={`tel-${p.id}`}
+                      value={telefone}
+                      onChange={(e) => setTelefone(e.target.value)}
+                      className="h-11"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor={`pos-${p.id}`}>Posição</Label>
-                    <Select value={posicao} onValueChange={(v) => setPosicao(v as "linha" | "goleiro")}>
+                    <Select
+                      value={posicao}
+                      onValueChange={(v) => setPosicao(v as "linha" | "goleiro")}
+                    >
                       <SelectTrigger id={`pos-${p.id}`} className="h-11">
                         <SelectValue />
                       </SelectTrigger>
@@ -287,7 +298,13 @@ function UsuariosPage() {
                     </Select>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="gold" size="sm" className="flex-1" disabled={salvar.isPending} onClick={() => salvar.mutate(p.id)}>
+                    <Button
+                      variant="gold"
+                      size="sm"
+                      className="flex-1"
+                      disabled={salvar.isPending}
+                      onClick={() => salvar.mutate(p.id)}
+                    >
                       <Save className="size-4" /> Salvar
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setEditando(null)}>
@@ -298,11 +315,14 @@ function UsuariosPage() {
               ) : (
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className={`truncate font-semibold ${p.ativo ? "" : "text-muted-foreground line-through"}`}>
+                    <p
+                      className={`truncate font-semibold ${p.ativo ? "" : "text-muted-foreground line-through"}`}
+                    >
                       {p.nome}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {p.telefone ? formataTelefone(p.telefone) : "sem WhatsApp"} • {p.posicao === "goleiro" ? "Goleiro" : "Linha"}
+                      {p.telefone ? formataTelefone(p.telefone) : "sem WhatsApp"} •{" "}
+                      {p.posicao === "goleiro" ? "Goleiro" : "Linha"}
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1">
                       <Badge variant="outline" className="border-gold/40 text-gold capitalize">
@@ -343,7 +363,6 @@ function UsuariosPage() {
                     <UserMinus className="size-4" />
                   </Button>
                 </div>
-
               )}
             </li>
           );

@@ -332,16 +332,13 @@ function BabaPage() {
           <h2 className="font-display text-2xl">Lista de presença</h2>
           <div className="flex items-center gap-2">
             {isAdmin && (
-              <Button
-                variant="goldOutline"
-                size="sm"
-                onClick={() => setAdicionarAberto((v) => !v)}
-              >
+              <Button variant="goldOutline" size="sm" onClick={() => setAdicionarAberto((v) => !v)}>
                 <UserPlus className="size-4" /> Adicionar
               </Button>
             )}
             <Badge variant="outline" className="border-gold/40 text-gold">
-              {membros.length} + {convidados.filter((c) => c.status_convidado === "aprovado").length}
+              {membros.length} +{" "}
+              {convidados.filter((c) => c.status_convidado === "aprovado").length}
             </Badge>
           </div>
         </div>
@@ -375,9 +372,7 @@ function BabaPage() {
               </Button>
             </div>
             {disponiveis.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Todos os jogadores já estão na lista.
-              </p>
+              <p className="text-xs text-muted-foreground">Todos os jogadores já estão na lista.</p>
             )}
           </div>
         )}
