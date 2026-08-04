@@ -161,14 +161,15 @@ async function desenharRanking(
 interface LinhaRanking {
   usuario_id: string | null;
   nome: string | null;
-  gols: number;
-  assistencias: number;
-  penaltis_defendidos: number;
-  vitorias: number;
-  derrotas: number;
-  cartoes_amarelos: number;
-  cartoes_azuis: number;
-  cartoes_vermelhos: number;
+  gols: number | null;
+  assistencias: number | null;
+  penaltis_defendidos: number | null;
+  vitorias: number | null;
+  derrotas: number | null;
+  empates: number | null;
+  cartoes_amarelos: number | null;
+  cartoes_azuis: number | null;
+  cartoes_vermelhos: number | null;
 }
 
 export function RankingMensal() {
