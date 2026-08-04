@@ -181,12 +181,12 @@ function EstatisticasPage() {
               )}
             </p>
             <div className="grid grid-cols-5 gap-2">
-              {CAMPOS.map(({ campo, rotulo, icone, cor }) => (
+              {CAMPOS.map(({ campo, rotulo, icone: Icone, cor }) => (
                 <div key={campo} className="rounded-md bg-background p-2 text-center">
                   <p
                     className={`flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest ${cor}`}
                   >
-                    <icone className="size-3" /> {rotulo}
+                    <Icone className="size-3" /> {rotulo}
                   </p>
                   <div className="mt-1 flex items-center justify-center gap-1">
                     <button
