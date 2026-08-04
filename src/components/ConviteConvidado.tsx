@@ -14,7 +14,9 @@ import {
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
 import { listarAnfitrioes, solicitarConvite, pixDaSolicitacao } from "@/lib/convidados.functions";
 import { minhasSolicitacoesQuery } from "@/lib/babaQueries";
-import { HandHeart, QrCode } from "lucide-react";
+import { HandHeart, QrCode, MessageCircle } from "lucide-react";
+
+const GRUPO_WHATSAPP_URL = "https://chat.whatsapp.com/HtGUdc005Hd9NLqY8Bcg3W";
 
 export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: string }) {
   const qc = useQueryClient();
@@ -156,7 +158,19 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
                 </p>
               )}
               {pago ? (
-                <p className="text-sm text-success">Pagamento confirmado! Você está na lista.</p>
+                <div className="space-y-3">
+                  <p className="text-sm text-success">Pagamento confirmado! Você está na lista.</p>
+                  <a
+                    href={GRUPO_WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <Button variant="goldOutline" size="lg" className="w-full">
+                      <MessageCircle className="size-4" /> Entrar no grupo do WhatsApp
+                    </Button>
+                  </a>
+                </div>
               ) : ativa.status === "aprovado" && !aguardandoDiretoria && !semCobranca ? (
                 <Button variant="hero" size="lg" className="w-full" onClick={abrirPix}>
                   <QrCode className="size-4" /> Pagar taxa com PIX
