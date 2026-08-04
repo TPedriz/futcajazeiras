@@ -186,7 +186,7 @@ function EstatisticasPage() {
                   <p
                     className={`flex items-center justify-center gap-1 text-[9px] uppercase tracking-widest ${cor}`}
                   >
-                    <icone className="size-3" /> {rotulo}
+                    <Icone className="size-3" /> {rotulo}
                   </p>
                   <div className="mt-1 flex items-center justify-center gap-1">
                     <button
