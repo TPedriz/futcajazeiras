@@ -209,11 +209,11 @@ function InicioPage() {
         </div>
       )}
 
-      {passados.length > 0 && (
+      {(passados?.length ?? 0) > 0 && (
         <div className="card-premium p-5">
           <p className="text-xs uppercase tracking-widest text-gold">Babas passados</p>
           <ul className="mt-3 space-y-2">
-            {passados.map((s) => (
+            {(passados ?? []).map((s) => (
               <li
                 key={s.id}
                 className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface p-3 opacity-80"
