@@ -176,7 +176,8 @@ export function RankingMensal() {
   const { data, isLoading } = useQuery(rankingDoMesQuery(referencia));
   const { data: perfis } = useQuery(perfisPublicosQuery());
   const [categoria, setCategoria] = useState<Categoria>("gols");
-  const avatarDe = (id: string | null) => (perfis ?? []).find((p) => p.id === id)?.avatar_url ?? null;
+  const avatarDe = (id: string | null) =>
+    (perfis ?? []).find((p) => p.id === id)?.avatar_url ?? null;
 
   const totalCartoes = (r: LinhaRanking) =>
     (r.cartoes_amarelos ?? 0) + (r.cartoes_azuis ?? 0) + (r.cartoes_vermelhos ?? 0);
@@ -272,7 +273,10 @@ export function RankingMensal() {
         {top.map((r, i) => {
           const Icone = categoriaAtual?.Icone ?? Goal;
           return (
-            <li key={r.usuario_id} className="flex items-center gap-3 rounded-lg border border-border/60 p-2.5">
+            <li
+              key={r.usuario_id}
+              className="flex items-center gap-3 rounded-lg border border-border/60 p-2.5"
+            >
               <span
                 className={`flex size-7 shrink-0 items-center justify-center rounded-full font-display text-sm ${
                   i === 0 ? "bg-gold/15 text-gold" : "bg-muted text-muted-foreground"
@@ -318,4 +322,3 @@ export function RankingMensal() {
     </section>
   );
 }
-
