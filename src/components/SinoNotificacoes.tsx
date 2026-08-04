@@ -1,7 +1,16 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Bell, CheckCheck, HandHeart, Wallet, ShieldX, Info, ClipboardList, UserCog } from "lucide-react";
+import {
+  Bell,
+  CheckCheck,
+  HandHeart,
+  Wallet,
+  ShieldX,
+  Info,
+  ClipboardList,
+  UserCog,
+} from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -77,9 +86,11 @@ export function SinoNotificacoes({ userId }: { userId: string | undefined }) {
             </Button>
           )}
         </div>
-        <ScrollArea className="max-h-80">
+        <ScrollArea type="always" className="max-h-[70vh] min-h-24">
           {(notificacoes ?? []).length === 0 ? (
-            <p className="p-6 text-center text-sm text-muted-foreground">Nenhum aviso por aqui ainda.</p>
+            <p className="p-6 text-center text-sm text-muted-foreground">
+              Nenhum aviso por aqui ainda.
+            </p>
           ) : (
             <ul className="divide-y divide-border">
               {(notificacoes ?? []).map((n) => {
@@ -98,12 +109,17 @@ export function SinoNotificacoes({ userId }: { userId: string | undefined }) {
                       onClick={abrir}
                       className="flex w-full gap-3 p-3 text-left transition-colors hover:bg-surface"
                     >
-                      <Icone className={`mt-0.5 size-4 shrink-0 ${n.lida ? "text-muted-foreground" : "text-gold"}`} />
+                      <Icone
+                        className={`mt-0.5 size-4 shrink-0 ${n.lida ? "text-muted-foreground" : "text-gold"}`}
+                      />
                       <div className="min-w-0">
                         <p className="text-sm font-semibold">{n.titulo}</p>
                         <p className="text-xs text-muted-foreground">{n.mensagem}</p>
                         <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground/70">
-                          {formatDistanceToNow(new Date(n.criado_em), { addSuffix: true, locale: ptBR })}
+                          {formatDistanceToNow(new Date(n.criado_em), {
+                            addSuffix: true,
+                            locale: ptBR,
+                          })}
                         </p>
                       </div>
                     </button>
