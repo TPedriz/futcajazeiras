@@ -13,14 +13,17 @@ import {
 } from "@/components/ui/select";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
 import { listarAnfitrioes, solicitarConvite, pixDaSolicitacao } from "@/lib/convidados.functions";
-import { minhasSolicitacoesQuery } from "@/lib/babaQueries";
-import { HandHeart, QrCode } from "lucide-react";
+import { minhasSolicitacoesQuery, valorConvidadoQuery } from "@/lib/babaQueries";
+import { HandHeart, QrCode, MessageCircle } from "lucide-react";
+
+const GRUPO_WHATSAPP_URL = "https://chat.whatsapp.com/HtGUdc005Hd9NLqY8Bcg3W";
 
 export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: string }) {
   const qc = useQueryClient();
   const buscarAnfitrioes = useServerFn(listarAnfitrioes);
   const pedir = useServerFn(solicitarConvite);
   const verPix = useServerFn(pixDaSolicitacao);
+  const { data: valorConvidado } = useQuery(valorConvidadoQuery());
 
   const [anfitriao, setAnfitriao] = useState<string>("");
   const [pixAberto, setPixAberto] = useState(false);
@@ -117,8 +120,14 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
           <p className="font-display text-lg">Ir como convidado</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Convidados não entram direto na lista: peça a um associado para te levar. Se ele
-            aceitar, você paga a taxa de <strong className="text-gold">R$ 5,00</strong> via PIX e
-            entra na lista.
+            aceitar, você paga a taxa de{" "}
+            <strong className="text-gold">
+              R${" "}
+              {Number(valorConvidado ?? 5)
+                .toFixed(2)
+                .replace(".", ",")}
+            </strong>{" "}
+            via PIX e entra na lista.
           </p>
 
           {ativa ? (
@@ -156,7 +165,19 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
                 </p>
               )}
               {pago ? (
-                <p className="text-sm text-success">Pagamento confirmado! Você está na lista.</p>
+                <div className="space-y-3">
+                  <p className="text-sm text-success">Pagamento confirmado! Você está na lista.</p>
+                  <a
+                    href={GRUPO_WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <Button variant="goldOutline" size="lg" className="w-full">
+                      <MessageCircle className="size-4" /> Entrar no grupo do WhatsApp
+                    </Button>
+                  </a>
+                </div>
               ) : ativa.status === "aprovado" && !aguardandoDiretoria && !semCobranca ? (
                 <Button variant="hero" size="lg" className="w-full" onClick={abrirPix}>
                   <QrCode className="size-4" /> Pagar taxa com PIX

@@ -166,6 +166,10 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
     }
 
     // ---- Convidado da casa: libera presença + PIX direto (já foi aprovado pela diretoria). ----
+    const { criarPagamentoPix, emailPagador, valorConvidadoAtual } =
+      await import("@/lib/mercadopago.server");
+    const valorConvidado = await valorConvidadoAtual();
+
     const { data: presenca, error: erroPresenca } = await supabase
       .from("presencas")
       .insert({
@@ -174,7 +178,7 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
         nome_convidado: perfilSolicitante?.nome ?? "Convidado",
         convidado_user_id: sol.solicitante_id,
         status_convidado: "pendente",
-        valor: 5,
+        valor: valorConvidado,
       })
       .select("id")
       .single();
@@ -189,10 +193,8 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
         );
     }
 
-    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } =
-      await import("@/lib/mercadopago.server");
     const pix = await criarPagamentoPix({
-      valor: VALOR_CONVIDADO,
+      valor: valorConvidado,
       descricao: `Taxa de convidado — ${perfilSolicitante?.nome ?? "Convidado"}`,
       email: emailPagador(perfilSolicitante?.telefone, sol.solicitante_id),
       nome: perfilSolicitante?.nome ?? "Convidado",
@@ -375,6 +377,10 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
 
     let presencaId = pedido.presenca_id;
     if (!presencaId) {
+      const { criarPagamentoPix, emailPagador, valorConvidadoAtual } =
+        await import("@/lib/mercadopago.server");
+      const valorConvidado = await valorConvidadoAtual();
+
       const { data: presenca, error: erroPresenca } = await supabase
         .from("presencas")
         .insert({
@@ -384,7 +390,7 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
           convidado_cadastro_id: cad.id,
           convidado_user_id: cad.user_id,
           status_convidado: "pendente",
-          valor: 5,
+          valor: valorConvidado,
         })
         .select("id")
         .single();
@@ -442,10 +448,10 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
       .eq("id", userId)
       .maybeSingle();
 
-    const { criarPagamentoPix, emailPagador, VALOR_CONVIDADO } =
-      await import("@/lib/mercadopago.server");
+    const { criarPagamentoPix, emailPagador } = await import("@/lib/mercadopago.server");
+    const valorPix = Number(presencaAtual?.valor) > 0 ? Number(presencaAtual.valor) : 5;
     const pix = await criarPagamentoPix({
-      valor: VALOR_CONVIDADO,
+      valor: valorPix,
       descricao: `Diária de convidado — ${cad.nome}`,
       email: emailPagador(anfitriao?.telefone, userId),
       nome: anfitriao?.nome ?? "Associado",
@@ -471,6 +477,6 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
       status: pix.status,
       qrCode: pix.qrCode,
       qrBase64: pix.qrBase64,
-      valor: VALOR_CONVIDADO,
+      valor: valorPix,
     };
   });
