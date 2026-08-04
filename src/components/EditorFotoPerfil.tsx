@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Move, ZoomIn, Loader2 } from "lucide-react";
 
 interface EditorFotoPerfilProps {
-  arquivo: File | null;
+  /** Arquivo novo (File) OU URL assinada da foto já salva (string). */
+  origem: File | string | null;
   aberto: boolean;
   onAbertoChange: (v: boolean) => void;
   /** Recebe o recorte final pronto (Blob) para o fluxo de upload. */
@@ -17,7 +18,7 @@ const SAIDA = 512; // tamanho da imagem gerada
 
 /** Editor: reposicionar (arrastar), dar zoom e ver o preview antes de salvar. */
 export function EditorFotoPerfil({
-  arquivo,
+  origem,
   aberto,
   onAbertoChange,
   onSalvar,
@@ -29,10 +30,11 @@ export function EditorFotoPerfil({
   const [salvando, setSalvando] = useState(false);
   const arrastando = useRef<{ x: number; y: number; dx: number; dy: number } | null>(null);
 
-  // Carrega o arquivo escolhido para o editor.
+  // Carrega a origem (arquivo novo ou URL da foto atual) para o editor.
   useEffect(() => {
-    if (!arquivo) return;
-    const url = URL.createObjectURL(arquivo);
+    if (!origem || !aberto) return;
+    const ehUrl = typeof origem === "string";
+    const url = ehUrl ? origem : URL.createObjectURL(origem);
     const img = new Image();
     img.onload = () => {
       setImagem(img);
@@ -41,8 +43,11 @@ export function EditorFotoPerfil({
       setDy(0);
     };
     img.src = url;
-    return () => URL.revokeObjectURL(url);
-  }, [arquivo]);
+    return () => {
+      if (!ehUrl) URL.revokeObjectURL(url);
+      setImagem(null);
+    };
+  }, [origem, aberto]);
 
   const escalaBase = imagem
     ? Math.max(EXIBICAO / imagem.naturalWidth, EXIBICAO / imagem.naturalHeight)
