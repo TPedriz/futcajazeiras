@@ -188,9 +188,10 @@ function BabaPage() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
-  // Admin: adiciona um jogador de volta à lista e marca o check-in (a qualquer momento).
+  // Admin: adiciona um jogador à lista de presença — com ou sem check-in (a qualquer momento,
+  // mesmo após o fechamento). Útil quando o jogador não tem celular para confirmar sozinho.
   const adicionarPresencaAdmin = useMutation({
-    mutationFn: async (usuarioId: string) => {
+    mutationFn: async ({ usuarioId, comCheckin }: { usuarioId: string; comCheckin: boolean }) => {
       if (!sessao) throw new Error("Sem sessão");
       const { data: presenca, error } = await supabase
         .from("presencas")
@@ -198,6 +199,7 @@ function BabaPage() {
         .select("id")
         .single();
       if (error) throw error;
+      if (!comCheckin) return;
       const { error: e2 } = await supabase.rpc("marcar_chegada", {
         _presenca_id: presenca.id,
         _lat: 0,
@@ -205,8 +207,12 @@ function BabaPage() {
       });
       if (e2) throw new Error(e2.message);
     },
-    onSuccess: () => {
-      toast.success("Jogador adicionado à lista com check-in!");
+    onSuccess: (_d, vars) => {
+      toast.success(
+        vars.comCheckin
+          ? "Jogador adicionado à lista com check-in!"
+          : "Jogador adicionado à lista!",
+      );
       setAdicionarAberto(false);
       setNovoJogadorId("");
       invalidar();
@@ -346,8 +352,8 @@ function BabaPage() {
         {isAdmin && adicionarAberto && (
           <div className="mb-3 space-y-2 rounded-lg border border-border bg-surface p-3">
             <p className="text-xs text-muted-foreground">
-              Adicione um jogador à lista de presença e ao check-in do campo (válido mesmo após o
-              fechamento).
+              Use quando um jogador não conseguiu confirmar sozinho (ex.: sem celular). Vale mesmo
+              após o fechamento da lista — a diretoria resolve sem deixar ninguém de fora.
             </p>
             <div className="flex gap-2">
               <Select value={novoJogadorId} onValueChange={setNovoJogadorId}>
@@ -362,13 +368,27 @@ function BabaPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="goldOutline"
+                className="h-10"
+                disabled={!novoJogadorId || adicionarPresencaAdmin.isPending}
+                onClick={() =>
+                  adicionarPresencaAdmin.mutate({ usuarioId: novoJogadorId, comCheckin: false })
+                }
+              >
+                <UserPlus className="size-4" /> Só lista
+              </Button>
               <Button
                 variant="hero"
                 className="h-10"
                 disabled={!novoJogadorId || adicionarPresencaAdmin.isPending}
-                onClick={() => adicionarPresencaAdmin.mutate(novoJogadorId)}
+                onClick={() =>
+                  adicionarPresencaAdmin.mutate({ usuarioId: novoJogadorId, comCheckin: true })
+                }
               >
-                <UserPlus className="size-4" /> Adicionar
+                <UserPlus className="size-4" /> Lista + check-in
               </Button>
             </div>
             {disponiveis.length === 0 && (

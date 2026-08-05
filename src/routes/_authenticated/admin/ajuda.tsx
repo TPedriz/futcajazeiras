@@ -58,6 +58,10 @@ const secoes = [
         "Removi alguém da lista sem querer. E agora?",
         "Na página do Baba (como admin), use “Adicionar” na Lista de presença: o jogador volta para a lista e o check-in do campo é marcado, a qualquer momento — mesmo após o fechamento.",
       ],
+      [
+        "E se um jogador não tiver celular para confirmar?",
+        "A diretoria resolve na página do Baba: botão “Adicionar” na Lista de presença → escolha o jogador → “Só lista” (coloca o nome na lista de presença) ou “Lista + check-in” (coloca na lista E marca a chegada no campo). Funciona mesmo depois do fechamento da lista — ninguém fica de fora por falta de celular.",
+      ],
     ],
   },
   {
@@ -95,20 +99,28 @@ const secoes = [
     titulo: "Sorteio",
     itens: [
       [
-        "Como funciona?",
-        "Usa as presenças confirmadas (membros + convidados aprovados). Escolha o tamanho dos times (6 ou 7) e o modo.",
+        "Como funciona o sorteio?",
+        "O sorteio monta os times usando as presenças confirmadas da lista (associados + convidados aprovados). Você escolhe o tamanho dos times (6 ou 7 jogadores) e o modo. A regra de ouro é: ninguém fica de fora — todo mundo confirmado entra em algum time, mesmo que o último time fique com menos gente.",
       ],
       [
-        "Quais modos existem?",
-        "Aleatório, Ordem de chegada (quem chegou antes entra nos times A/B) e BAxVI (divide Bahia e Vitória).",
+        "Quais são os modos de sorteio?",
+        "São três: 1) Aleatório — embaralha todo mundo e distribui entre os times. 2) Ordem de chegada — usa o check-in por GPS, em duas etapas (veja a próxima pergunta). 3) BAxVI — divide os associados entre Time Bahia e Time Vitória, pelo time do coração cadastrado no perfil.",
+      ],
+      [
+        "Como funciona o modo “Ordem de chegada” (2 etapas)?",
+        "A ideia é premiar quem chegou cedo. 1ª etapa: os 12 primeiros jogadores de linha que marcaram chegada são embaralhados e formam os Times A e B (6 em cada); os demais que já chegaram seguem para os Times C em diante, também na ordem de chegada. 2ª etapa: conforme mais gente vai chegando ao campo (retardatários), você executa o segundo sorteio e eles são encaixados — primeiro no último time que ainda está incompleto e, se precisar, em times novos. Tudo isso mantendo os times já montados.",
       ],
       [
         "O que é goleiro fixo?",
-        "É o jogador marcado como goleiro fixo (na página do Baba). O sorteio distribui os goleiros entre os times automaticamente e, quando falta goleiro, promove um jogador de linha e avisa.",
+        "É um goleiro marcado como “Fixo” (na página do Baba) para poder cobrir mais de um time quando faltar goleiro. No sorteio, os goleiros são distribuídos um por time: primeiro os normais, depois os fixos em rodízio. Se mesmo assim faltar goleiro, o sorteio promove um jogador de linha para o gol e mostra um aviso de “déficit de goleiros”.",
+      ],
+      [
+        "Posso trocar um jogador depois do sorteio?",
+        "Sim. Cada jogador dos times tem um botão ⇄ (substituir). Toque nele, escolha quem entra (a lista mostra os jogadores que ainda não têm time, como os retardatários) e confirme. O jogador escolhido assume a vaga — no gol, se a vaga era do goleiro. Quem saiu volta para o grupo de disponíveis. Isso funciona em qualquer momento do sorteio, inclusive depois da 2ª etapa.",
       ],
       [
         "Preciso salvar os times?",
-        "Sim. “Salvar times” grava os times; só depois eles aparecem na aba Resultados.",
+        "Sim. Toque em “Salvar times” para gravar os times montados. Só depois de salvar eles aparecem na aba Resultados para lançar o placar e as estatísticas. Você também pode copiar os times para o WhatsApp antes de salvar.",
       ],
     ],
   },
