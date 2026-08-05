@@ -95,11 +95,11 @@ function PerfilPage() {
       return;
     }
     setEnviandoFoto(true);
-    const extensao = "jpg";
+    const extensao = "png";
     const caminho = `${perfil.id}/avatar-${Date.now()}.${extensao}`;
     const { error: erroUpload } = await supabase.storage
       .from("avatares")
-      .upload(caminho, blob, { upsert: true, contentType: "image/jpeg" });
+      .upload(caminho, blob, { upsert: true, contentType: "image/png" });
     if (erroUpload) {
       setEnviandoFoto(false);
       toast.error("Não foi possível enviar a foto", { description: erroUpload.message });
