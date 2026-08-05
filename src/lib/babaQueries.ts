@@ -396,6 +396,20 @@ export const vagasAssociadosQuery = () =>
     },
   });
 
+/** Ajustes manuais de babas pagos de convidados (diretoria). */
+export const ajustesBabasConvidadoQuery = () =>
+  queryOptions({
+    queryKey: ["ajustes-babas-convidado"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ajustes_babas_convidado")
+        .select("*")
+        .order("atualizado_em", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
 /** Minha solicitação de associação mais recente. */
 export const minhaSolicitacaoAssociacaoQuery = (userId: string | undefined) =>
   queryOptions({

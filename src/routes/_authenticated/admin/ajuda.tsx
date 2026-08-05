@@ -214,6 +214,10 @@ const secoes = [
         "Como aplico ou removo uma punição?",
         "Em Usuários → Punições: escolha o usuário (qualquer cargo), o baba a bloquear e o motivo. A punição bloqueia o check-in dele nesse baba e aparece no mural. Use o X para remover.",
       ],
+      [
+        "Um convidado jogou 3 babas antes do app existir. Como registro isso?",
+        "Em Usuários → Babas dos convidados → Ajustar babas: escolha o convidado, informe quantos babas ele já jogou (crédito) e, se quiser, uma observação. Salve. Esse crédito soma ao contador dele no Perfil e, ao atingir 3, ele libera o pedido de associação. Para remover o ajuste, use o X na lista.",
+      ],
     ],
   },
 ];
