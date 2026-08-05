@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      ajustes_babas_convidado: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string | null
+          babas_credito: number
+          criado_em: string
+          observacao: string
+          usuario_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          babas_credito?: number
+          criado_em?: string
+          observacao?: string
+          usuario_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          babas_credito?: number
+          criado_em?: string
+          observacao?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ajustes_babas_convidado_atualizado_por_fkey"
+            columns: ["atualizado_por"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ajustes_babas_convidado_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracoes: {
         Row: {
           atualizado_em: string
