@@ -58,6 +58,10 @@ const secoes = [
         "Removi alguém da lista sem querer. E agora?",
         "Na página do Baba (como admin), use “Adicionar” na Lista de presença: o jogador volta para a lista e o check-in do campo é marcado, a qualquer momento — mesmo após o fechamento.",
       ],
+      [
+        "E se um jogador não tiver celular para confirmar?",
+        "A diretoria resolve na página do Baba: botão “Adicionar” na Lista de presença → escolha o jogador → “Só lista” (coloca o nome na lista de presença) ou “Lista + check-in” (coloca na lista E marca a chegada no campo). Funciona mesmo depois do fechamento da lista — ninguém fica de fora por falta de celular.",
+      ],
     ],
   },
   {

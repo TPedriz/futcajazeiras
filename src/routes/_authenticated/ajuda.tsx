@@ -52,6 +52,10 @@ const secoes = [
         "Por que meu check-in está bloqueado?",
         "Ou a lista ainda não abriu / já fechou, ou a mensalidade está em aberto depois do dia 10, ou você está cumprindo suspensão por cartão vermelho.",
       ],
+      [
+        "Não tenho celular / não consigo confirmar. E agora?",
+        "Fale com a diretoria: ela consegue colocar seu nome na lista de presença e marcar seu check-in no campo a partir do painel dela, mesmo depois do fechamento.",
+      ],
     ],
   },
   {
