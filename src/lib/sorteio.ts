@@ -131,6 +131,33 @@ function distribuirSobras(times: TimeSorteado[], sobras: JogadorSorteio[]): Time
   return alvo;
 }
 
+/**
+ * Substitui um jogador já sorteado por outro. O jogador que entra assume a
+ * vaga (e a posição) de quem saiu — funciona em qualquer sorteio, inclusive
+ * na 2ª etapa da "Ordem de Chegada" (retardatários). Quem sai volta para o
+ * pool de não alocados (pode ser sorteado de novo depois).
+ */
+export function substituirJogador(
+  times: TimeSorteado[],
+  sairId: string,
+  entrar: JogadorSorteio,
+): TimeSorteado[] {
+  return times.map((t) => {
+    const novoTime = { ...t, linha: [...t.linha] };
+    // Substituição no gol.
+    if (novoTime.goleiro?.id === sairId) {
+      novoTime.goleiro = { ...entrar, posicao: "goleiro" };
+      return novoTime;
+    }
+    // Substituição na linha.
+    const idx = novoTime.linha.findIndex((j) => j.id === sairId);
+    if (idx >= 0) {
+      novoTime.linha[idx] = { ...entrar, posicao: "linha" };
+    }
+    return novoTime;
+  });
+}
+
 function coletarAlocados(times: TimeSorteado[]): string[] {
   const ids: string[] = [];
   for (const t of times) {
@@ -138,6 +165,11 @@ function coletarAlocados(times: TimeSorteado[]): string[] {
     for (const j of t.linha) ids.push(j.id);
   }
   return ids;
+}
+
+/** Exporta os ids de presença já alocados em times (para o pool de substituição). */
+export function idsAlocados(times: TimeSorteado[]): string[] {
+  return coletarAlocados(times);
 }
 
 function renumerar(times: TimeSorteado[]): TimeSorteado[] {
