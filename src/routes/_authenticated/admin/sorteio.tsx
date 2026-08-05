@@ -9,6 +9,8 @@ import {
   sortearBaxVi,
   sortearPrimeiroChegada,
   sortearSegundoChegada,
+  substituirJogador,
+  idsAlocados,
   formatarTimesParaWhatsApp,
   TAMANHOS_TIME,
   type JogadorSorteio,
@@ -16,7 +18,14 @@ import {
   type SorteioEstado,
 } from "@/lib/sorteio";
 import { useState, useMemo } from "react";
-import { Shuffle, Copy, HandMetal, User, Save, Lock } from "lucide-react";
+import { Shuffle, Copy, HandMetal, User, Save, Lock, ArrowLeftRight } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -37,6 +46,8 @@ function SorteioPage() {
   const [estadoChegada, setEstadoChegada] = useState<SorteioEstado | null>(null);
   const [tamanho, setTamanho] = useState<number>(7);
   const [modo, setModo] = useState<"aleatorio" | "chegada" | "baxvi">("aleatorio");
+  const [substituindoId, setSubstituindoId] = useState<string | null>(null);
+  const [substitutoId, setSubstitutoId] = useState<string>("");
 
   const qc = useQueryClient();
 
@@ -208,6 +219,38 @@ function SorteioPage() {
         description: "Jogadores de linha foram escalados no gol para não travar o sorteio.",
       });
     }
+  };
+
+  /**
+   * Substitui um jogador sorteado por outro disponível (que ainda não tem time).
+   * Vale para qualquer sorteio (aleatório, chegada 1ª/2ª etapa e BAxVI).
+   */
+  const poolSubstituicao = useMemo(() => {
+    const times = modo === "chegada" ? estadoChegada?.times : resultado?.times;
+    if (!times) return [];
+    const alocados = new Set(idsAlocados(times));
+    return jogadores.filter((j) => !alocados.has(j.id));
+  }, [modo, estadoChegada, resultado, jogadores]);
+
+  const confirmarSubstituicao = () => {
+    if (!substituindoId || !substitutoId) return;
+    const entrar = jogadores.find((j) => j.id === substitutoId);
+    if (!entrar) return;
+
+    if (modo === "chegada" && estadoChegada) {
+      const times = substituirJogador(estadoChegada.times, substituindoId, entrar);
+      setEstadoChegada({ ...estadoChegada, times, alocados: idsAlocados(times) });
+    } else if (resultado) {
+      const times = substituirJogador(resultado.times, substituindoId, entrar);
+      setResultado({ ...resultado, times });
+    }
+
+    const saiu = jogadores.find((j) => j.id === substituindoId);
+    toast.success("Jogador substituído!", {
+      description: `${saiu?.nome ?? "Quem saiu"} saiu e ${entrar.nome} entrou no time.`,
+    });
+    setSubstituindoId(null);
+    setSubstitutoId("");
   };
 
   const copiar = async () => {
@@ -438,6 +481,24 @@ function SorteioPage() {
                     {t.goleiro.isConvidado && (
                       <span className="text-[10px] text-muted-foreground">(convidado)</span>
                     )}
+                    {poolSubstituicao.length > 0 && (
+                      <SubstituirBotao
+                        jogadorId={t.goleiro.id}
+                        pool={poolSubstituicao}
+                        substituindoId={substituindoId}
+                        substitutoId={substitutoId}
+                        onIniciar={(id) => {
+                          setSubstituindoId(id);
+                          setSubstitutoId("");
+                        }}
+                        onEscolher={setSubstitutoId}
+                        onConfirmar={confirmarSubstituicao}
+                        onCancelar={() => {
+                          setSubstituindoId(null);
+                          setSubstitutoId("");
+                        }}
+                      />
+                    )}
                   </li>
                 )}
                 {t.linha.map((j, idx) => (
@@ -447,6 +508,24 @@ function SorteioPage() {
                     <span className="text-foreground">{j.nome}</span>
                     {j.isConvidado && (
                       <span className="text-[10px] text-muted-foreground">(convidado)</span>
+                    )}
+                    {poolSubstituicao.length > 0 && (
+                      <SubstituirBotao
+                        jogadorId={j.id}
+                        pool={poolSubstituicao}
+                        substituindoId={substituindoId}
+                        substitutoId={substitutoId}
+                        onIniciar={(id) => {
+                          setSubstituindoId(id);
+                          setSubstitutoId("");
+                        }}
+                        onEscolher={setSubstitutoId}
+                        onConfirmar={confirmarSubstituicao}
+                        onCancelar={() => {
+                          setSubstituindoId(null);
+                          setSubstitutoId("");
+                        }}
+                      />
                     )}
                   </li>
                 ))}
@@ -466,5 +545,66 @@ function SorteioPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/** Botão "Substituir" por jogador: abre um seletor de quem entra no lugar. */
+function SubstituirBotao({
+  jogadorId,
+  pool,
+  substituindoId,
+  substitutoId,
+  onIniciar,
+  onEscolher,
+  onConfirmar,
+  onCancelar,
+}: {
+  jogadorId: string;
+  pool: JogadorSorteio[];
+  substituindoId: string | null;
+  substitutoId: string;
+  onIniciar: (id: string) => void;
+  onEscolher: (id: string) => void;
+  onConfirmar: () => void;
+  onCancelar: () => void;
+}) {
+  const ativo = substituindoId === jogadorId;
+  return (
+    <span className="ml-auto flex shrink-0 items-center gap-1">
+      {ativo ? (
+        <>
+          <Select value={substitutoId} onValueChange={onEscolher}>
+            <SelectTrigger className="h-8 w-40 text-xs" aria-label="Substituir por">
+              <SelectValue placeholder="Quem entra?" />
+            </SelectTrigger>
+            <SelectContent>
+              {pool.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.nome}
+                  {p.posicao === "goleiro" ? " 🧤" : ""}
+                  {p.isConvidado ? " (convidado)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="gold" size="sm" disabled={!substitutoId} onClick={onConfirmar}>
+            OK
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onCancelar}>
+            ✕
+          </Button>
+        </>
+      ) : (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-gold"
+          aria-label="Substituir jogador"
+          onClick={() => onIniciar(jogadorId)}
+        >
+          <ArrowLeftRight className="size-3.5" />
+        </Button>
+      )}
+    </span>
   );
 }
