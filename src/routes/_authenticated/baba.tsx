@@ -374,7 +374,9 @@ function BabaPage() {
                 variant="goldOutline"
                 className="h-10"
                 disabled={!novoJogadorId || adicionarPresencaAdmin.isPending}
-                onClick={() => adicionarPresencaAdmin.mutate({ usuarioId: novoJogadorId, comCheckin: false })}
+                onClick={() =>
+                  adicionarPresencaAdmin.mutate({ usuarioId: novoJogadorId, comCheckin: false })
+                }
               >
                 <UserPlus className="size-4" /> Só lista
               </Button>
@@ -382,7 +384,9 @@ function BabaPage() {
                 variant="hero"
                 className="h-10"
                 disabled={!novoJogadorId || adicionarPresencaAdmin.isPending}
-                onClick={() => adicionarPresencaAdmin.mutate({ usuarioId: novoJogadorId, comCheckin: true })}
+                onClick={() =>
+                  adicionarPresencaAdmin.mutate({ usuarioId: novoJogadorId, comCheckin: true })
+                }
               >
                 <UserPlus className="size-4" /> Lista + check-in
               </Button>
