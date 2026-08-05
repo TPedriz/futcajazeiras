@@ -8,6 +8,7 @@ import {
   presencasDaSessaoQuery,
   todasSessoesQuery,
   suspensoesQuery,
+  ajustesBabasConvidadoQuery,
 } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ import { AprovacoesConvidados } from "@/components/AprovacoesConvidados";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formataTelefone, normalizaTelefone } from "@/lib/telefone";
-import { Pencil, UserMinus, Save, X, Power, Gavel } from "lucide-react";
+import { Pencil, UserMinus, Save, X, Power, Gavel, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -40,6 +41,7 @@ function UsuariosPage() {
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
   const { data: suspensoes } = useQuery(suspensoesQuery());
   const { data: todas } = useQuery(todasSessoesQuery());
+  const { data: ajustes } = useQuery(ajustesBabasConvidadoQuery());
   const qc = useQueryClient();
 
   const [editando, setEditando] = useState<string | null>(null);
@@ -51,6 +53,10 @@ function UsuariosPage() {
   const [punicaoUserId, setPunicaoUserId] = useState("");
   const [punicaoBabaId, setPunicaoBabaId] = useState("");
   const [punicaoMotivo, setPunicaoMotivo] = useState("");
+  const [ajusteBabasAberto, setAjusteBabasAberto] = useState(false);
+  const [ajusteBabasUserId, setAjusteBabasUserId] = useState("");
+  const [ajusteBabasValor, setAjusteBabasValor] = useState("");
+  const [ajusteBabasObs, setAjusteBabasObs] = useState("");
 
   const babasFuturos = (todas ?? [])
     .filter((b) => new Date(b.data_horario).getTime() > Date.now())
@@ -146,6 +152,50 @@ function UsuariosPage() {
     onSuccess: () => {
       toast.success("Punição removida");
       qc.invalidateQueries({ queryKey: ["suspensoes"] });
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  /** Salva o crédito manual de babas pagos do convidado (upsert por usuário). */
+  const salvarAjusteBabas = useMutation({
+    mutationFn: async () => {
+      if (!ajusteBabasUserId) throw new Error("Escolha o usuário");
+      const valor = Number(ajusteBabasValor.replace(",", "."));
+      if (!Number.isInteger(valor) || valor < 0)
+        throw new Error("Informe um número inteiro maior ou igual a 0.");
+      const { error } = await supabase.from("ajustes_babas_convidado").upsert(
+        {
+          usuario_id: ajusteBabasUserId,
+          babas_credito: valor,
+          observacao: ajusteBabasObs.trim(),
+          atualizado_em: new Date().toISOString(),
+        },
+        { onConflict: "usuario_id" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Babas do convidado atualizados!");
+      setAjusteBabasAberto(false);
+      setAjusteBabasUserId("");
+      setAjusteBabasValor("");
+      setAjusteBabasObs("");
+      qc.invalidateQueries({ queryKey: ["ajustes-babas-convidado"] });
+    },
+    onError: (e: Error) => toast.error("Erro ao salvar", { description: e.message }),
+  });
+
+  const removerAjusteBabas = useMutation({
+    mutationFn: async (usuarioId: string) => {
+      const { error } = await supabase
+        .from("ajustes_babas_convidado")
+        .delete()
+        .eq("usuario_id", usuarioId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Ajuste removido");
+      qc.invalidateQueries({ queryKey: ["ajustes-babas-convidado"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -256,6 +306,107 @@ function UsuariosPage() {
       </div>
 
       <FiltroCargo valor={filtro} onChange={setFiltro} total={perfis.length} />
+
+      <div className="card-premium p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="font-display text-xl">Babas dos convidados</p>
+          <Button variant="goldOutline" size="sm" onClick={() => setAjusteBabasAberto((v) => !v)}>
+            <Trophy className="size-4" /> Ajustar babas
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          O convidado precisa de 3 babas pagos para pedir associação. Se ele já jogou antes do app
+          existir, registre aqui esse crédito para não precisar jogar 3 de novo.
+        </p>
+
+        {ajusteBabasAberto && (
+          <div className="space-y-2 rounded-lg border border-border bg-surface p-3">
+            <div className="space-y-1">
+              <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+                Convidado
+              </Label>
+              <Select value={ajusteBabasUserId} onValueChange={setAjusteBabasUserId}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Escolha o convidado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {todos.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+                Babas que ele já jogou (crédito)
+              </Label>
+              <Input
+                inputMode="numeric"
+                placeholder="Ex.: 3"
+                value={ajusteBabasValor}
+                onChange={(e) => setAjusteBabasValor(e.target.value)}
+                className="h-11"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+                Observação (opcional)
+              </Label>
+              <Input
+                placeholder="Ex.: jogou 3 babas antes do app"
+                value={ajusteBabasObs}
+                onChange={(e) => setAjusteBabasObs(e.target.value)}
+                className="h-11"
+              />
+            </div>
+            <Button
+              variant="hero"
+              className="w-full"
+              disabled={!ajusteBabasUserId || salvarAjusteBabas.isPending}
+              onClick={() => salvarAjusteBabas.mutate()}
+            >
+              <Trophy className="size-4" /> Salvar babas
+            </Button>
+          </div>
+        )}
+
+        {(ajustes ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum ajuste registrado ainda.</p>
+        ) : (
+          <ul className="space-y-2">
+            {(ajustes ?? []).map((a) => (
+              <li
+                key={a.usuario_id}
+                className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">
+                    {nomesUsuarios.get(a.usuario_id) ?? "Convidado"}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {a.babas_credito} {a.babas_credito === 1 ? "baba" : "babas"} de crédito
+                    {a.observacao ? ` • ${a.observacao}` : ""}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive"
+                  aria-label="Remover ajuste de babas"
+                  onClick={() => {
+                    if (confirm("Remover esse ajuste de babas?"))
+                      removerAjusteBabas.mutate(a.usuario_id);
+                  }}
+                >
+                  <X className="size-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <ul className="space-y-2">
         {perfis.map((p) => {
