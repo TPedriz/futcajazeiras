@@ -310,17 +310,13 @@ function UsuariosPage() {
       <div className="card-premium p-5 space-y-3">
         <div className="flex items-center justify-between">
           <p className="font-display text-xl">Babas dos convidados</p>
-          <Button
-            variant="goldOutline"
-            size="sm"
-            onClick={() => setAjusteBabasAberto((v) => !v)}
-          >
+          <Button variant="goldOutline" size="sm" onClick={() => setAjusteBabasAberto((v) => !v)}>
             <Trophy className="size-4" /> Ajustar babas
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          O convidado precisa de 3 babas pagos para pedir associação. Se ele já jogou antes do
-          app existir, registre aqui esse crédito para não precisar jogar 3 de novo.
+          O convidado precisa de 3 babas pagos para pedir associação. Se ele já jogou antes do app
+          existir, registre aqui esse crédito para não precisar jogar 3 de novo.
         </p>
 
         {ajusteBabasAberto && (
@@ -400,7 +396,8 @@ function UsuariosPage() {
                   className="text-destructive"
                   aria-label="Remover ajuste de babas"
                   onClick={() => {
-                    if (confirm("Remover esse ajuste de babas?")) removerAjusteBabas.mutate(a.usuario_id);
+                    if (confirm("Remover esse ajuste de babas?"))
+                      removerAjusteBabas.mutate(a.usuario_id);
                   }}
                 >
                   <X className="size-4" />
