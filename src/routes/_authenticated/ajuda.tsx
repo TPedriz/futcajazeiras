@@ -169,7 +169,7 @@ const secoes = [
       ],
       [
         "Como funciona o sorteio?",
-        "Times de 6 ou 7 jogadores, equilibrando goleiros e linha. Ninguém fica de fora: há os modos Aleatório, Ordem de chegada e BAxVI.",
+        "A diretoria monta os times com os nomes confirmados na lista — ninguém que confirmou fica de fora. Os times têm 6 ou 7 jogadores. Há três modos: 1) Aleatório — embaralha todo mundo. 2) Ordem de chegada — quem marcou o check-in por GPS primeiro tem prioridade: os 12 primeiros da linha formam os Times A e B, e quem chega depois vai sendo encaixado em uma segunda rodada de sorteio. 3) BAxVI — Bahia contra Vitória, pelo time do coração cadastrado no perfil. Cada time tem seu goleiro; se faltar goleiro, um jogador de linha assume o gol. O resultado é divulgado no grupo do WhatsApp.",
       ],
       [
         "A mensalidade pode mudar de valor?",
