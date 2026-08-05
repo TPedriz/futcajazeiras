@@ -30,6 +30,7 @@ export function EditorFotoPerfil({
   const [dy, setDy] = useState(0);
   const [salvando, setSalvando] = useState(false);
   const arrastando = useRef<{ x: number; y: number; dx: number; dy: number } | null>(null);
+  const canvasPreview = useRef<HTMLCanvasElement | null>(null);
 
   // Carrega a origem (arquivo novo ou URL da foto atual) para o editor.
   // URLs cross-origin (storage) são baixadas como blob local para não contaminar o canvas.
@@ -78,6 +79,42 @@ export function EditorFotoPerfil({
     ? Math.max(EXIBICAO / imagem.naturalWidth, EXIBICAO / imagem.naturalHeight)
     : 1;
 
+  // Desenha a imagem recortada num canvas do tamanho pedido.
+  // O MESMO cálculo é usado para o preview e para a imagem final,
+  // então o que aparece no círculo é exatamente o que é salvo.
+  const desenharCanvas = (tamanho: number): HTMLCanvasElement | null => {
+    if (!imagem) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = tamanho;
+    canvas.height = tamanho;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    const fator = tamanho / EXIBICAO;
+    const escala = escalaBase * zoom;
+    const largura = imagem.naturalWidth * escala;
+    const altura = imagem.naturalHeight * escala;
+    ctx.drawImage(
+      imagem,
+      (tamanho - largura) / 2 + dx * fator,
+      (tamanho - altura) / 2 + dy * fator,
+      largura,
+      altura,
+    );
+    return canvas;
+  };
+
+  // Redesenha o preview sempre que imagem/zoom/posição mudam.
+  useEffect(() => {
+    const alvo = canvasPreview.current;
+    if (!alvo) return;
+    const ctx = alvo.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, EXIBICAO, EXIBICAO);
+    if (!imagem) return;
+    const desenhado = desenharCanvas(EXIBICAO);
+    if (desenhado) ctx.drawImage(desenhado, 0, 0);
+  });
+
   // Eventos de arrastar para reposicionar.
   const aoPressionar = (e: React.PointerEvent) => {
     arrastando.current = { x: e.clientX, y: e.clientY, dx, dy };
@@ -93,27 +130,12 @@ export function EditorFotoPerfil({
     arrastando.current = null;
   };
 
-  // Gera o recorte final (quadrado 512px com a região visível no preview).
+  // Gera o recorte final (quadrado 512px) usando o mesmo cálculo do preview.
   const gerarRecorte = (): Promise<Blob | null> =>
     new Promise((resolve) => {
-      if (!imagem) return resolve(null);
       try {
-        const canvas = document.createElement("canvas");
-        canvas.width = SAIDA;
-        canvas.height = SAIDA;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return resolve(null);
-        const fator = SAIDA / EXIBICAO;
-        const escala = escalaBase * zoom;
-        const largura = imagem.naturalWidth * escala;
-        const altura = imagem.naturalHeight * escala;
-        ctx.drawImage(
-          imagem,
-          (SAIDA - largura) / 2 + dx * fator,
-          (SAIDA - altura) / 2 + dy * fator,
-          largura,
-          altura,
-        );
+        const canvas = desenharCanvas(SAIDA);
+        if (!canvas) return resolve(null);
         canvas.toBlob(resolve, "image/jpeg", 0.92);
       } catch {
         resolve(null);
@@ -157,19 +179,12 @@ export function EditorFotoPerfil({
           onPointerUp={aoSoltar}
           onPointerCancel={aoSoltar}
         >
-          {imagem && (
-            <img
-              src={imagem.src}
-              alt="Pré-visualização da foto de perfil"
-              draggable={false}
-              className="pointer-events-none absolute left-1/2 top-1/2 max-w-none"
-              style={{
-                width: imagem.naturalWidth * escalaBase * zoom,
-                height: imagem.naturalHeight * escalaBase * zoom,
-                transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`,
-              }}
-            />
-          )}
+          <canvas
+            ref={canvasPreview}
+            width={EXIBICAO}
+            height={EXIBICAO}
+            className="block h-full w-full"
+          />
         </div>
 
         <div className="flex items-center gap-3">
