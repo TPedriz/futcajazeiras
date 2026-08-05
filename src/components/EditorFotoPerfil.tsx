@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Move, ZoomIn, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface EditorFotoPerfilProps {
   /** Arquivo novo (File) OU URL assinada da foto já salva (string). */
@@ -31,20 +32,44 @@ export function EditorFotoPerfil({
   const arrastando = useRef<{ x: number; y: number; dx: number; dy: number } | null>(null);
 
   // Carrega a origem (arquivo novo ou URL da foto atual) para o editor.
+  // URLs cross-origin (storage) são baixadas como blob local para não contaminar o canvas.
   useEffect(() => {
     if (!origem || !aberto) return;
-    const ehUrl = typeof origem === "string";
-    const url = ehUrl ? origem : URL.createObjectURL(origem);
-    const img = new Image();
-    img.onload = () => {
-      setImagem(img);
-      setZoom(1);
-      setDx(0);
-      setDy(0);
+    let objectUrl: string | null = null;
+    let cancelado = false;
+
+    const carregar = async () => {
+      try {
+        if (typeof origem === "string") {
+          const resposta = await fetch(origem);
+          if (!resposta.ok) throw new Error("Falha ao baixar a foto");
+          const blob = await resposta.blob();
+          if (cancelado) return;
+          objectUrl = URL.createObjectURL(blob);
+        } else {
+          objectUrl = URL.createObjectURL(origem);
+        }
+        const img = new Image();
+        img.onload = () => {
+          if (cancelado) return;
+          setImagem(img);
+          setZoom(1);
+          setDx(0);
+          setDy(0);
+        };
+        img.onerror = () => {
+          if (!cancelado) setImagem(null);
+        };
+        img.src = objectUrl;
+      } catch {
+        if (!cancelado) setImagem(null);
+      }
     };
-    img.src = url;
+
+    carregar();
     return () => {
-      if (!ehUrl) URL.revokeObjectURL(url);
+      cancelado = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
       setImagem(null);
     };
   }, [origem, aberto]);
@@ -72,23 +97,27 @@ export function EditorFotoPerfil({
   const gerarRecorte = (): Promise<Blob | null> =>
     new Promise((resolve) => {
       if (!imagem) return resolve(null);
-      const canvas = document.createElement("canvas");
-      canvas.width = SAIDA;
-      canvas.height = SAIDA;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return resolve(null);
-      const fator = SAIDA / EXIBICAO;
-      const escala = escalaBase * zoom;
-      const largura = imagem.naturalWidth * escala;
-      const altura = imagem.naturalHeight * escala;
-      ctx.drawImage(
-        imagem,
-        (SAIDA - largura) / 2 + dx * fator,
-        (SAIDA - altura) / 2 + dy * fator,
-        largura,
-        altura,
-      );
-      canvas.toBlob(resolve, "image/jpeg", 0.92);
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = SAIDA;
+        canvas.height = SAIDA;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(null);
+        const fator = SAIDA / EXIBICAO;
+        const escala = escalaBase * zoom;
+        const largura = imagem.naturalWidth * escala;
+        const altura = imagem.naturalHeight * escala;
+        ctx.drawImage(
+          imagem,
+          (SAIDA - largura) / 2 + dx * fator,
+          (SAIDA - altura) / 2 + dy * fator,
+          largura,
+          altura,
+        );
+        canvas.toBlob(resolve, "image/jpeg", 0.92);
+      } catch {
+        resolve(null);
+      }
     });
 
   const salvar = async () => {
@@ -100,8 +129,9 @@ export function EditorFotoPerfil({
       await onSalvar(blob);
       onAbertoChange(false);
     } catch (e) {
-      /* o toast de erro é tratado pelo fluxo de upload */
-      throw e;
+      toast.error("Não foi possível salvar a foto", {
+        description: (e as Error).message,
+      });
     } finally {
       setSalvando(false);
     }
