@@ -236,7 +236,7 @@ function PerfilPage() {
         {perfil?.avatar_url && (
           <button
             type="button"
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/5 px-3 py-1.5 text-xs font-medium text-gold transition-colors hover:bg-gold/10"
+            className="mx-auto mt-3 flex w-fit items-center gap-1.5 rounded-full border border-gold/40 bg-gold/5 px-4 py-1.5 text-xs font-medium text-gold transition-colors hover:bg-gold/10"
             disabled={enviandoFoto}
             onClick={() => {
               if (!urlFotoAtual) {
