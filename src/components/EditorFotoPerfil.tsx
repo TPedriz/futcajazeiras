@@ -79,9 +79,8 @@ export function EditorFotoPerfil({
     ? Math.max(EXIBICAO / imagem.naturalWidth, EXIBICAO / imagem.naturalHeight)
     : 1;
 
-  // Desenha a imagem recortada num canvas do tamanho pedido.
-  // O MESMO cálculo é usado para o preview e para a imagem final,
-  // então o que aparece no círculo é exatamente o que é salvo.
+  // Desenha a imagem recortada num canvas do tamanho pedido (quadrado, "cover").
+  // Usado para o preview e como base do recorte final.
   const desenharCanvas = (tamanho: number): HTMLCanvasElement | null => {
     if (!imagem) return null;
     const canvas = document.createElement("canvas");
@@ -130,13 +129,36 @@ export function EditorFotoPerfil({
     arrastando.current = null;
   };
 
-  // Gera o recorte final (quadrado 512px) usando o mesmo cálculo do preview.
+  // Gera o recorte final EM CÍRCULO (PNG transparente fora do círculo) usando
+  // exatamente a mesma posição/zoom do preview — o que aparece no círculo é o que sai.
   const gerarRecorte = (): Promise<Blob | null> =>
     new Promise((resolve) => {
+      if (!imagem) return resolve(null);
       try {
-        const canvas = desenharCanvas(SAIDA);
-        if (!canvas) return resolve(null);
-        canvas.toBlob(resolve, "image/jpeg", 0.92);
+        const canvas = document.createElement("canvas");
+        canvas.width = SAIDA;
+        canvas.height = SAIDA;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(null);
+        const raio = SAIDA / 2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(raio, raio, raio, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        const fator = SAIDA / EXIBICAO;
+        const escala = escalaBase * zoom;
+        const largura = imagem.naturalWidth * escala;
+        const altura = imagem.naturalHeight * escala;
+        ctx.drawImage(
+          imagem,
+          (SAIDA - largura) / 2 + dx * fator,
+          (SAIDA - altura) / 2 + dy * fator,
+          largura,
+          altura,
+        );
+        ctx.restore();
+        canvas.toBlob(resolve, "image/png");
       } catch {
         resolve(null);
       }
