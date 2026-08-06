@@ -14,6 +14,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
 import { ChegadaGps } from "@/components/ChegadaGps";
+import { BadgeDestaque } from "@/components/BadgeDestaque";
 
 import { ConviteConvidado } from "@/components/ConviteConvidado";
 import { SolicitacoesRecebidas } from "@/components/SolicitacoesRecebidas";
@@ -409,6 +410,7 @@ function BabaPage() {
                 avatar={p.perfis?.avatar_url}
                 posicao={p.perfis?.posicao ?? "linha"}
                 tipo="membro"
+                usuarioId={p.usuario_id}
                 onMarcarChegada={
                   isAdmin && p.ordem_chegada == null
                     ? () => marcarChegadaAdmin.mutate(p.id)
@@ -537,6 +539,7 @@ interface PresencaCardProps {
   tipo: "membro" | "convidado";
   statusConvidado?: string;
   mpStatus?: string | null;
+  usuarioId?: string | null;
   onApprove?: () => void;
   onReject?: () => void;
   onMarcarChegada?: () => void;
@@ -551,6 +554,7 @@ function PresencaCard({
   tipo,
   statusConvidado,
   mpStatus,
+  usuarioId,
   onApprove,
   onReject,
   onMarcarChegada,
@@ -580,7 +584,10 @@ function PresencaCard({
       <AvatarJogador caminho={avatar} nome={nome} size="sm" />
 
       <div className="flex-1 min-w-0">
-        <p className="truncate text-sm font-semibold text-foreground">{nome}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="truncate text-sm font-semibold text-foreground">{nome}</p>
+          {!isConvidado && usuarioId && <BadgeDestaque usuarioId={usuarioId} />}
+        </div>
         <div className="mt-0.5 flex items-center gap-1.5">
           {isConvidado ? (
             <>
