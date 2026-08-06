@@ -3,6 +3,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandLogo } from "@/components/BrandLogo";
+import { RodapeApp } from "@/components/RodapeApp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -121,8 +122,8 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero px-4 py-8">
-      <div className="mx-auto max-w-md">
+    <div className="flex min-h-screen flex-col bg-gradient-hero px-4 py-8">
+      <div className="mx-auto w-full max-w-md flex-1">
         <Link to="/" className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-4" /> Voltar
         </Link>
@@ -235,6 +236,9 @@ function AuthPage() {
             </TabsContent>
           </Tabs>
         </div>
+      </div>
+      <div className="mx-auto w-full max-w-md pt-6">
+        <RodapeApp />
       </div>
     </div>
   );

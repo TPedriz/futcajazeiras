@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { perfilAtualQuery } from "@/lib/babaQueries";
 import { BrandLogo } from "@/components/BrandLogo";
 import { SinoNotificacoes } from "@/components/SinoNotificacoes";
+import { RodapeApp } from "@/components/RodapeApp";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -73,6 +74,7 @@ function AuthenticatedLayout() {
       </main>
 
       <BottomNav isAdmin={isAdmin} />
+      <RodapeApp />
     </div>
   );
 }
