@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { BrandLogo } from "@/components/BrandLogo";
+import { RodapeApp } from "@/components/RodapeApp";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, Trophy, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,7 +83,7 @@ function LandingPage() {
         <div className="mt-8 flex flex-col gap-3">
           <Link to="/auth" search={{ modo: "cadastro" }}>
             <Button variant="hero" size="xl" className="w-full">
-              Solicitar entrada
+              Vem jogar com a gente!
             </Button>
           </Link>
           <Link to="/auth">
@@ -112,13 +113,7 @@ function LandingPage() {
         />
       </section>
 
-      <footer className="border-t border-border/50 bg-background/50 py-6">
-        <div className="mx-auto max-w-md px-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Fut Cajazeiras — Todos os direitos reservados
-          </p>
-        </div>
-      </footer>
+      <RodapeApp transparente />
     </div>
   );
 }
