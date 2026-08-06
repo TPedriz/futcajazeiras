@@ -36,6 +36,8 @@ import {
   Trophy,
   ShieldCheck,
   Camera,
+  Check,
+  Calendar,
 } from "lucide-react";
 import { tempoDeAssociado } from "@/lib/associado";
 import { AvatarJogador, avatarUrlQuery } from "@/components/AvatarJogador";
@@ -304,45 +306,102 @@ function PerfilPage() {
         )}
 
         {isConvidado && (
-          <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-3 text-left">
+          <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-4 text-left">
             <p className="flex items-center gap-2 font-display text-lg text-gold">
               <Trophy className="size-4" /> Caminho para virar Associado
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Babas pagos como convidado:{" "}
-              <strong className="text-foreground">
-                {jogados}/{META_CONVIDADO}
-              </strong>
-            </p>
-            <Progress value={(jogados / META_CONVIDADO) * 100} className="mt-2 h-2" />
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Só conta baba com a taxa de convidado confirmada. Convite cancelado ou não pago não
-              entra.
+              Associe-se ao baba de vez! Basta{" "}
+              <strong className="text-foreground">{META_CONVIDADO} babas pagos</strong> como
+              convidado para liberar o pedido.
             </p>
 
+            {/* Progresso */}
+            <div className="mt-3 flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Babas pagos</span>
+              <strong className="font-display text-lg text-gold">
+                {jogados}/{META_CONVIDADO}
+              </strong>
+            </div>
+            <Progress value={(jogados / META_CONVIDADO) * 100} className="mt-1 h-2.5" />
+
+            {/* Passos */}
+            <ol className="mt-4 space-y-2">
+              {[
+                {
+                  ok: true,
+                  texto: "Participe de um baba como convidado e pague a diária.",
+                },
+                {
+                  ok: jogados >= 1,
+                  texto: `Complete ${META_CONVIDADO} babas pagos (${jogados}/${META_CONVIDADO}).`,
+                },
+                {
+                  ok: podePedirAssociacao,
+                  texto: "Envie o pedido de associação para a diretoria.",
+                },
+                {
+                  ok: solicitacao?.status === "aprovado",
+                  texto: "A diretoria aprova e você vira associado.",
+                },
+              ].map((passo, i) => (
+                <li key={i} className="flex items-start gap-2 text-[13px]">
+                  <span
+                    className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                      passo.ok ? "bg-gold/20 text-gold" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {passo.ok ? <Check className="size-3" /> : i + 1}
+                  </span>
+                  <span className={passo.ok ? "text-foreground" : "text-muted-foreground"}>
+                    {passo.texto}
+                  </span>
+                </li>
+              ))}
+            </ol>
+
+            <p className="mt-3 text-[11px] text-muted-foreground">
+              Só conta baba com a diária do convidado confirmada (PIX pago). Se você já jogou babas
+              antes do app existir, a diretoria pode registrar esse crédito para você.
+            </p>
+
+            {/* Ações por estado */}
             {solicitacao?.status === "pendente" ? (
-              <Badge variant="outline" className="mt-3 border-gold/40 text-gold">
-                Pedido de associação em análise
-              </Badge>
+              <div className="mt-3 rounded-lg border border-gold/40 bg-gold/10 p-3 text-center">
+                <p className="flex items-center justify-center gap-2 font-semibold text-gold">
+                  <ShieldCheck className="size-4" /> Pedido de associação em análise
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  A diretoria foi avisada e vai analisar. Você será notificado pelo sino.
+                </p>
+              </div>
             ) : podePedirAssociacao ? (
-              <Button
-                variant="gold"
-                size="lg"
-                className="mt-3 w-full"
-                disabled={salvando || lotado}
-                onClick={pedirAssociacao}
-              >
-                <ShieldCheck className="size-4" /> Solicitar associação ao baba
-              </Button>
+              <>
+                <Button
+                  variant="gold"
+                  size="lg"
+                  className="mt-3 w-full"
+                  disabled={salvando || lotado}
+                  onClick={pedirAssociacao}
+                >
+                  <ShieldCheck className="size-4" /> Solicitar associação ao baba
+                </Button>
+                {lotado && (
+                  <p className="mt-2 text-[11px] text-destructive">
+                    O baba está com as {LIMITE_ASSOCIADOS} vagas preenchidas. Aguarde abrir vaga.
+                  </p>
+                )}
+              </>
             ) : (
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                Faltam {META_CONVIDADO - jogados} baba(s) pagos para liberar o pedido.
-              </p>
-            )}
-            {lotado && podePedirAssociacao && (
-              <p className="mt-2 text-[11px] text-destructive">
-                O baba está com as {LIMITE_ASSOCIADOS} vagas preenchidas. Aguarde abrir vaga.
-              </p>
+              <Link to="/baba">
+                <Button variant="goldOutline" size="lg" className="mt-3 w-full">
+                  <Calendar className="size-4" /> Ir para o próximo baba
+                  <span className="text-[11px] text-muted-foreground">
+                    ({META_CONVIDADO - jogados} {META_CONVIDADO - jogados === 1 ? "baba" : "babas"}{" "}
+                    para completar)
+                  </span>
+                </Button>
+              </Link>
             )}
           </div>
         )}

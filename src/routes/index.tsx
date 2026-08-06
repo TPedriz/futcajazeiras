@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { BrandLogo } from "@/components/BrandLogo";
+import { RodapeApp } from "@/components/RodapeApp";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, Trophy, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,9 +9,16 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Fut Cajazeiras — Baba com organização de time premium" },
-      { name: "description", content: "O baba do Fut Cajazeiras na palma da mão: check-in, convidados, pagamentos e sorteio de times direto pelo celular." },
+      {
+        name: "description",
+        content:
+          "O baba do Fut Cajazeiras na palma da mão: check-in, convidados, pagamentos e sorteio de times direto pelo celular.",
+      },
       { property: "og:title", content: "Fut Cajazeiras — Baba com organização de time premium" },
-      { property: "og:description", content: "Confirme presença, leve seu convidado e acompanhe o baba direto pelo celular." },
+      {
+        property: "og:description",
+        content: "Confirme presença, leve seu convidado e acompanhe o baba direto pelo celular.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://futcajazeiras.lovable.app/" },
     ],
@@ -31,7 +39,8 @@ export const Route = createFileRoute("/")({
               "@type": "WebSite",
               name: "Fut Cajazeiras",
               url: "https://futcajazeiras.lovable.app/",
-              description: "Plataforma de gestão do baba do Fut Cajazeiras: presenças, convidados, mensalidades e sorteio de times.",
+              description:
+                "Plataforma de gestão do baba do Fut Cajazeiras: presenças, convidados, mensalidades e sorteio de times.",
             },
           ],
         }),
@@ -60,7 +69,9 @@ function LandingPage() {
             <span className="font-display text-lg tracking-wider">Fut Cajazeiras</span>
           </div>
           <Link to="/auth">
-            <Button variant="goldOutline" size="sm">Entrar</Button>
+            <Button variant="goldOutline" size="sm">
+              Entrar
+            </Button>
           </Link>
         </div>
       </header>
@@ -75,14 +86,14 @@ function LandingPage() {
           O baba do <span className="text-gold">Fut Cajazeiras</span> na palma da mão
         </h1>
         <p className="mt-4 text-base text-muted-foreground">
-          Confirme presença, gerencie seu convidado, acompanhe pagamento e receba os times sorteados —
-          tudo direto pelo celular.
+          Confirme presença, gerencie seu convidado, acompanhe pagamento e receba os times sorteados
+          — tudo direto pelo celular.
         </p>
 
         <div className="mt-8 flex flex-col gap-3">
           <Link to="/auth" search={{ modo: "cadastro" }}>
             <Button variant="hero" size="xl" className="w-full">
-              Solicitar entrada
+              Vem jogar com a gente!
             </Button>
           </Link>
           <Link to="/auth">
@@ -112,18 +123,20 @@ function LandingPage() {
         />
       </section>
 
-      <footer className="border-t border-border/50 bg-background/50 py-6">
-        <div className="mx-auto max-w-md px-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Fut Cajazeiras — Todos os direitos reservados
-          </p>
-        </div>
-      </footer>
+      <RodapeApp transparente />
     </div>
   );
 }
 
-function FeatureCard({ Icon, title, text }: { Icon: typeof Calendar; title: string; text: string }) {
+function FeatureCard({
+  Icon,
+  title,
+  text,
+}: {
+  Icon: typeof Calendar;
+  title: string;
+  text: string;
+}) {
   return (
     <div className="card-premium p-5 flex gap-4 items-start">
       <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-gradient-primary shadow-primary">

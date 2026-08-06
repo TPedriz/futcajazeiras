@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { perfilAtualQuery } from "@/lib/babaQueries";
 import { BrandLogo } from "@/components/BrandLogo";
 import { SinoNotificacoes } from "@/components/SinoNotificacoes";
+import { RodapeApp } from "@/components/RodapeApp";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -48,7 +49,6 @@ function AuthenticatedLayout() {
     );
   }
 
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header mobile */}
@@ -67,12 +67,12 @@ function AuthenticatedLayout() {
         </div>
       </header>
 
-
       <main className="mx-auto max-w-md px-4 pt-4 pb-28">
         <Outlet />
       </main>
 
       <BottomNav isAdmin={isAdmin} />
+      <RodapeApp />
     </div>
   );
 }
