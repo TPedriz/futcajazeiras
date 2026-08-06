@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { MapPin, Navigation, X, Users } from "lucide-react";
 import { AvatarJogador } from "@/components/AvatarJogador";
+import { BadgeDestaque } from "@/components/BadgeDestaque";
 
 export interface PresencaChegada {
   id: string;
@@ -223,11 +224,14 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
                     nome={p.nome_convidado ?? p.perfis?.nome}
                     size="sm"
                   />
-                  <span className="min-w-0 flex-1 truncate text-sm">
-                    {p.nome_convidado ?? p.perfis?.nome ?? "Jogador"}
-                    {p.nome_convidado && (
-                      <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>
-                    )}
+                  <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1">
+                    <span className="truncate text-sm">
+                      {p.nome_convidado ?? p.perfis?.nome ?? "Jogador"}
+                      {p.nome_convidado && (
+                        <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>
+                      )}
+                    </span>
+                    {!p.nome_convidado && <BadgeDestaque usuarioId={p.usuario_id} />}
                   </span>
                   <span className="text-[11px] text-muted-foreground">
                     {p.chegou_em
