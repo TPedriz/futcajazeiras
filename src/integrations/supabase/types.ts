@@ -721,6 +721,7 @@ export type Database = {
           criado_em: string
           id: string
           motivo: string
+          origem: string
           usuario_id: string
         }
         Insert: {
@@ -729,6 +730,7 @@ export type Database = {
           criado_em?: string
           id?: string
           motivo?: string
+          origem?: string
           usuario_id: string
         }
         Update: {
@@ -737,6 +739,7 @@ export type Database = {
           criado_em?: string
           id?: string
           motivo?: string
+          origem?: string
           usuario_id?: string
         }
         Relationships: [
@@ -855,7 +858,18 @@ export type Database = {
       }
     }
     Functions: {
+      aplica_suspensao: {
+        Args: {
+          _motivo: string
+          _origem: string
+          _origem_baba: string
+          _quantidade: number
+          _usuario_id: string
+        }
+        Returns: number
+      }
       babas_pagos_convidado: { Args: { _user_id: string }; Returns: number }
+      config_int: { Args: { _chave: string; _padrao: number }; Returns: number }
       criar_pedido_convidado: {
         Args: {
           _baba_id: string
