@@ -49,7 +49,6 @@ function AuthenticatedLayout() {
     );
   }
 
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header mobile */}
@@ -67,7 +66,6 @@ function AuthenticatedLayout() {
           <SinoNotificacoes userId={data?.user.id} />
         </div>
       </header>
-
 
       <main className="mx-auto max-w-md px-4 pt-4 pb-28">
         <Outlet />

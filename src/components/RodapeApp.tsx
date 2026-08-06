@@ -13,7 +13,9 @@ const DEV = {
 /** Rodapé com versão do sistema e créditos do desenvolvedor. */
 export function RodapeApp({ transparente = false }: { transparente?: boolean }) {
   return (
-    <footer className={`border-t border-border/50 ${transparente ? "bg-background/50" : "bg-surface"}`}>
+    <footer
+      className={`border-t border-border/50 ${transparente ? "bg-background/50" : "bg-surface"}`}
+    >
       <div className="mx-auto max-w-md px-4 py-6 text-center">
         <p className="text-xs text-muted-foreground">
           © {new Date().getFullYear()} Fut Cajazeiras — Todos os direitos reservados
