@@ -9,6 +9,7 @@ import {
   todasSessoesQuery,
   suspensoesQuery,
   ajustesBabasConvidadoQuery,
+  politicaSuspensaoQuery,
 } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,7 @@ import { AprovacoesConvidados } from "@/components/AprovacoesConvidados";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formataTelefone, normalizaTelefone } from "@/lib/telefone";
-import { Pencil, UserMinus, Save, X, Power, Gavel, Trophy } from "lucide-react";
+import { Pencil, UserMinus, Save, X, Power, Gavel, Trophy, SlidersHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -305,6 +306,8 @@ function UsuariosPage() {
         )}
       </div>
 
+      <PoliticaSuspensaoCard />
+
       <FiltroCargo valor={filtro} onChange={setFiltro} total={perfis.length} />
 
       <div className="card-premium p-5 space-y-3">
@@ -519,6 +522,141 @@ function UsuariosPage() {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/** Política de suspensões ajustável: limite/janela de faltas e duração das suspensões. */
+function PoliticaSuspensaoCard() {
+  const qc = useQueryClient();
+  const { data: pol } = useQuery(politicaSuspensaoQuery());
+  const [form, setForm] = useState<Record<string, string>>({});
+  const [confirmando, setConfirmando] = useState(false);
+
+  const campos: {
+    chave: string;
+    rotulo: string;
+    desc: string;
+    atual: number;
+    min: number;
+    max: number;
+  }[] = [
+    {
+      chave: "limite_faltas",
+      rotulo: "Limite de faltas",
+      desc: "Faltas em que o jogador é suspenso",
+      atual: pol?.limiteFaltas ?? 3,
+      min: 1,
+      max: 20,
+    },
+    {
+      chave: "janela_faltas",
+      rotulo: "Janela (nº de babas)",
+      desc: "Quantos babas recentes contam para o limite",
+      atual: pol?.janelaFaltas ?? 5,
+      min: 1,
+      max: 30,
+    },
+    {
+      chave: "suspensao_faltas_babas",
+      rotulo: "Suspensão por faltas",
+      desc: "Por quantos babas o faltoso fica fora (0 = desligado)",
+      atual: pol?.suspensaoFaltasBabas ?? 1,
+      min: 0,
+      max: 10,
+    },
+    {
+      chave: "suspensao_vermelho_babas",
+      rotulo: "Suspensão por cartão vermelho",
+      desc: "Por quantos babas o expulso fica fora (0 = desligado)",
+      atual: pol?.suspensaoVermelhoBabas ?? 1,
+      min: 0,
+      max: 10,
+    },
+  ];
+
+  const salvar = useMutation({
+    mutationFn: async () => {
+      const valores: Record<string, number> = {};
+      for (const c of campos) {
+        const raw = (form[c.chave] ?? "").trim();
+        if (raw === "") continue;
+        const v = Number(raw);
+        if (!Number.isInteger(v) || v < c.min || v > c.max)
+          throw new Error(`“${c.rotulo}” deve ser um inteiro entre ${c.min} e ${c.max}.`);
+        valores[c.chave] = v;
+      }
+      const limite = valores.limite_faltas ?? pol?.limiteFaltas ?? 3;
+      const janela = valores.janela_faltas ?? pol?.janelaFaltas ?? 5;
+      if (janela < limite)
+        throw new Error("A janela de babas não pode ser menor que o limite de faltas.");
+      for (const [chave, valor] of Object.entries(valores)) {
+        const { error } = await supabase
+          .from("configuracoes")
+          .upsert(
+            { chave, valor, atualizado_em: new Date().toISOString() },
+            { onConflict: "chave" },
+          );
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Política de suspensões atualizada", {
+        description: "Os novos valores já valem para as próximas marcações.",
+      });
+      setConfirmando(false);
+      setForm({});
+      qc.invalidateQueries({ queryKey: ["politica-suspensao"] });
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  const sujo = campos.some((c) => (form[c.chave] ?? "").trim() !== "");
+
+  return (
+    <div className="card-premium p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <SlidersHorizontal className="size-4 text-gold" />
+        <p className="font-display text-xl">Política de suspensões</p>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Tudo é ajustável: quantas faltas suspendem, em quantos babas e por quanto tempo vale cada
+        suspensão. Vale para novas marcações (faltas e cartões) a partir de agora.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {campos.map((c) => (
+          <div key={c.chave} className="space-y-1 rounded-lg border border-border bg-surface p-3">
+            <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+              {c.rotulo}
+            </Label>
+            <p className="font-display text-2xl text-gold">{c.atual}</p>
+            <p className="text-[11px] text-muted-foreground">{c.desc}</p>
+            <Input
+              inputMode="numeric"
+              placeholder={`Novo valor (atual: ${c.atual})`}
+              value={form[c.chave] ?? ""}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, [c.chave]: e.target.value }));
+                setConfirmando(false);
+              }}
+              className="h-10"
+            />
+          </div>
+        ))}
+      </div>
+      <Button
+        variant={confirmando ? "destructive" : "gold"}
+        className="w-full"
+        disabled={!sujo || salvar.isPending}
+        onClick={() => (confirmando ? salvar.mutate() : setConfirmando(true))}
+      >
+        {confirmando ? "Confirmar" : "Salvar política"}
+      </Button>
+      {confirmando && (
+        <p className="text-[11px] text-destructive">
+          Confirme: a política será aplicada a partir das próximas marcações de falta e cartão.
+        </p>
+      )}
     </div>
   );
 }

@@ -50,11 +50,15 @@ const secoes = [
       ],
       [
         "Por que meu check-in está bloqueado?",
-        "Ou a lista ainda não abriu / já fechou, ou a mensalidade está em aberto depois do dia 10, ou você está cumprindo suspensão por cartão vermelho.",
+        "Ou a lista ainda não abriu / já fechou, ou a mensalidade está em aberto depois do dia 10, ou você está cumprindo uma suspensão (cartão vermelho ou faltas).",
       ],
       [
         "Não tenho celular / não consigo confirmar. E agora?",
         "Fale com a diretoria: ela consegue colocar seu nome na lista de presença e marcar seu check-in no campo a partir do painel dela, mesmo depois do fechamento.",
+      ],
+      [
+        "Fui marcado com falta. O que significa?",
+        "Falta é quando você confirma na lista e não aparece no dia — a diretoria registra isso na lista de presença. Se teve um motivo justo, fale com ela para desfazer. Quem atinge o limite de faltas definido pela diretoria (padrão: 3 nos últimos 5 babas) é suspenso automaticamente do próximo baba.",
       ],
     ],
   },
@@ -166,6 +170,10 @@ const secoes = [
       [
         "Cartão vermelho, e agora?",
         "Suspensão automática de 1 baba: você fica fora do próximo jogo e aparece no mural de punições.",
+      ],
+      [
+        "E quem dá faltas?",
+        "Faltas também punem: ao atingir o limite definido pela diretoria (padrão: 3 faltas nos últimos 5 babas), a suspensão é automática — você fica fora do próximo jogo, recebe uma notificação e aparece no mural de punições. Foi por um motivo justo? Combine com a diretoria antes do baba.",
       ],
       [
         "Onde vejo punições e avisos?",

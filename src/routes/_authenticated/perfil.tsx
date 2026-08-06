@@ -42,6 +42,7 @@ import {
 import { tempoDeAssociado } from "@/lib/associado";
 import { AvatarJogador, avatarUrlQuery } from "@/components/AvatarJogador";
 import { EditorFotoPerfil } from "@/components/EditorFotoPerfil";
+import { BadgeDestaque } from "@/components/BadgeDestaque";
 import { useState } from "react";
 import { formataTelefone } from "@/lib/telefone";
 
@@ -304,6 +305,11 @@ function PerfilPage() {
             Conta desativada
           </Badge>
         )}
+
+        {/* Destaques do mês (gamificação) */}
+        <div className="mt-2 flex justify-center">
+          <BadgeDestaque usuarioId={perfil?.id} />
+        </div>
 
         {isConvidado && (
           <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-4 text-left">
