@@ -77,6 +77,7 @@ function InicioPage() {
 
   const nome = perfilData?.perfil?.nome ?? "Atleta";
   const emDia = perfilData?.perfil?.status_pagamento === "pago";
+  const isConvidado = perfilData?.isConvidado ?? false;
   const totalConfirmados = presencas?.filter((p) => !p.nome_convidado).length ?? 0;
   const tempo = tempoDeAssociado(perfilData?.perfil?.criado_em);
 
@@ -104,26 +105,36 @@ function InicioPage() {
       <div className={emDia ? "card-vip p-5" : "card-premium border-destructive/40 p-5"}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Mensalidade</p>
-            <p className={`mt-1 font-display text-3xl ${emDia ? "text-gold" : "text-destructive"}`}>
-              {emDia ? "Em dia" : "Pendente"}
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">
+              {isConvidado ? "Diária de convidado" : "Mensalidade"}
+            </p>
+            <p className={`mt-1 font-display text-3xl ${emDia ? "text-gold" : isConvidado ? "" : "text-destructive"}`}>
+              {isConvidado ? "Paga a diária por baba" : emDia ? "Em dia" : "Pendente"}
             </p>
           </div>
           <div
-            className={`flex size-14 items-center justify-center rounded-full ${emDia ? "bg-gold/10" : "bg-destructive/10"}`}
+            className={`flex size-14 items-center justify-center rounded-full ${
+              isConvidado ? "bg-gold/10" : emDia ? "bg-gold/10" : "bg-destructive/10"
+            }`}
           >
-            {emDia ? (
+            {isConvidado ? (
+              <CheckCircle2 className="size-7 text-gold" />
+            ) : emDia ? (
               <CheckCircle2 className="size-7 text-gold" />
             ) : (
               <AlertCircle className="size-7 text-destructive" />
             )}
           </div>
         </div>
-        {!emDia && (
+        {isConvidado ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Convidados não pagam mensalidade — apenas a diária de cada baba que participam.
+          </p>
+        ) : !emDia ? (
           <p className="mt-3 text-sm text-muted-foreground">
             Regularize sua mensalidade com a diretoria para manter a prioridade no check-in.
           </p>
-        )}
+        ) : null}
       </div>
 
       {/* Próximo Baba */}
