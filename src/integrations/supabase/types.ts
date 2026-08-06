@@ -112,44 +112,44 @@ export type Database = {
       }
       estatisticas_baba: {
         Row: {
-          assistencias: number;
-          atualizado_em: string;
-          baba_id: string;
-          cartoes_amarelos: number;
-          cartoes_azuis: number;
-          cartoes_vermelhos: number;
-          criado_em: string;
-          gols: number;
-          id: string;
-          penaltis_defendidos: number;
-          usuario_id: string;
-        };
+          assistencias: number
+          atualizado_em: string
+          baba_id: string
+          cartoes_amarelos: number
+          cartoes_azuis: number
+          cartoes_vermelhos: number
+          criado_em: string
+          gols: number
+          id: string
+          penaltis_defendidos: number
+          usuario_id: string
+        }
         Insert: {
-          assistencias?: number;
-          atualizado_em?: string;
-          baba_id: string;
-          cartoes_amarelos?: number;
-          cartoes_azuis?: number;
-          cartoes_vermelhos?: number;
-          criado_em?: string;
-          gols?: number;
-          id?: string;
-          penaltis_defendidos?: number;
-          usuario_id: string;
-        };
+          assistencias?: number
+          atualizado_em?: string
+          baba_id: string
+          cartoes_amarelos?: number
+          cartoes_azuis?: number
+          cartoes_vermelhos?: number
+          criado_em?: string
+          gols?: number
+          id?: string
+          penaltis_defendidos?: number
+          usuario_id: string
+        }
         Update: {
-          assistencias?: number;
-          atualizado_em?: string;
-          baba_id?: string;
-          cartoes_amarelos?: number;
-          cartoes_azuis?: number;
-          cartoes_vermelhos?: number;
-          criado_em?: string;
-          gols?: number;
-          id?: string;
-          penaltis_defendidos?: number;
-          usuario_id?: string;
-        };
+          assistencias?: number
+          atualizado_em?: string
+          baba_id?: string
+          cartoes_amarelos?: number
+          cartoes_azuis?: number
+          cartoes_vermelhos?: number
+          criado_em?: string
+          gols?: number
+          id?: string
+          penaltis_defendidos?: number
+          usuario_id?: string
+        }
         Relationships: [
           {
             foreignKeyName: "estatisticas_baba_baba_id_fkey"
@@ -457,53 +457,59 @@ export type Database = {
       }
       presencas: {
         Row: {
-          baba_id: string;
-          chegou_em: string | null;
-          compareceu: boolean | null;
-          confirmado_em: string;
-          convidado_cadastro_id: string | null;
-          convidado_user_id: string | null;
-          id: string;
-          is_goleiro_fixo: boolean;
-          mp_status: string | null;
-          nome_convidado: string | null;
-          ordem_chegada: number | null;
-          status_convidado: Database["public"]["Enums"]["status_convidado"] | null;
-          usuario_id: string;
-          valor: number;
-        };
+          baba_id: string
+          chegou_em: string | null
+          compareceu: boolean | null
+          confirmado_em: string
+          convidado_cadastro_id: string | null
+          convidado_user_id: string | null
+          id: string
+          is_goleiro_fixo: boolean
+          mp_status: string | null
+          nome_convidado: string | null
+          ordem_chegada: number | null
+          status_convidado:
+            | Database["public"]["Enums"]["status_convidado"]
+            | null
+          usuario_id: string
+          valor: number
+        }
         Insert: {
-          baba_id: string;
-          chegou_em?: string | null;
-          compareceu?: boolean | null;
-          confirmado_em?: string;
-          convidado_cadastro_id?: string | null;
-          convidado_user_id?: string | null;
-          id?: string;
-          is_goleiro_fixo?: boolean;
-          mp_status?: string | null;
-          nome_convidado?: string | null;
-          ordem_chegada?: number | null;
-          status_convidado?: Database["public"]["Enums"]["status_convidado"] | null;
-          usuario_id: string;
-          valor?: number;
-        };
+          baba_id: string
+          chegou_em?: string | null
+          compareceu?: boolean | null
+          confirmado_em?: string
+          convidado_cadastro_id?: string | null
+          convidado_user_id?: string | null
+          id?: string
+          is_goleiro_fixo?: boolean
+          mp_status?: string | null
+          nome_convidado?: string | null
+          ordem_chegada?: number | null
+          status_convidado?:
+            | Database["public"]["Enums"]["status_convidado"]
+            | null
+          usuario_id: string
+          valor?: number
+        }
         Update: {
-          baba_id?: string;
-          chegou_em?: string | null;
-          compareceu?: boolean | null;
-          confirmado_em?: string;
-          convidado_cadastro_id?: string | null;
-          convidado_user_id?: string | null;
-          id?: string;
-          is_goleiro_fixo?: boolean;
-          mp_status?: string | null;
-          nome_convidado?: string | null;
-          ordem_chegada?: number | null;
-          status_convidado?: Database["public"]["Enums"]["status_convidado"] | null;
-          usuario_id?: string;
-          valor?: number;
-        };
+          baba_id?: string
+          chegou_em?: string | null
+          compareceu?: boolean | null
+          confirmado_em?: string
+          convidado_cadastro_id?: string | null
+          convidado_user_id?: string | null
+          id?: string
+          is_goleiro_fixo?: boolean
+          mp_status?: string | null
+          nome_convidado?: string | null
+          ordem_chegada?: number | null
+          status_convidado?:
+            | Database["public"]["Enums"]["status_convidado"]
+            | null
+          usuario_id?: string
+          valor?: number
+        }
         Relationships: [
           {
             foreignKeyName: "presencas_baba_id_fkey"
@@ -831,23 +837,23 @@ export type Database = {
     Views: {
       ranking_mensal: {
         Row: {
-          assistencias: number | null;
-          cartoes_amarelos: number | null;
-          cartoes_azuis: number | null;
-          cartoes_vermelhos: number | null;
-          derrotas: number | null;
-          empates: number | null;
-          gols: number | null;
-          mes: string | null;
-          nome: string | null;
-          penaltis_defendidos: number | null;
-          posicao: Database["public"]["Enums"]["posicao_jogador"] | null;
-          usuario_id: string | null;
-          vitorias: number | null;
-        };
-        Relationships: [];
-      };
-    };
+          assistencias: number | null
+          cartoes_amarelos: number | null
+          cartoes_azuis: number | null
+          cartoes_vermelhos: number | null
+          derrotas: number | null
+          empates: number | null
+          gols: number | null
+          mes: string | null
+          nome: string | null
+          penaltis_defendidos: number | null
+          posicao: Database["public"]["Enums"]["posicao_jogador"] | null
+          usuario_id: string | null
+          vitorias: number | null
+        }
+        Relationships: []
+      }
+    }
     Functions: {
       babas_pagos_convidado: { Args: { _user_id: string }; Returns: number }
       criar_pedido_convidado: {
