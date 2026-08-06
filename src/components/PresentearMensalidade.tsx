@@ -7,8 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
 import { listarMensalidadesPendentes, criarPixPresente, consultarPixPresente } from "@/lib/pagamentos.functions";
 import { Gift } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 export function PresentearMensalidade() {
   const qc = useQueryClient();
@@ -85,8 +83,7 @@ export function PresentearMensalidade() {
               <SelectContent>
                 {(pendentes ?? []).map((m) => (
                   <SelectItem key={m.mensalidadeId} value={m.mensalidadeId}>
-                    {m.nome} — {format(new Date(`${m.referencia}T12:00:00`), "MMM/yy", { locale: ptBR })} — R${" "}
-                    {m.valor.toFixed(2).replace(".", ",")}
+                    {m.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
