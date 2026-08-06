@@ -10,12 +10,12 @@ export type CategoriaDestaque = "gols" | "assistencias" | "penaltis" | "cartoes"
 
 export interface LinhaRankingDestaque {
   usuario_id: string | null;
-  gols: number;
-  assistencias: number;
-  penaltis_defendidos: number;
-  cartoes_amarelos: number;
-  cartoes_azuis: number;
-  cartoes_vermelhos: number;
+  gols: number | null;
+  assistencias: number | null;
+  penaltis_defendidos: number | null;
+  cartoes_amarelos: number | null;
+  cartoes_azuis: number | null;
+  cartoes_vermelhos: number | null;
 }
 
 export interface Destaque {
