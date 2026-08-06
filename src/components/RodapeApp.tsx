@@ -1,7 +1,7 @@
 import { Github, Instagram, Linkedin } from "lucide-react";
 
-/** Versão atual do site — incremente a cada release (1.0.20 = 20º PR). */
-export const VERSAO_APP = "1.0.20";
+/** Versão atual do site — incremente a cada release (1.0.21 = 21º PR). */
+export const VERSAO_APP = "1.0.21";
 
 const DEV = {
   nome: "Thiago Pedriz",
