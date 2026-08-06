@@ -58,7 +58,7 @@ const secoes = [
       ],
       [
         "Fui marcado com falta. O que significa?",
-        "Falta é quando você confirma na lista e não aparece no dia — a diretoria registra isso na lista de presença. Se teve um motivo justo, fale com ela para desfazer. Quem acumula 3 faltas nos últimos 5 babas é suspenso automaticamente do próximo baba.",
+        "Falta é quando você confirma na lista e não aparece no dia — a diretoria registra isso na lista de presença. Se teve um motivo justo, fale com ela para desfazer. Quem atinge o limite de faltas definido pela diretoria (padrão: 3 nos últimos 5 babas) é suspenso automaticamente do próximo baba.",
       ],
     ],
   },
@@ -173,7 +173,7 @@ const secoes = [
       ],
       [
         "E quem dá faltas?",
-        "Faltas também punem: ao completar 3 faltas nos últimos 5 babas, a suspensão é automática — você fica fora do próximo jogo, recebe uma notificação e aparece no mural de punições. Foi por um motivo justo? Combine com a diretoria antes do baba.",
+        "Faltas também punem: ao atingir o limite definido pela diretoria (padrão: 3 faltas nos últimos 5 babas), a suspensão é automática — você fica fora do próximo jogo, recebe uma notificação e aparece no mural de punições. Foi por um motivo justo? Combine com a diretoria antes do baba.",
       ],
       [
         "Onde vejo punições e avisos?",

@@ -216,7 +216,7 @@ const secoes = [
       ],
       [
         "Faltas suspendem automaticamente?",
-        "Sim. Ao completar 3 faltas nos últimos 5 babas, o jogador é suspenso automaticamente do próximo baba (motivo “3 faltas nos últimos 5 babas”) e notificado. Se você desfizer a falta, a suspensão automática daquele baba some sozinha. A suspensão por cartão vermelho continua igual: 1 baba.",
+        "Sim. Ao completar o limite de faltas (padrão 3) nos últimos babas (janela padrão 5), o jogador é suspenso automaticamente do próximo baba (ou dos próximos, conforme a duração configurada) e notificado. Tudo isso é ajustável no painel Usuários → Política de suspensões: limite de faltas, janela de babas, duração da suspensão por faltas e por cartão vermelho (0 desliga). Se você desfizer a falta, a suspensão automática daquele baba some sozinha.",
       ],
       [
         "Como marco falta de quem não apareceu?",

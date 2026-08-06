@@ -363,6 +363,31 @@ export const suspensoesQuery = () =>
     },
   });
 
+/** Parâmetros da política de suspensões (ajustáveis pela diretoria em configuracoes). */
+export const politicaSuspensaoQuery = () =>
+  queryOptions({
+    queryKey: ["politica-suspensao"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("configuracoes")
+        .select("chave, valor")
+        .in("chave", [
+          "limite_faltas",
+          "janela_faltas",
+          "suspensao_faltas_babas",
+          "suspensao_vermelho_babas",
+        ]);
+      if (error) throw error;
+      const m = new Map((data ?? []).map((c) => [c.chave, Number(c.valor)]));
+      return {
+        limiteFaltas: m.get("limite_faltas") ?? 3,
+        janelaFaltas: m.get("janela_faltas") ?? 5,
+        suspensaoFaltasBabas: m.get("suspensao_faltas_babas") ?? 1,
+        suspensaoVermelhoBabas: m.get("suspensao_vermelho_babas") ?? 1,
+      };
+    },
+  });
+
 /** Meta de babas pagos que o convidado precisa cumprir para pedir associação. */
 export const META_CONVIDADO = 3;
 
@@ -477,6 +502,7 @@ export const situacaoCheckinQuery = (userId: string | undefined, babaId: string 
               .select("motivo")
               .eq("usuario_id", userId)
               .eq("baba_bloqueado_id", babaId)
+              .limit(1)
               .maybeSingle()
           : Promise.resolve({ data: null }),
       ]);
