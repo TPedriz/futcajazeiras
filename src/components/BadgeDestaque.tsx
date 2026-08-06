@@ -47,7 +47,7 @@ export function BadgeDestaque({ usuarioId, top = 3, compacto = true }: BadgeDest
           <span
             key={d.categoria}
             title={`${d.posicao}º em ${ROTULOS_DESTAQUE[d.categoria]} do mês`}
-            className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${CORES[d.posicao] ?? "border-border bg-muted text-muted-foreground"}`}
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[13px] font-bold ${CORES[d.posicao] ?? "border-border bg-muted text-muted-foreground"}`}
           >
             <span>{MEDALHA[d.posicao] ?? d.posicao}</span>
             {iconeDestaque(d.categoria)}
@@ -62,9 +62,9 @@ export function BadgeDestaque({ usuarioId, top = 3, compacto = true }: BadgeDest
       {destaques.map((d) => (
         <span
           key={d.categoria}
-          className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold ${CORES[d.posicao] ?? "border-border bg-muted text-muted-foreground"}`}
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-bold ${CORES[d.posicao] ?? "border-border bg-muted text-muted-foreground"}`}
         >
-          <Medal className="size-3.5" />
+          <Medal className="size-4" />
           {ROTULOS_DESTAQUE[d.categoria]}: {d.posicao}º ({d.valor})
         </span>
       ))}

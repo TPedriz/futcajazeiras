@@ -4,6 +4,8 @@ import { Trophy, Goal, Handshake, ShieldCheck, ImageDown, Medal } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AvatarJogador } from "@/components/AvatarJogador";
+import { BadgeDestaque } from "@/components/BadgeDestaque";
+import { destaquesDoUsuario, iconeDestaque, type Destaque } from "@/lib/gamificacao";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,7 +27,14 @@ interface LinhaImagem {
   nome: string;
   valor: string;
   avatar: HTMLImageElement | null;
+  destaques: Destaque[];
 }
+
+const MEDALHA_CANVAS: Record<number, string> = {
+  1: "🥇",
+  2: "🥈",
+  3: "🥉",
+};
 
 /** Desenha o ranking num canvas e devolve o PNG. */
 function carregarEscudo(): Promise<HTMLImageElement | null> {
@@ -137,6 +146,37 @@ async function desenharRanking(
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 50px Inter, system-ui, sans-serif";
     ctx.fillText(r.nome.slice(0, 20), 310, y + 5);
+
+    // Badges de destaque (medalha + ícone da categoria) ao lado do nome.
+    const nomeW = ctx.measureText(r.nome.slice(0, 20)).width;
+    let bx = 310 + nomeW + 26;
+    ctx.font = "30px Inter, system-ui, sans-serif";
+    for (const d of r.destaques) {
+      const txt = `${MEDALHA_CANVAS[d.posicao] ?? d.posicao} ${iconeDestaque(d.categoria)}`;
+      const w = ctx.measureText(txt).width + 36;
+      if (bx + w > L - 130) break;
+      ctx.fillStyle =
+        d.posicao === 1
+          ? "rgba(201,162,39,0.30)"
+          : d.posicao === 2
+            ? "rgba(148,163,184,0.28)"
+            : "rgba(217,119,6,0.28)";
+      const pH = 54;
+      const pY = y - 30;
+      const rr = pH / 2;
+      ctx.beginPath();
+      ctx.moveTo(bx + rr, pY);
+      ctx.arcTo(bx + w, pY, bx + w, pY + pH, rr);
+      ctx.arcTo(bx + w, pY + pH, bx, pY + pH, rr);
+      ctx.arcTo(bx, pY + pH, bx, pY, rr);
+      ctx.arcTo(bx, pY, bx + w, pY, rr);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(txt, bx + 18, y + 4);
+      bx += w + 12;
+    }
+
     ctx.fillStyle = "#8c8c92";
     ctx.font = "30px Inter, system-ui, sans-serif";
     ctx.fillText(categoria, 310, y + 42);
@@ -209,6 +249,7 @@ export function RankingMensal() {
         nome: r.nome ?? "Jogador",
         valor: String(valorDe(r)),
         avatar,
+        destaques: destaquesDoUsuario(data ?? [], r.usuario_id, 3),
       });
     }
     const blob = await desenharRanking(mesTexto, categoriaAtual?.rotulo ?? "Gols", linhas);
@@ -286,7 +327,10 @@ export function RankingMensal() {
                 {i === 0 ? <Medal className="size-4" /> : i + 1}
               </span>
               <AvatarJogador caminho={avatarDe(r.usuario_id)} nome={r.nome} size="sm" />
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold">{r.nome}</span>
+              <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1">
+                <span className="truncate text-sm font-semibold">{r.nome}</span>
+                <BadgeDestaque usuarioId={r.usuario_id} />
+              </span>
               {categoria === "cartoes" ? (
                 <span className="flex items-center gap-1">
                   {(r.cartoes_amarelos ?? 0) > 0 && (

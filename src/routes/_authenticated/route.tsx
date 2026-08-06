@@ -1,10 +1,11 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/BottomNav";
 import { perfilAtualQuery } from "@/lib/babaQueries";
 import { BrandLogo } from "@/components/BrandLogo";
 import { SinoNotificacoes } from "@/components/SinoNotificacoes";
+import { AvatarJogador } from "@/components/AvatarJogador";
 import { RodapeApp } from "@/components/RodapeApp";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -50,7 +51,7 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Header mobile */}
       <header className="sticky top-0 z-30 border-b border-border/50 bg-surface/95 backdrop-blur-lg">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
@@ -63,16 +64,34 @@ function AuthenticatedLayout() {
               </p>
             </div>
           </div>
-          <SinoNotificacoes userId={data?.user.id} />
+          <div className="flex items-center gap-2">
+            <SinoNotificacoes userId={data?.user.id} />
+            <Link
+              to="/perfil"
+              aria-label="Meu perfil"
+              title="Meu perfil"
+              className="shrink-0 transition-opacity hover:opacity-80"
+            >
+              <AvatarJogador
+                caminho={data?.perfil?.avatar_url}
+                nome={data?.perfil?.nome}
+                size="sm"
+              />
+            </Link>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-md px-4 pt-4 pb-28">
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pt-4 pb-10">
         <Outlet />
       </main>
 
-      <BottomNav isAdmin={isAdmin} />
       <RodapeApp />
+
+      {/* Espaço reservado para a barra de navegação inferior fixa (não sobrepõe o rodapé) */}
+      <div className="h-20 shrink-0" aria-hidden />
+
+      <BottomNav isAdmin={isAdmin} />
     </div>
   );
 }
