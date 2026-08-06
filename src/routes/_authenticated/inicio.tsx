@@ -6,8 +6,10 @@ import {
   proximasSessoesQuery,
   sessoesPassadasQuery,
   presencasDaSessaoQuery,
+  babasPagosConvidadoQuery,
   fechamentoEfetivo,
   aberturaEfetivo,
+  META_CONVIDADO,
 } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,12 +23,14 @@ import {
   Hourglass,
   Lock,
   CalendarClock,
+  Trophy,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RankingMensal } from "@/components/RankingMensal";
 import { tempoDeAssociado } from "@/lib/associado";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Progress } from "@/components/ui/progress";
 
 type ListaModo = "abre" | "fecha" | "encerrada" | "diretoria";
 
@@ -73,10 +77,13 @@ function InicioPage() {
   const { data: presencas } = useQuery(presencasDaSessaoQuery(proxSessao?.id));
   const { data: proximasBruto } = useQuery(proximasSessoesQuery());
   const { data: passados } = useQuery(sessoesPassadasQuery());
+  const { data: babasPagos } = useQuery(babasPagosConvidadoQuery(perfilData?.user.id));
   const proximas = (proximasBruto ?? []).filter((s) => s.id !== proxSessao?.id);
 
   const nome = perfilData?.perfil?.nome ?? "Atleta";
   const emDia = perfilData?.perfil?.status_pagamento === "pago";
+  const isConvidado = perfilData?.isConvidado ?? false;
+  const jogados = Math.min(babasPagos ?? 0, META_CONVIDADO);
   const totalConfirmados = presencas?.filter((p) => !p.nome_convidado).length ?? 0;
   const tempo = tempoDeAssociado(perfilData?.perfil?.criado_em);
 
@@ -104,27 +111,67 @@ function InicioPage() {
       <div className={emDia ? "card-vip p-5" : "card-premium border-destructive/40 p-5"}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Mensalidade</p>
-            <p className={`mt-1 font-display text-3xl ${emDia ? "text-gold" : "text-destructive"}`}>
-              {emDia ? "Em dia" : "Pendente"}
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">
+              {isConvidado ? "Diária de convidado" : "Mensalidade"}
+            </p>
+            <p
+              className={`mt-1 font-display text-3xl ${emDia ? "text-gold" : isConvidado ? "" : "text-destructive"}`}
+            >
+              {isConvidado ? "Paga a diária por baba" : emDia ? "Em dia" : "Pendente"}
             </p>
           </div>
           <div
-            className={`flex size-14 items-center justify-center rounded-full ${emDia ? "bg-gold/10" : "bg-destructive/10"}`}
+            className={`flex size-14 items-center justify-center rounded-full ${
+              isConvidado ? "bg-gold/10" : emDia ? "bg-gold/10" : "bg-destructive/10"
+            }`}
           >
-            {emDia ? (
+            {isConvidado ? (
+              <CheckCircle2 className="size-7 text-gold" />
+            ) : emDia ? (
               <CheckCircle2 className="size-7 text-gold" />
             ) : (
               <AlertCircle className="size-7 text-destructive" />
             )}
           </div>
         </div>
-        {!emDia && (
+        {isConvidado ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Convidados não pagam mensalidade — apenas a diária de cada baba que participam.
+          </p>
+        ) : !emDia ? (
           <p className="mt-3 text-sm text-muted-foreground">
             Regularize sua mensalidade com a diretoria para manter a prioridade no check-in.
           </p>
-        )}
+        ) : null}
       </div>
+
+      {/* Caminho para virar associado (convidados) */}
+      {isConvidado && (
+        <Link to="/perfil">
+          <div className="card-premium p-5 hover:border-gold/40 transition-colors">
+            <div className="flex items-center justify-between">
+              <p className="flex items-center gap-2 text-xs uppercase tracking-widest text-gold">
+                <Trophy className="size-4" /> Caminho para virar Associado
+              </p>
+              <ArrowRight className="size-4 text-muted-foreground" />
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Faltam{" "}
+              <strong className="font-display text-2xl text-gold">
+                {META_CONVIDADO - jogados}
+              </strong>{" "}
+              {META_CONVIDADO - jogados === 1 ? "baba pago" : "babas pagos"} para liberar o pedido.
+            </p>
+            <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>
+                {jogados}/{META_CONVIDADO} babas pagos
+              </span>
+              <span>Toque para ver como funciona</span>
+            </div>
+            <Progress value={(jogados / META_CONVIDADO) * 100} className="mt-1 h-2" />
+          </div>
+        </Link>
+      )}
 
       {/* Próximo Baba */}
       {proxSessao ? (

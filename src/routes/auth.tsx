@@ -3,10 +3,17 @@ import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandLogo } from "@/components/BrandLogo";
+import { RodapeApp } from "@/components/RodapeApp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -26,7 +33,10 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Entrar — Fut Cajazeiras" },
-      { name: "description", content: "Acesse sua conta de associado do Fut Cajazeiras ou solicite entrada." },
+      {
+        name: "description",
+        content: "Acesse sua conta de associado do Fut Cajazeiras ou solicite entrada.",
+      },
       { property: "og:title", content: "Entrar — Fut Cajazeiras" },
       { property: "og:description", content: "Área do associado do Fut Cajazeiras." },
     ],
@@ -121,9 +131,12 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero px-4 py-8">
-      <div className="mx-auto max-w-md">
-        <Link to="/" className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+    <div className="flex min-h-screen flex-col bg-gradient-hero px-4 py-8">
+      <div className="mx-auto w-full max-w-md flex-1">
+        <Link
+          to="/"
+          className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="size-4" /> Voltar
         </Link>
 
@@ -168,7 +181,13 @@ function AuthPage() {
                     className="h-12"
                   />
                 </div>
-                <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
+                <Button
+                  type="submit"
+                  variant="hero"
+                  size="lg"
+                  className="w-full"
+                  disabled={loading}
+                >
                   {loading ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
@@ -199,7 +218,9 @@ function AuthPage() {
                     onChange={(e) => setTelefoneCadastro(formataTelefone(e.target.value))}
                     className="h-12"
                   />
-                  <p className="text-xs text-muted-foreground">Use o número com DDD. Ele será seu login.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Use o número com DDD. Ele será seu login.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="senha-cad">Senha</Label>
@@ -217,7 +238,10 @@ function AuthPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="posicao">Posição preferida</Label>
-                  <Select value={posicao} onValueChange={(v) => setPosicao(v as "linha" | "goleiro")}>
+                  <Select
+                    value={posicao}
+                    onValueChange={(v) => setPosicao(v as "linha" | "goleiro")}
+                  >
                     <SelectTrigger id="posicao" className="h-12">
                       <SelectValue />
                     </SelectTrigger>
@@ -226,15 +250,26 @@ function AuthPage() {
                       <SelectItem value="goleiro">Goleiro</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">Você pode alterar no seu perfil quando quiser.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Você pode alterar no seu perfil quando quiser.
+                  </p>
                 </div>
-                <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
+                <Button
+                  type="submit"
+                  variant="hero"
+                  size="lg"
+                  className="w-full"
+                  disabled={loading}
+                >
                   {loading ? "Cadastrando..." : "Solicitar entrada"}
                 </Button>
               </form>
             </TabsContent>
           </Tabs>
         </div>
+      </div>
+      <div className="mx-auto w-full max-w-md pt-6">
+        <RodapeApp />
       </div>
     </div>
   );

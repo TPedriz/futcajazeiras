@@ -3,12 +3,20 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
-import { listarMensalidadesPendentes, criarPixPresente, consultarPixPresente } from "@/lib/pagamentos.functions";
+import {
+  listarMensalidadesPendentes,
+  criarPixPresente,
+  consultarPixPresente,
+} from "@/lib/pagamentos.functions";
 import { Gift } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 export function PresentearMensalidade() {
   const qc = useQueryClient();
@@ -74,7 +82,8 @@ export function PresentearMensalidade() {
         <div className="flex-1">
           <p className="font-display text-lg">Presentear alguém</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Pague a mensalidade de outro jogador. Assim que o PIX cair, ele fica em dia automaticamente.
+            Pague a mensalidade de outro jogador. Assim que o PIX cair, ele fica em dia
+            automaticamente.
           </p>
 
           <div className="mt-3 space-y-2">
@@ -85,8 +94,7 @@ export function PresentearMensalidade() {
               <SelectContent>
                 {(pendentes ?? []).map((m) => (
                   <SelectItem key={m.mensalidadeId} value={m.mensalidadeId}>
-                    {m.nome} — {format(new Date(`${m.referencia}T12:00:00`), "MMM/yy", { locale: ptBR })} — R${" "}
-                    {m.valor.toFixed(2).replace(".", ",")}
+                    {m.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -101,7 +109,9 @@ export function PresentearMensalidade() {
               <Gift className="size-4" /> Gerar PIX do presente
             </Button>
             {(pendentes ?? []).length === 0 && (
-              <p className="text-xs text-muted-foreground">Ninguém com mensalidade em aberto no momento.</p>
+              <p className="text-xs text-muted-foreground">
+                Ninguém com mensalidade em aberto no momento.
+              </p>
             )}
           </div>
         </div>

@@ -80,7 +80,7 @@ const secoes = [
       ],
       [
         "Como viro associado?",
-        "Participando de 3 babas como convidado. O progresso aparece no seu Perfil.",
+        "É simples: participe de 3 babas como convidado (pagando a diária de cada um). A cada baba pago, seu progresso aumenta — veja no card “Caminho para virar Associado” na Home e no Perfil. Ao completar 3, aparece o botão “Solicitar associação”; a diretoria analisa e, se aprovado, você vira associado e entra no grupo oficial do WhatsApp. Se você já jogou babas antes do app existir, a diretoria pode registrar esse crédito para você.",
       ],
     ],
   },
