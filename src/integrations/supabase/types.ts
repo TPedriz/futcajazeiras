@@ -708,6 +708,7 @@ export type Database = {
           criado_em: string;
           id: string;
           motivo: string;
+          origem: string;
           usuario_id: string;
         };
         Insert: {
@@ -716,6 +717,7 @@ export type Database = {
           criado_em?: string;
           id?: string;
           motivo?: string;
+          origem?: string;
           usuario_id: string;
         };
         Update: {
@@ -724,6 +726,7 @@ export type Database = {
           criado_em?: string;
           id?: string;
           motivo?: string;
+          origem?: string;
           usuario_id?: string;
         };
         Relationships: [
