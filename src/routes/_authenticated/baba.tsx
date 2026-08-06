@@ -28,7 +28,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, MapPin, UserPlus, Clock, Check, Shield, HandMetal, X } from "lucide-react";
+import { Calendar, MapPin, UserPlus, Clock, Check, Shield, HandMetal, X, UserX, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -184,6 +184,22 @@ function BabaPage() {
     },
     onSuccess: (ordem) => {
       toast.success("Check-in marcado!", { description: `Ordem de chegada ${ordem}.` });
+      invalidar();
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  // Admin: registra falta de quem estava na lista mas não apareceu (compareceu = false).
+  const marcarFalta = useMutation({
+    mutationFn: async ({ id, faltou }: { id: string; faltou: boolean }) => {
+      const { error } = await supabase
+        .from("presencas")
+        .update({ compareceu: faltou ? false : null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(vars.faltou ? "Falta registrada" : "Falta desfeita");
       invalidar();
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
@@ -411,9 +427,15 @@ function BabaPage() {
                 posicao={p.perfis?.posicao ?? "linha"}
                 tipo="membro"
                 usuarioId={p.usuario_id}
+                faltou={p.compareceu === false}
                 onMarcarChegada={
                   isAdmin && p.ordem_chegada == null
                     ? () => marcarChegadaAdmin.mutate(p.id)
+                    : undefined
+                }
+                onMarcarFalta={
+                  isAdmin && p.ordem_chegada == null
+                    ? () => marcarFalta.mutate({ id: p.id, faltou: p.compareceu !== false })
                     : undefined
                 }
                 onRemove={isAdmin ? () => removerPresenca.mutate(p.id) : undefined}
@@ -427,6 +449,7 @@ function BabaPage() {
                 tipo="convidado"
                 statusConvidado={p.status_convidado ?? undefined}
                 mpStatus={p.mp_status}
+                faltou={p.compareceu === false}
                 onApprove={
                   isAdmin && p.status_convidado === "pendente"
                     ? () => moderarConvidado.mutate({ id: p.id, status: "aprovado" })
@@ -440,6 +463,11 @@ function BabaPage() {
                 onMarcarChegada={
                   isAdmin && p.ordem_chegada == null
                     ? () => marcarChegadaAdmin.mutate(p.id)
+                    : undefined
+                }
+                onMarcarFalta={
+                  isAdmin && p.status_convidado === "aprovado" && p.ordem_chegada == null
+                    ? () => marcarFalta.mutate({ id: p.id, faltou: p.compareceu !== false })
                     : undefined
                 }
                 onRemove={isAdmin ? () => removerPresenca.mutate(p.id) : undefined}
@@ -540,9 +568,11 @@ interface PresencaCardProps {
   statusConvidado?: string;
   mpStatus?: string | null;
   usuarioId?: string | null;
+  faltou?: boolean;
   onApprove?: () => void;
   onReject?: () => void;
   onMarcarChegada?: () => void;
+  onMarcarFalta?: () => void;
   onRemove?: () => void;
 }
 
@@ -555,9 +585,11 @@ function PresencaCard({
   statusConvidado,
   mpStatus,
   usuarioId,
+  faltou,
   onApprove,
   onReject,
   onMarcarChegada,
+  onMarcarFalta,
   onRemove,
 }: PresencaCardProps) {
   const isConvidado = tipo === "convidado";
@@ -567,13 +599,15 @@ function PresencaCard({
   return (
     <li
       className={`flex items-center gap-3 rounded-lg border p-3 ${
-        isConvidado
-          ? statusConvidado === "aprovado"
-            ? "border-success/30 bg-success/5"
-            : statusConvidado === "rejeitado"
-              ? "border-destructive/30 bg-destructive/5 opacity-60"
-              : "border-border bg-surface"
-          : "border-gold/20 bg-surface"
+        faltou
+          ? "border-destructive/30 bg-destructive/5 opacity-70"
+          : isConvidado
+            ? statusConvidado === "aprovado"
+              ? "border-success/30 bg-success/5"
+              : statusConvidado === "rejeitado"
+                ? "border-destructive/30 bg-destructive/5 opacity-60"
+                : "border-border bg-surface"
+            : "border-gold/20 bg-surface"
       }`}
     >
       {numero && (
@@ -585,8 +619,17 @@ function PresencaCard({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <p className="truncate text-sm font-semibold text-foreground">{nome}</p>
-          {!isConvidado && usuarioId && <BadgeDestaque usuarioId={usuarioId} />}
+          <p
+            className={`truncate text-sm font-semibold ${faltou ? "text-muted-foreground line-through" : "text-foreground"}`}
+          >
+            {nome}
+          </p>
+          {!isConvidado && usuarioId && !faltou && <BadgeDestaque usuarioId={usuarioId} />}
+          {faltou && (
+            <Badge variant="destructive" className="text-[10px]">
+              Falta
+            </Badge>
+          )}
         </div>
         <div className="mt-0.5 flex items-center gap-1.5">
           {isConvidado ? (
@@ -643,6 +686,30 @@ function PresencaCard({
           aria-label="Marcar check-in no campo"
         >
           <MapPin className="size-4" />
+        </Button>
+      )}
+      {onMarcarFalta && !faltou && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9 text-destructive"
+          onClick={onMarcarFalta}
+          aria-label="Marcar falta"
+          title="Marcar falta"
+        >
+          <UserX className="size-4" />
+        </Button>
+      )}
+      {onMarcarFalta && faltou && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9 text-muted-foreground"
+          onClick={onMarcarFalta}
+          aria-label="Desfazer falta"
+          title="Desfazer falta"
+        >
+          <RotateCcw className="size-4" />
         </Button>
       )}
       {!pendente && onRemove && (
