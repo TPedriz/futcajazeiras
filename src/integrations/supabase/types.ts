@@ -74,6 +74,42 @@ export type Database = {
         }
         Relationships: []
       }
+      conquistas: {
+        Row: {
+          categoria: string
+          codigo: string
+          cor: string
+          criado_em: string
+          descricao: string
+          icone: string
+          id: string
+          meta: number
+          nome: string
+        }
+        Insert: {
+          categoria: string
+          codigo: string
+          cor?: string
+          criado_em?: string
+          descricao: string
+          icone?: string
+          id?: string
+          meta: number
+          nome: string
+        }
+        Update: {
+          categoria?: string
+          codigo?: string
+          cor?: string
+          criado_em?: string
+          descricao?: string
+          icone?: string
+          id?: string
+          meta?: number
+          nome?: string
+        }
+        Relationships: []
+      }
       convidados_cadastro: {
         Row: {
           aprovado: boolean
@@ -386,11 +422,13 @@ export type Database = {
           criado_em: string
           email: string
           id: string
+          nivel_atual: number
           nome: string
           posicao: Database["public"]["Enums"]["posicao_jogador"]
           status_pagamento: Database["public"]["Enums"]["status_pagamento"]
           telefone: string
           time_coracao: Database["public"]["Enums"]["time_coracao"] | null
+          xp_atual: number
         }
         Insert: {
           ativo?: boolean
@@ -399,11 +437,13 @@ export type Database = {
           criado_em?: string
           email: string
           id: string
+          nivel_atual?: number
           nome: string
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
           status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
           telefone?: string
           time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
+          xp_atual?: number
         }
         Update: {
           ativo?: boolean
@@ -412,11 +452,13 @@ export type Database = {
           criado_em?: string
           email?: string
           id?: string
+          nivel_atual?: number
           nome?: string
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
           status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
           telefone?: string
           time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
+          xp_atual?: number
         }
         Relationships: []
       }
@@ -836,6 +878,48 @@ export type Database = {
           },
         ]
       }
+      usuario_conquistas: {
+        Row: {
+          conquista_id: string
+          desbloqueada_em: string
+          em_destaque: boolean
+          id: string
+          ordem_destaque: number | null
+          usuario_id: string
+        }
+        Insert: {
+          conquista_id: string
+          desbloqueada_em?: string
+          em_destaque?: boolean
+          id?: string
+          ordem_destaque?: number | null
+          usuario_id: string
+        }
+        Update: {
+          conquista_id?: string
+          desbloqueada_em?: string
+          em_destaque?: boolean
+          id?: string
+          ordem_destaque?: number | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_conquistas_conquista_id_fkey"
+            columns: ["conquista_id"]
+            isOneToOne: false
+            referencedRelation: "conquistas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuario_conquistas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       ranking_mensal: {
@@ -869,6 +953,10 @@ export type Database = {
         Returns: number
       }
       babas_pagos_convidado: { Args: { _user_id: string }; Returns: number }
+      concede_xp: {
+        Args: { quantidade: number; usuario: string }
+        Returns: number
+      }
       config_int: { Args: { _chave: string; _padrao: number }; Returns: number }
       criar_pedido_convidado: {
         Args: {
@@ -887,6 +975,10 @@ export type Database = {
         Args: { _aprovar: boolean; _pedido_id: string }
         Returns: undefined
       }
+      desbloqueia_conquista: {
+        Args: { conquista: string; usuario: string }
+        Returns: undefined
+      }
       garante_mensalidade: {
         Args: { _referencia: string; _usuario_id: string }
         Returns: string
@@ -896,6 +988,7 @@ export type Database = {
         Args: { _lat: number; _lng: number; _presenca_id: string }
         Returns: number
       }
+      nivel_para_xp: { Args: { xp: number }; Returns: number }
       notifica: {
         Args: {
           _link?: string
@@ -929,6 +1022,8 @@ export type Database = {
       }
       total_associados_ativos: { Args: never; Returns: number }
       valor_mensalidade: { Args: never; Returns: number }
+      verifica_conquistas: { Args: { usuario: string }; Returns: undefined }
+      xp_necessaria_para_nivel: { Args: { nivel: number }; Returns: number }
     }
     Enums: {
       papel_usuario: "administrador" | "associado" | "convidado"
