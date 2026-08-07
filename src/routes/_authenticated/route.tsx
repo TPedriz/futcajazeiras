@@ -7,6 +7,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { SinoNotificacoes } from "@/components/SinoNotificacoes";
 import { AvatarJogador } from "@/components/AvatarJogador";
 import { RodapeApp } from "@/components/RodapeApp";
+import { CartinhaProvider } from "@/components/CartinhaModal";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -83,7 +84,9 @@ function AuthenticatedLayout() {
       </header>
 
       <main className="mx-auto w-full max-w-md flex-1 px-4 pt-4 pb-10">
-        <Outlet />
+        <CartinhaProvider>
+          <Outlet />
+        </CartinhaProvider>
       </main>
 
       <RodapeApp />

@@ -19,6 +19,8 @@ import {
 } from "@/lib/sorteio";
 import { useState, useMemo } from "react";
 import { Shuffle, Copy, HandMetal, User, Save, Lock, ArrowLeftRight } from "lucide-react";
+import { MicroConquistas } from "@/components/MicroConquistas";
+import { NomeJogadorCartinha } from "@/components/NomeJogadorCartinha";
 import {
   Select,
   SelectContent,
@@ -472,7 +474,18 @@ function SorteioPage() {
                 {t.goleiro && (
                   <li key={`g-${t.numero}`} className="flex items-center gap-2 text-sm">
                     <HandMetal className="size-3.5 text-primary" />
-                    <span className="text-foreground">{t.goleiro.nome}</span>
+                    <NomeJogadorCartinha
+                      nome={t.goleiro.nome}
+                      usuarioId={
+                        t.goleiro.isConvidado
+                          ? null
+                          : (usuarioPorPresenca.get(t.goleiro.id) ?? null)
+                      }
+                      className="text-foreground"
+                    />
+                    {!t.goleiro.isConvidado && (
+                      <MicroConquistas usuarioId={usuarioPorPresenca.get(t.goleiro.id) ?? null} />
+                    )}
                     {t.goleiro.isGoleiroFixo && (
                       <span className="inline-flex items-center gap-1 rounded bg-gold/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-gold">
                         <Lock className="size-3" /> Fixo
@@ -505,7 +518,14 @@ function SorteioPage() {
                   <li key={`${t.numero}-${j.id}`} className="flex items-center gap-2 text-sm">
                     <span className="w-5 font-display text-gold">{idx + 1}</span>
                     <User className="size-3.5 text-muted-foreground" />
-                    <span className="text-foreground">{j.nome}</span>
+                    <NomeJogadorCartinha
+                      nome={j.nome}
+                      usuarioId={j.isConvidado ? null : (usuarioPorPresenca.get(j.id) ?? null)}
+                      className="text-foreground"
+                    />
+                    {!j.isConvidado && (
+                      <MicroConquistas usuarioId={usuarioPorPresenca.get(j.id) ?? null} />
+                    )}
                     {j.isConvidado && (
                       <span className="text-[10px] text-muted-foreground">(convidado)</span>
                     )}

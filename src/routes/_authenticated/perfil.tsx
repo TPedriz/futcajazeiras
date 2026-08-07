@@ -43,8 +43,19 @@ import { tempoDeAssociado } from "@/lib/associado";
 import { AvatarJogador, avatarUrlQuery } from "@/components/AvatarJogador";
 import { EditorFotoPerfil } from "@/components/EditorFotoPerfil";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
-import { useState } from "react";
+import { GerenciadorConquistas } from "@/components/GerenciadorConquistas";
+import { progressoNivel, xpNecessariaParaNivel } from "@/lib/gamificacao";
+import { useState, useRef } from "react";
 import { formataTelefone } from "@/lib/telefone";
+import { PlayerCard } from "@/components/PlayerCard";
+import { Download, Share2, Loader2, BadgeCheck } from "lucide-react";
+import { temaEfetivo, temaBasePorOvr, type TemaCarta } from "@/lib/cartinha";
+import { conquistasEmDestaqueQuery, rankingDoMesQuery, mesReferencia } from "@/lib/babaQueries";
+import { rankingDeCategoria } from "@/lib/gamificacao";
+import { baixarCartinha, compartilharCartinha } from "@/lib/cartinhaExport";
+import type { Database } from "@/integrations/supabase/types";
+
+type PerfilAtual = Database["public"]["Tables"]["perfis"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/perfil")({
   head: () => ({
@@ -306,6 +317,30 @@ function PerfilPage() {
           </Badge>
         )}
 
+        {/* Nível e XP */}
+        {(() => {
+          const prog = progressoNivel(perfil?.xp_atual ?? 0);
+          return (
+            <div className="mx-auto mt-3 max-w-xs rounded-xl border border-gold/25 bg-gold/5 p-3 text-left">
+              <div className="flex items-center justify-between">
+                <p className="font-display text-lg text-gold">
+                  Nível {prog.nivel}
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    {prog.xp} XP
+                  </span>
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {prog.xpNoNivel}/{prog.xpParaProximo} XP p/ nível {prog.nivel + 1}
+                </p>
+              </div>
+              <Progress value={prog.progresso * 100} className="mt-1.5 h-2.5" />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Próximo nível em {xpNecessariaParaNivel(prog.nivel + 1)} XP no total
+              </p>
+            </div>
+          );
+        })()}
+
         {/* Destaques do mês (gamificação) */}
         <div className="mt-2 flex justify-center">
           <BadgeDestaque usuarioId={perfil?.id} />
@@ -476,6 +511,17 @@ function PerfilPage() {
         </p>
       </div>
 
+      {/* Minha Cartinha (estilo FUT) */}
+      <MinhaCartinha perfil={perfil} usuarioId={perfil?.id} />
+
+      {/* Minhas Conquistas (gamificação) */}
+      <div className="card-premium space-y-3 p-4">
+        <Label className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+          <Trophy className="size-4 text-gold" /> Minhas Conquistas
+        </Label>
+        <GerenciadorConquistas usuarioId={perfil?.id} />
+      </div>
+
       <div className="card-premium space-y-3 p-4">
         <Label
           htmlFor="posicao-perfil"
@@ -544,6 +590,110 @@ function InfoRow({
           {value}
         </p>
       </div>
+    </div>
+  );
+}
+
+/** Seção "Minha Cartinha" no perfil: exibe a cartinha oficial + exportar. */
+function MinhaCartinha({
+  perfil,
+  usuarioId,
+}: {
+  perfil: PerfilAtual | null | undefined;
+  usuarioId: string | undefined;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { data: destaquesMap } = useQuery(conquistasEmDestaqueQuery());
+  const referencia = mesReferencia();
+  const { data: ranking } = useQuery(rankingDoMesQuery(referencia));
+  const [exportando, setExportando] = useState(false);
+
+  if (!usuarioId || !perfil?.id) return null;
+
+  const posicao = perfil.posicao;
+  const nivel = perfil.nivel_atual ?? 1;
+  const top1Mes = (() => {
+    if (!ranking) return false;
+    const categorias = ["gols", "assistencias", "penaltis"] as const;
+    return categorias.some((cat) => {
+      const r = rankingDeCategoria(ranking, cat);
+      return r[0]?.usuario_id === usuarioId;
+    });
+  })();
+
+  const base = temaBasePorOvr(perfil.ovr ?? 40) as TemaCarta;
+  const tema = temaEfetivo(base, {
+    top1Mes,
+    nivel,
+    goleiroDestaque: posicao === "goleiro" && (perfil.stat_fisico ?? 0) >= 70,
+  });
+
+  const conquistas = (destaquesMap?.get(usuarioId) ?? []).map((c) => ({
+    id: c.id,
+    nome: c.nome,
+    icone: c.icone,
+  }));
+
+  const aoExportar = async (tipo: "baixar" | "compartilhar") => {
+    if (!ref.current) return;
+    setExportando(true);
+    try {
+      const ok =
+        tipo === "baixar"
+          ? await baixarCartinha(ref.current, "minha-cartinha.png")
+          : await compartilharCartinha(ref.current);
+      if (!ok) toast.error("Não foi possível exportar a cartinha");
+    } catch {
+      toast.error("Não foi possível exportar a cartinha");
+    } finally {
+      setExportando(false);
+    }
+  };
+
+  return (
+    <div className="card-premium space-y-3 p-4">
+      <Label className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+        <BadgeCheck className="size-4 text-gold" /> Minha Cartinha
+      </Label>
+      <div className="flex justify-center">
+        <PlayerCard
+          ref={ref}
+          nome={perfil.nome}
+          fotoUrl={perfil.avatar_url}
+          posicao={perfil.posicao}
+          ovr={perfil.ovr ?? 40}
+          pac={perfil.stat_ritmo ?? 40}
+          sho={perfil.stat_finalizacao ?? 40}
+          pas={perfil.stat_passe ?? 40}
+          dri={perfil.stat_drible ?? 40}
+          def={perfil.stat_defesa ?? 40}
+          phy={perfil.stat_fisico ?? 40}
+          nivel={nivel}
+          tema={tema}
+          conquistas={conquistas}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="gold" disabled={exportando} onClick={() => aoExportar("baixar")}>
+          {exportando ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Download className="size-4" />
+          )}
+          Baixar
+        </Button>
+        <Button
+          variant="goldOutline"
+          disabled={exportando}
+          onClick={() => aoExportar("compartilhar")}
+        >
+          <Share2 className="size-4" /> Compartilhar
+        </Button>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Seus atributos são calculados automaticamente a partir das presenças, gols, assistências,
+        vitórias e nível de XP. O tema muda conforme o OVR.
+      </p>
     </div>
   );
 }

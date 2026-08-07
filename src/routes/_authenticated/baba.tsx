@@ -15,6 +15,8 @@ import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
 import { ChegadaGps } from "@/components/ChegadaGps";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
+import { MicroConquistas } from "@/components/MicroConquistas";
+import { NomeJogadorCartinha } from "@/components/NomeJogadorCartinha";
 
 import { ConviteConvidado } from "@/components/ConviteConvidado";
 import { SolicitacoesRecebidas } from "@/components/SolicitacoesRecebidas";
@@ -630,11 +632,12 @@ function PresencaCard({
 
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-1.5">
-          <p
+          <NomeJogadorCartinha
+            nome={nome}
+            usuarioId={isConvidado ? null : usuarioId}
             className={`min-w-0 truncate text-sm font-semibold ${faltou ? "text-muted-foreground line-through" : "text-foreground"}`}
-          >
-            {nome}
-          </p>
+          />
+          {!isConvidado && usuarioId && !faltou && <MicroConquistas usuarioId={usuarioId} />}
           {!isConvidado && usuarioId && !faltou && <BadgeDestaque usuarioId={usuarioId} />}
           {faltou && (
             <Badge variant="destructive" className="text-[10px]">
