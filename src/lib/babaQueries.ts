@@ -481,6 +481,10 @@ export const solicitacoesAssociacaoQuery = () =>
 /** Dia fixo de vencimento da mensalidade. */
 export const DIA_VENCIMENTO = 10;
 
+/** Valores padrão usados quando a configuração ainda não existe (espelha o servidor). */
+export const VALOR_MENSALIDADE_PADRAO = 15;
+export const VALOR_CONVIDADO_PADRAO = 5;
+
 /** Situação do jogador para o check-in: inadimplência e suspensão. */
 export const situacaoCheckinQuery = (userId: string | undefined, babaId: string | undefined) =>
   queryOptions({
@@ -530,7 +534,7 @@ export const valorMensalidadeQuery = () =>
         .eq("chave", "valor_mensalidade")
         .maybeSingle();
       if (error) throw error;
-      return Number(data?.valor ?? 20);
+      return Number(data?.valor ?? VALOR_MENSALIDADE_PADRAO);
     },
   });
 
@@ -545,7 +549,7 @@ export const valorConvidadoQuery = () =>
         .eq("chave", "valor_convidado")
         .maybeSingle();
       if (error) throw error;
-      return Number(data?.valor ?? 5);
+      return Number(data?.valor ?? VALOR_CONVIDADO_PADRAO);
     },
   });
 

@@ -13,7 +13,11 @@ import {
 } from "@/components/ui/select";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
 import { listarAnfitrioes, solicitarConvite, pixDaSolicitacao } from "@/lib/convidados.functions";
-import { minhasSolicitacoesQuery, valorConvidadoQuery } from "@/lib/babaQueries";
+import {
+  minhasSolicitacoesQuery,
+  valorConvidadoQuery,
+  VALOR_CONVIDADO_PADRAO,
+} from "@/lib/babaQueries";
 import { HandHeart, QrCode } from "lucide-react";
 
 export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: string }) {
@@ -121,7 +125,7 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
             aceitar, você paga a taxa de{" "}
             <strong className="text-gold">
               R${" "}
-              {Number(valorConvidado ?? 5)
+              {Number(valorConvidado ?? VALOR_CONVIDADO_PADRAO)
                 .toFixed(2)
                 .replace(".", ",")}
             </strong>{" "}

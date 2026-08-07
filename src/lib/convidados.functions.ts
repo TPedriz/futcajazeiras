@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { VALOR_CONVIDADO } from "@/lib/mercadopago.server";
 
 export interface PixConvite {
   pago: boolean;
@@ -241,7 +242,7 @@ async function statusDaPresenca(presencaId: string): Promise<PixConvite> {
   const base = {
     qrCode: cobranca?.pix_qr_code ?? null,
     qrBase64: cobranca?.pix_qr_base64 ?? null,
-    valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : 5,
+    valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : VALOR_CONVIDADO,
   };
 
   if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...base };
@@ -280,18 +281,30 @@ export const pixDaSolicitacao = createServerFn({ method: "POST" })
         .eq("solicitacao_id", sol.id)
         .maybeSingle();
       if (!pedido)
-        return { pago: false, status: "sem_cobranca", qrCode: null, qrBase64: null, valor: 5 };
+        return {
+          pago: false,
+          status: "sem_cobranca",
+          qrCode: null,
+          qrBase64: null,
+          valor: VALOR_CONVIDADO,
+        };
       if (pedido.status === "pendente") {
         return {
           pago: false,
           status: "aguardando_diretoria",
           qrCode: null,
           qrBase64: null,
-          valor: 5,
+          valor: VALOR_CONVIDADO,
         };
       }
       if (pedido.presenca_id) return await statusDaPresenca(pedido.presenca_id);
-      return { pago: false, status: "sem_cobranca", qrCode: null, qrBase64: null, valor: 5 };
+      return {
+        pago: false,
+        status: "sem_cobranca",
+        qrCode: null,
+        qrBase64: null,
+        valor: VALOR_CONVIDADO,
+      };
     }
 
     return await statusDaPresenca(sol.presenca_id);
@@ -424,7 +437,7 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
         status: "approved",
         qrCode: cobranca?.pix_qr_code ?? null,
         qrBase64: cobranca?.pix_qr_base64 ?? null,
-        valor: 5,
+        valor: VALOR_CONVIDADO,
       };
     }
 
@@ -438,7 +451,7 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
         status: "pending",
         qrCode: cobranca!.pix_qr_code,
         qrBase64: cobranca!.pix_qr_base64,
-        valor: 5,
+        valor: VALOR_CONVIDADO,
       };
     }
 
@@ -449,7 +462,8 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const { criarPagamentoPix, emailPagador } = await import("@/lib/mercadopago.server");
-    const valorPix = Number(presencaAtual?.valor) > 0 ? Number(presencaAtual?.valor) : 5;
+    const valorPix =
+      Number(presencaAtual?.valor) > 0 ? Number(presencaAtual?.valor) : VALOR_CONVIDADO;
     const pix = await criarPagamentoPix({
       valor: valorPix,
       descricao: `Diária de convidado — ${cad.nome}`,

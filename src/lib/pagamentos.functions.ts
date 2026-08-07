@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { VALOR_MENSALIDADE, VALOR_CONVIDADO } from "@/lib/mercadopago.server";
 
 export interface PixResposta {
   status: string;
@@ -25,7 +26,7 @@ export const criarPixMensalidade = createServerFn({ method: "POST" })
     if (!mensalidade || mensalidade.usuario_id !== userId)
       throw new Error("Mensalidade não encontrada");
 
-    const valor = Number(mensalidade.valor) > 0 ? Number(mensalidade.valor) : 15;
+    const valor = Number(mensalidade.valor) > 0 ? Number(mensalidade.valor) : VALOR_MENSALIDADE;
 
     if (mensalidade.status === "pago") {
       return {
@@ -213,7 +214,7 @@ export const consultarPixConvidado = createServerFn({ method: "POST" })
     const pix = {
       qrCode: cobranca?.pix_qr_code ?? null,
       qrBase64: cobranca?.pix_qr_base64 ?? null,
-      valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : 5,
+      valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : VALOR_CONVIDADO,
     };
 
     if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...pix };
@@ -255,7 +256,7 @@ export const listarMensalidadesPendentes = createServerFn({ method: "POST" })
         mensalidadeId: m.id,
         nome: nomes.get(m.usuario_id) ?? "Associado",
         referencia: m.referencia,
-        valor: Number(m.valor) > 0 ? Number(m.valor) : 15,
+        valor: Number(m.valor) > 0 ? Number(m.valor) : VALOR_MENSALIDADE,
       }));
     },
   );
@@ -280,7 +281,7 @@ export const criarPixPresente = createServerFn({ method: "POST" })
       .eq("id", mensalidade.usuario_id)
       .maybeSingle();
     const nome = presenteado?.nome ?? "Associado";
-    const valor = Number(mensalidade.valor) > 0 ? Number(mensalidade.valor) : 15;
+    const valor = Number(mensalidade.valor) > 0 ? Number(mensalidade.valor) : VALOR_MENSALIDADE;
 
     if (mensalidade.status === "pago") {
       return {
