@@ -251,7 +251,7 @@ export function RankingMensal() {
         nome: r.nome ?? "Jogador",
         valor: String(valorDe(r)),
         avatar,
-        destaques: destaquesDoUsuario(data ?? [], r.usuario_id, 3),
+        destaques: destaquesDoUsuario(data ?? [], r.usuario_id ?? undefined, 3),
       });
     }
     const blob = await desenharRanking(mesTexto, categoriaAtual?.rotulo ?? "Gols", linhas);
