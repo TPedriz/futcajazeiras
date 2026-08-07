@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { emailReal } from "@/lib/email";
 import { BottomNav } from "@/components/BottomNav";
 import { perfilAtualQuery } from "@/lib/babaQueries";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -14,6 +15,19 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+
+    // Guard de bloqueio: após o login, exige e-mail real confirmado.
+    // Sem e-mail (cadastro antigo) ou e-mail não confirmado => /atualizar-cadastro.
+    const { data: perfil } = await supabase
+      .from("perfis")
+      .select("email, email_confirmado")
+      .eq("id", data.user.id)
+      .maybeSingle();
+    const contato = perfil?.email ? emailReal(perfil.email) : null;
+    if (!contato || !perfil?.email_confirmado) {
+      throw redirect({ to: "/atualizar-cadastro" });
+    }
+
     return { user: data.user };
   },
   loader: ({ context }) => {

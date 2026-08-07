@@ -190,6 +190,14 @@ function AuthPage() {
                 >
                   {loading ? "Entrando..." : "Entrar"}
                 </Button>
+                <div className="pt-1 text-center">
+                  <Link
+                    to="/esqueci-senha"
+                    className="text-sm text-muted-foreground underline hover:text-gold"
+                  >
+                    Esqueci minha senha
+                  </Link>
+                </div>
               </form>
             </TabsContent>
 
