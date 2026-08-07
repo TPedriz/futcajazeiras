@@ -18,6 +18,7 @@ import {
   convidadosDaCasaQuery,
   meusPedidosConvidadoQuery,
   valorConvidadoQuery,
+  VALOR_CONVIDADO_PADRAO,
 } from "@/lib/babaQueries";
 import { criarPedidoConvidado, gerarPixPedido } from "@/lib/convidados.functions";
 import { formataTelefone } from "@/lib/telefone";
@@ -108,7 +109,7 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
             convidado da casa já libera o PIX de{" "}
             <strong className="text-gold">
               R${" "}
-              {Number(valorConvidado ?? 5)
+              {Number(valorConvidado ?? VALOR_CONVIDADO_PADRAO)
                 .toFixed(2)
                 .replace(".", ",")}
             </strong>{" "}

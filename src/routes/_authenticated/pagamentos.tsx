@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { perfilAtualQuery, minhasMensalidadesQuery } from "@/lib/babaQueries";
+import {
+  perfilAtualQuery,
+  minhasMensalidadesQuery,
+  VALOR_MENSALIDADE_PADRAO,
+} from "@/lib/babaQueries";
 import { tempoDeAssociado } from "@/lib/associado";
 import { criarPixMensalidade, consultarPixMensalidade } from "@/lib/pagamentos.functions";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
@@ -202,7 +206,7 @@ function PagamentosPage() {
                   onClick={() => cobrar.mutate(m.id)}
                 >
                   <QrCode className="size-4" /> Pagar com PIX — R${" "}
-                  {Number(m.valor || 15)
+                  {Number(m.valor || VALOR_MENSALIDADE_PADRAO)
                     .toFixed(2)
                     .replace(".", ",")}
                 </Button>

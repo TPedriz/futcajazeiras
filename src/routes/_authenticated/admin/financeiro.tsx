@@ -9,6 +9,8 @@ import {
   valorConvidadoQuery,
   vagasAssociadosQuery,
   LIMITE_ASSOCIADOS,
+  VALOR_MENSALIDADE_PADRAO,
+  VALOR_CONVIDADO_PADRAO,
 } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -247,11 +249,13 @@ function ValorMensalidadeCard() {
     },
     onSuccess: () => {
       toast.success("Valor da mensalidade atualizado", {
-        description: "As próximas cobranças geradas já usam o novo valor.",
+        description: "Mensalidades em aberto e novas cobranças já usam o novo valor.",
       });
       setConfirmando(false);
       setNovo("");
       qc.invalidateQueries({ queryKey: ["valor-mensalidade"] });
+      qc.invalidateQueries({ queryKey: ["mensalidades-mes"] });
+      qc.invalidateQueries({ queryKey: ["mensalidades-minhas"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -265,7 +269,9 @@ function ValorMensalidadeCard() {
         <Coins className="size-4 text-gold" />
         <p className="text-xs uppercase tracking-widest text-gold">Valor da mensalidade</p>
       </div>
-      <p className="font-display text-3xl text-gold">{formatado(Number(valorAtual ?? 20))}</p>
+      <p className="font-display text-3xl text-gold">
+        {formatado(Number(valorAtual ?? VALOR_MENSALIDADE_PADRAO))}
+      </p>
       <div className="flex gap-2">
         <Input
           inputMode="decimal"
@@ -294,8 +300,8 @@ function ValorMensalidadeCard() {
         </p>
       )}
       <p className="text-[11px] text-muted-foreground">
-        O reajuste vale para as próximas cobranças geradas. Mensalidades já emitidas mantêm o valor
-        original.
+        O reajuste atualiza na hora todas as mensalidades ainda em aberto e as novas cobranças.
+        Mensalidades já pagas mantêm o valor pago.
       </p>
     </div>
   );
@@ -341,7 +347,9 @@ function ValorConvidadoCard() {
         <UserPlus className="size-4 text-gold" />
         <p className="text-xs uppercase tracking-widest text-gold">Valor da diária de convidado</p>
       </div>
-      <p className="font-display text-3xl text-gold">{formatado(Number(valorAtual ?? 5))}</p>
+      <p className="font-display text-3xl text-gold">
+        {formatado(Number(valorAtual ?? VALOR_CONVIDADO_PADRAO))}
+      </p>
       <div className="flex gap-2">
         <Input
           inputMode="decimal"
@@ -370,7 +378,8 @@ function ValorConvidadoCard() {
         </p>
       )}
       <p className="text-[11px] text-muted-foreground">
-        O reajuste vale para os próximos PIX gerados. Convites já cobrados mantêm o valor original.
+        O reajuste vale para os próximos PIX de convidado gerados. Convites já cobrados mantêm o
+        valor pago.
       </p>
     </div>
   );
