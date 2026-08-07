@@ -222,11 +222,11 @@ const secoes = [
     itens: [
       [
         "O que é a cartinha?",
-        "É o seu card de jogador estilo Ultimate Team: mostra seu OVR (nota geral), posição (GOL ou ATA) e os 6 atributos — PAC (ritmo/presença), SHO (finalização), PAS (passe), DRI (drible), DEF (defesa/disciplina) e PHY (físico). Ela fica em destaque na aba Perfil.",
+        "É o seu card de jogador estilo Ultimate Team: mostra seu OVR (nota geral), posição (GOL ou ATA) e os 6 atributos — RIT (ritmo/presença), FIN (finalização), PAS (passe), DRI (drible), DEF (defesa/disciplina) e FÍS (físico). Ela fica em destaque na aba Perfil.",
       ],
       [
         "Como os atributos são calculados?",
-        "Automaticamente, a partir do seu desempenho real: PAC pela frequência nos babas, SHO pela média de gols, PAS pela média de assistências, DRI por vitórias nos times sorteados, DEF por vitórias com desconto de cartões e PHY por pênaltis defendidos + bônus de goleiro + nível de XP. O OVR é a média dos atributos somada a um bônus de nível.",
+        "Automaticamente, a partir do seu desempenho real: RIT pela frequência nos babas, FIN pela média de gols, PAS pela média de assistências, DRI por vitórias nos times sorteados, DEF por vitórias com desconto de cartões e FÍS por pênaltis defendidos + bônus de goleiro + nível de XP. O OVR é a média dos atributos somada a um bônus de nível.",
       ],
       [
         "O que significam os temas da cartinha?",

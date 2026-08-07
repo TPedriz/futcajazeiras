@@ -139,7 +139,7 @@ function LandingPage() {
           <FeatureCard
             Icon={Layers}
             title="Cartinhas de jogador"
-            text="OVR e atributos (PAC, SHO, PAS, DRI, DEF, PHY) calculados do seu desempenho real. Temas Bronze, Prata, Ouro e especiais (TOTW, Lenda, Paredão)."
+            text="OVR e atributos (RIT, FIN, PAS, DRI, DEF, FÍS) calculados do seu desempenho real. Temas Bronze, Prata, Ouro e especiais (TOTW, Lenda, Paredão)."
           />
           <FeatureCard
             Icon={Star}

@@ -6,8 +6,8 @@
  * espelhando as regras do banco (supabase/migrations).
  */
 
-/** Siglas exibidas na cartinha (estilo FUT). */
-export const SIGLAS_ATRIBUTO = ["PAC", "SHO", "PAS", "DRI", "DEF", "PHY"] as const;
+/** Abreviações em português exibidas na cartinha (RIT, FIN, PAS, DRI, DEF, FÍS). */
+export const SIGLAS_ATRIBUTO = ["RIT", "FIN", "PAS", "DRI", "DEF", "FÍS"] as const;
 export type SiglaAtributo = (typeof SIGLAS_ATRIBUTO)[number];
 
 /** Temas de cartinha: base (bronze/prata/ouro) + especiais (totw/icon/paredao). */
@@ -122,12 +122,12 @@ export function calculaAtributos(t: TotaisParaCartinha): {
 
 /** Rótulo em português de cada atributo (para tooltip/legenda). */
 export const ROTULOS_ATRIBUTO: Record<SiglaAtributo, string> = {
-  PAC: "Ritmo / Presença",
-  SHO: "Finalização",
+  RIT: "Ritmo / Presença",
+  FIN: "Finalização",
   PAS: "Passe",
   DRI: "Drible / Habilidade",
   DEF: "Defesa / Disciplina",
-  PHY: "Físico / Raça",
+  FÍS: "Físico / Raça",
 };
 
 /** Rótulo do tema da carta em português. */

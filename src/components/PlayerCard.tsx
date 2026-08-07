@@ -103,8 +103,20 @@ export const PlayerCard = forwardRef<HTMLDivElement, PlayerCardProps>(function P
 ) {
   const estilo = TEMAS[tema] ?? TEMAS.ouro;
   const atributos = [pac, sho, pas, dri, def, phy];
-  // Tema "icon" tem fundo claro → marca d'água escura; demais usam clara.
-  const filtroEscudo = tema === "icon" ? "brightness(0)" : "brightness(0) invert(1)";
+
+  // Tamanho da fonte do nome conforme o comprimento, para nomes longos não vazarem.
+  const tamNome = nome.length;
+  const classeNome =
+    tamNome <= 14
+      ? "text-2xl"
+      : tamNome <= 20
+        ? "text-xl"
+        : tamNome <= 28
+          ? "text-lg"
+          : "text-base";
+
+  // Tema "icon" tem fundo claro → a logo usa mistura "multiply"; demais usam "screen".
+  const mesclaEscudo = tema === "icon" ? "multiply" : "screen";
 
   return (
     <div
@@ -119,13 +131,13 @@ export const PlayerCard = forwardRef<HTMLDivElement, PlayerCardProps>(function P
           background: `radial-gradient(circle at 50% 18%, ${estilo.brilho} 0%, transparent 55%)`,
         }}
       />
-      {/* Marca d'água do escudo (mesmo efeito do ranking do mês) */}
+      {/* Logo do Fut Cajazeiras ao fundo (atrás do avatar e do nome) */}
       <img
         src={escudoUrl}
         alt=""
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 w-[85%] -translate-x-1/2 -translate-y-1/2 opacity-15"
-        style={{ filter: filtroEscudo }}
+        className="pointer-events-none absolute left-1/2 top-1/2 w-[92%] -translate-x-1/2 -translate-y-1/2 opacity-25"
+        style={{ mixBlendMode: mesclaEscudo }}
       />
       <div className="relative">
         {/* Brasão do Fut Cajazeiras no topo */}
@@ -176,9 +188,9 @@ export const PlayerCard = forwardRef<HTMLDivElement, PlayerCardProps>(function P
           <AvatarJogador caminho={fotoUrl} nome={nome} size="lg" />
         </div>
 
-        {/* Nome */}
+        {/* Nome (até 2 linhas; fonte reduz para nomes longos) */}
         <p
-          className="mt-3 truncate font-display text-2xl font-bold uppercase leading-tight"
+          className={`mt-3 line-clamp-2 px-1 font-display font-bold uppercase leading-tight ${classeNome}`}
           style={{ color: estilo.texto, textShadow: "0 2px 6px rgba(0,0,0,0.6)" }}
         >
           {nome}
