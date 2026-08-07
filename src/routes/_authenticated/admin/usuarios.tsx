@@ -357,7 +357,7 @@ function UsuariosPage() {
               <SlidersHorizontal className="size-4" /> Cartinhas de jogador
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Recalcula o OVR e os atributos (PAC, SHO, PAS, DRI, DEF, PHY) de todos os jogadores a
+              Recalcula o OVR e os atributos (RIT, FIN, PAS, DRI, DEF, FÍS) de todos os jogadores a
               partir do desempenho real. Os ajustes manuais feitos no cadastro são preservados até o
               próximo lançamento.
             </p>
