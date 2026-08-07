@@ -106,13 +106,23 @@ function LandingPage() {
 
       {/* Gamificação: XP, conquistas e cartinhas */}
       <section className="mx-auto max-w-md px-4 pb-8">
-        <div className="text-center">
-          <p className="text-xs uppercase tracking-widest text-gold">Novidade</p>
-          <h2 className="mt-1 font-display text-3xl text-foreground">
-            Sua carreira no baba vira jogo
+        <div className="rounded-2xl border border-gold/40 bg-gradient-to-b from-gold/15 to-transparent p-5 text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gold">
+            Agora o baba tem jogo fora de campo também
+          </p>
+          <h2 className="mt-2 font-display text-4xl leading-tight text-foreground">
+            Cada gol, cada presença, cada vitória —{" "}
+            <span className="text-gold">vira evolução.</span>
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Jogue, ganhe XP, suba de nível e monte sua cartinha de craque — estilo Ultimate Team.
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            No Fut Cajazeiras sua raça no campo agora conta pontos de verdade. Confirme presença,
+            balance a rede, dê aquela assistência — e veja seu jogador crescer: ganhe XP, suba de
+            nível e conquiste seu lugar entre as lendas do baba.
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+            Sua jornada vira uma <strong className="text-gold">cartinha de craque</strong> — com
+            OVR, atributos e visual de Ultimate Team, calculados do seu desempenho real e prontos
+            para você mostrar pro mundo.
           </p>
         </div>
         <div className="mt-6 space-y-4">
@@ -136,6 +146,18 @@ function LandingPage() {
             title="Compartilhe sua cartinha"
             text="Baixe sua cartinha em PNG ou compartilhe direto no WhatsApp/Instagram direto do seu Perfil."
           />
+        </div>
+        <div className="mt-6 flex flex-col gap-3">
+          <Link to="/auth" search={{ modo: "cadastro" }}>
+            <Button variant="hero" size="xl" className="w-full">
+              Comece sua jornada
+            </Button>
+          </Link>
+          <Link to="/auth">
+            <Button variant="goldOutline" size="xl" className="w-full">
+              Já sou associado — ver minha cartinha
+            </Button>
+          </Link>
         </div>
       </section>
 
