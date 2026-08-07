@@ -14,12 +14,13 @@ export const Route = createFileRoute("/_authenticated/ajuda")({
       {
         name: "description",
         content:
-          "Tire dúvidas sobre check-in no baba, como levar convidados, pagamento da mensalidade por PIX e as regras do ranking do Fut Cajazeiras.",
+          "Tire dúvidas sobre check-in no baba, como levar convidados, pagamento da mensalidade por PIX, as regras do ranking e a gamificação (XP, níveis, conquistas e cartinhas) do Fut Cajazeiras.",
       },
       { property: "og:title", content: "Central de Ajuda — Fut Cajazeiras" },
       {
         property: "og:description",
-        content: "Guia rápido do Fut Cajazeiras: presença, convidados, PIX e regras do ranking.",
+        content:
+          "Guia rápido do Fut Cajazeiras: presença, convidados, PIX, regras do ranking, XP, conquistas e cartinhas.",
       },
       { property: "og:type", content: "website" },
     ],
@@ -186,6 +187,62 @@ const secoes = [
       [
         "A mensalidade pode mudar de valor?",
         "Pode. A diretoria reajusta o valor no painel Financeiro e as próximas cobranças já saem com o novo valor.",
+      ],
+    ],
+  },
+  {
+    id: "gamificacao",
+    titulo: "Gamificação: XP, níveis e conquistas",
+    itens: [
+      [
+        "O que é XP e como eu ganho?",
+        "XP é a pontuação de experiência de cada jogador, calculada automaticamente conforme você joga: +10 XP por presença confirmada (check-in), +5 XP por cada gol e +3 XP por cada assistência lançados nas estatísticas do baba. Você acompanha seu XP total e a barra de progresso no Perfil.",
+      ],
+      [
+        "Como funcionam os níveis?",
+        "Seu nível sobe conforme o XP acumulado: nível 2 a partir de 100 XP, nível 3 com 300, nível 4 com 600, nível 5 com 1000 e assim por diante. Quanto mais alto o nível, maior o bônus aplicado no OVR da sua cartinha (até +5).",
+      ],
+      [
+        "O que são conquistas e como desbloqueio?",
+        "Conquistas são medalhas liberadas automaticamente quando você atinge marcas reais: presenças confirmadas, gols, assistências, níveis e XP total (ex.: Primeira Presença, Artilheiro, Nível 3, Veterano). Quando você desbloqueia uma, recebe uma notificação no sino.",
+      ],
+      [
+        "Como destaco minhas conquistas?",
+        "Na aba Perfil, abra “Minhas Conquistas”. Toque em até 3 conquistas desbloqueadas para marcá-las como destaque. Elas passam a aparecer ao lado do seu nome em todo o app (ranking, lista de presença e times sorteados) e no rodapé da sua cartinha. Para trocar, basta tocar de novo em uma destacada para removê-la.",
+      ],
+      [
+        "Por que algumas conquistas aparecem cinza?",
+        "Cinza e opacas são as conquistas ainda bloqueadas: você ainda não atingiu o requisito (o texto descreve exatamente o que falta). Conquistas desbloqueadas ficam coloridas, com brilho.",
+      ],
+    ],
+  },
+  {
+    id: "cartinhas",
+    titulo: "Cartinhas de jogador (estilo EA FC)",
+    itens: [
+      [
+        "O que é a cartinha?",
+        "É o seu card de jogador estilo Ultimate Team: mostra seu OVR (nota geral), posição (GOL ou ATA) e os 6 atributos — PAC (ritmo/presença), SHO (finalização), PAS (passe), DRI (drible), DEF (defesa/disciplina) e PHY (físico). Ela fica em destaque na aba Perfil.",
+      ],
+      [
+        "Como os atributos são calculados?",
+        "Automaticamente, a partir do seu desempenho real: PAC pela frequência nos babas, SHO pela média de gols, PAS pela média de assistências, DRI por vitórias nos times sorteados, DEF por vitórias com desconto de cartões e PHY por pênaltis defendidos + bônus de goleiro + nível de XP. O OVR é a média dos atributos somada a um bônus de nível.",
+      ],
+      [
+        "O que significam os temas da cartinha?",
+        "O tema muda pela sua faixa de OVR: Bronze (OVR abaixo de 65), Prata (65 a 74) e Ouro (75 ou mais). Existem também temas especiais: TOTW (moldura preta/dourada para quem é 1º do ranking do mês), Lenda do Baba/Icon (nível alto ou marcas históricas) e Paredão (goleiros em destaque).",
+      ],
+      [
+        "Posso baixar ou compartilhar minha cartinha?",
+        "Sim. No Perfil, na seção “Minha Cartinha”, use os botões “Baixar” (gera um PNG em alta resolução) e “Compartilhar” (envia pelo WhatsApp/Instagram pelo celular).",
+      ],
+      [
+        "Como vejo a cartinha de outro jogador?",
+        "Toque no nome do jogador em qualquer lugar do site (ranking da Home, lista de presença, chegada GPS ou times sorteados) e a cartinha dele abre em um modal.",
+      ],
+      [
+        "A diretoria pode ajustar meus atributos?",
+        "Sim. A diretoria pode ajustar manualmente os atributos base (estilo “ratings” de pré-temporada) na edição de cadastro. Depois, o sistema recalcula automaticamente conforme os babas acontecem. Também há o botão “Recalcular cartinhas” no painel da diretoria.",
       ],
     ],
   },

@@ -2,7 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { BrandLogo } from "@/components/BrandLogo";
 import { RodapeApp } from "@/components/RodapeApp";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Trophy, ChevronRight } from "lucide-react";
+import { Calendar, Users, Trophy, ChevronRight, Zap, Sparkles, Layers, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
@@ -101,6 +101,41 @@ function LandingPage() {
               Já sou associado
             </Button>
           </Link>
+        </div>
+      </section>
+
+      {/* Gamificação: XP, conquistas e cartinhas */}
+      <section className="mx-auto max-w-md px-4 pb-8">
+        <div className="text-center">
+          <p className="text-xs uppercase tracking-widest text-gold">Novidade</p>
+          <h2 className="mt-1 font-display text-3xl text-foreground">
+            Sua carreira no baba vira jogo
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Jogue, ganhe XP, suba de nível e monte sua cartinha de craque — estilo Ultimate Team.
+          </p>
+        </div>
+        <div className="mt-6 space-y-4">
+          <FeatureCard
+            Icon={Zap}
+            title="XP e níveis"
+            text="Cada presença confirmada vale +10 XP, cada gol +5 XP e cada assistência +3 XP. Suba de nível e acompanhe seu progresso no Perfil."
+          />
+          <FeatureCard
+            Icon={Sparkles}
+            title="Conquistas"
+            text="Desbloqueie medalhas automáticas (Primeira Presença, Artilheiro, Nível 3, Veterano...) e destaque até 3 delas ao lado do seu nome."
+          />
+          <FeatureCard
+            Icon={Layers}
+            title="Cartinhas de jogador"
+            text="OVR e atributos (PAC, SHO, PAS, DRI, DEF, PHY) calculados do seu desempenho real. Temas Bronze, Prata, Ouro e especiais (TOTW, Lenda, Paredão)."
+          />
+          <FeatureCard
+            Icon={Star}
+            title="Compartilhe sua cartinha"
+            text="Baixe sua cartinha em PNG ou compartilhe direto no WhatsApp/Instagram direto do seu Perfil."
+          />
         </div>
       </section>
 
