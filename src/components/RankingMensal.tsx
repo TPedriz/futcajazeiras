@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AvatarJogador } from "@/components/AvatarJogador";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
+import { MicroConquistas } from "@/components/MicroConquistas";
 import { destaquesDoUsuario, iconeDestaque, type Destaque } from "@/lib/gamificacao";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -329,6 +330,7 @@ export function RankingMensal() {
               <AvatarJogador caminho={avatarDe(r.usuario_id)} nome={r.nome} size="sm" />
               <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1">
                 <span className="truncate text-sm font-semibold">{r.nome}</span>
+                <MicroConquistas usuarioId={r.usuario_id} />
                 <BadgeDestaque usuarioId={r.usuario_id} />
               </span>
               {categoria === "cartoes" ? (

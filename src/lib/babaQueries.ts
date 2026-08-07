@@ -661,3 +661,61 @@ export const pedidosConvidadoPendentesQuery = () =>
       }));
     },
   });
+
+// ==================== GAMIFICAÇÃO: conquistas ====================
+
+/** Catálogo completo de conquistas do sistema, ordenado por categoria e meta. */
+export const conquistasQuery = () =>
+  queryOptions({
+    queryKey: ["conquistas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("conquistas")
+        .select("*")
+        .order("categoria", { ascending: true })
+        .order("meta", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/** Conquistas desbloqueadas por um usuário (com detalhes da conquista). */
+export const minhasConquistasQuery = (usuarioId: string | undefined) =>
+  queryOptions({
+    queryKey: ["minhas-conquistas", usuarioId],
+    enabled: !!usuarioId,
+    queryFn: async () => {
+      if (!usuarioId) return [];
+      const { data, error } = await supabase
+        .from("usuario_conquistas")
+        .select(
+          "id, usuario_id, conquista_id, desbloqueada_em, em_destaque, ordem_destaque, conquistas(id, codigo, nome, descricao, icone, cor, categoria, meta)",
+        )
+        .eq("usuario_id", usuarioId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/** Conquistas em destaque de todos os usuários (para micro-badges globais). */
+export const conquistasEmDestaqueQuery = () =>
+  queryOptions({
+    queryKey: ["conquistas-em-destaque"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("usuario_conquistas")
+        .select("usuario_id, ordem_destaque, conquistas(id, codigo, nome, icone, cor)")
+        .eq("em_destaque", true)
+        .order("ordem_destaque", { ascending: true });
+      if (error) throw error;
+
+      const mapa = new Map<string, NonNullable<(typeof data)[number]["conquistas"]>[]>();
+      for (const uc of data ?? []) {
+        if (!uc.conquistas) continue;
+        const lista = mapa.get(uc.usuario_id) ?? [];
+        lista.push(uc.conquistas);
+        mapa.set(uc.usuario_id, lista);
+      }
+      return mapa;
+    },
+  });

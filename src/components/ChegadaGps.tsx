@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { MapPin, Navigation, X, Users } from "lucide-react";
 import { AvatarJogador } from "@/components/AvatarJogador";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
+import { MicroConquistas } from "@/components/MicroConquistas";
 
 export interface PresencaChegada {
   id: string;
@@ -231,6 +232,7 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
                         <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>
                       )}
                     </span>
+                    {!p.nome_convidado && <MicroConquistas usuarioId={p.usuario_id} />}
                     {!p.nome_convidado && <BadgeDestaque usuarioId={p.usuario_id} />}
                   </span>
                   <span className="text-[11px] text-muted-foreground">

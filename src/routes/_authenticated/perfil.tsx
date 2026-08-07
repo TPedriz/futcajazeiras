@@ -43,6 +43,8 @@ import { tempoDeAssociado } from "@/lib/associado";
 import { AvatarJogador, avatarUrlQuery } from "@/components/AvatarJogador";
 import { EditorFotoPerfil } from "@/components/EditorFotoPerfil";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
+import { GerenciadorConquistas } from "@/components/GerenciadorConquistas";
+import { progressoNivel, xpNecessariaParaNivel } from "@/lib/gamificacao";
 import { useState } from "react";
 import { formataTelefone } from "@/lib/telefone";
 
@@ -306,6 +308,30 @@ function PerfilPage() {
           </Badge>
         )}
 
+        {/* Nível e XP */}
+        {(() => {
+          const prog = progressoNivel(perfil?.xp_atual ?? 0);
+          return (
+            <div className="mx-auto mt-3 max-w-xs rounded-xl border border-gold/25 bg-gold/5 p-3 text-left">
+              <div className="flex items-center justify-between">
+                <p className="font-display text-lg text-gold">
+                  Nível {prog.nivel}
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    {prog.xp} XP
+                  </span>
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {prog.xpNoNivel}/{prog.xpParaProximo} XP p/ nível {prog.nivel + 1}
+                </p>
+              </div>
+              <Progress value={prog.progresso * 100} className="mt-1.5 h-2.5" />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Próximo nível em {xpNecessariaParaNivel(prog.nivel + 1)} XP no total
+              </p>
+            </div>
+          );
+        })()}
+
         {/* Destaques do mês (gamificação) */}
         <div className="mt-2 flex justify-center">
           <BadgeDestaque usuarioId={perfil?.id} />
@@ -474,6 +500,14 @@ function PerfilPage() {
         <p className="text-[11px] text-muted-foreground">
           A escolha é definitiva: depois de marcada, só a diretoria pode alterar.
         </p>
+      </div>
+
+      {/* Minhas Conquistas (gamificação) */}
+      <div className="card-premium space-y-3 p-4">
+        <Label className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+          <Trophy className="size-4 text-gold" /> Minhas Conquistas
+        </Label>
+        <GerenciadorConquistas usuarioId={perfil?.id} />
       </div>
 
       <div className="card-premium space-y-3 p-4">

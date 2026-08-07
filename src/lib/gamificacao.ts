@@ -101,3 +101,96 @@ export function destaquesDoUsuario(
 export function iconeDestaque(categoria: CategoriaDestaque): string {
   return ICONES_DESTAQUE[categoria];
 }
+
+// ============================================================================
+// XP, níveis e conquistas — mesmas regras do banco de dados.
+// ============================================================================
+
+/** XP concedido por evento (espelha os triggers do banco). */
+export const XP_POR_EVENTO = {
+  presenca: 10,
+  gol: 5,
+  assistencia: 3,
+} as const;
+
+export type EventoXp = keyof typeof XP_POR_EVENTO;
+
+export function ganhoXp(evento: EventoXp): number {
+  return XP_POR_EVENTO[evento];
+}
+
+/**
+ * XP cumulativo necessário para alcançar um nível.
+ * Regra do banco: 100 * nivel * (nivel - 1) / 2.
+ */
+export function xpNecessariaParaNivel(nivel: number): number {
+  if (nivel <= 1) return 0;
+  return (100 * nivel * (nivel - 1)) / 2;
+}
+
+/** Nível correspondente a um total de XP (inverso de xpNecessariaParaNivel). */
+export function nivelParaXp(xp: number): number {
+  const seguro = Math.max(0, Math.floor(xp));
+  return Math.floor((1 + Math.sqrt(1 + (8 * seguro) / 100)) / 2);
+}
+
+export interface ProgressoNivel {
+  nivel: number;
+  xp: number;
+  /** XP já conquistado dentro do nível atual. */
+  xpNoNivel: number;
+  /** XP necessário para subir do nível atual para o próximo. */
+  xpParaProximo: number;
+  /** Progresso de 0 a 1 dentro do nível atual. */
+  progresso: number;
+}
+
+/** Detalhes de progresso do nível atual a partir do XP total. */
+export function progressoNivel(xp: number): ProgressoNivel {
+  const nivel = nivelParaXp(xp);
+  const xpNoNivel = xp - xpNecessariaParaNivel(nivel);
+  const xpParaProximo = xpNecessariaParaNivel(nivel + 1) - xpNecessariaParaNivel(nivel);
+  return {
+    nivel,
+    xp,
+    xpNoNivel,
+    xpParaProximo,
+    progresso: xpParaProximo > 0 ? Math.min(1, xpNoNivel / xpParaProximo) : 1,
+  };
+}
+
+/** Conquista do catálogo (tabela `conquistas`). */
+export interface Conquista {
+  id: string;
+  codigo: string;
+  nome: string;
+  descricao: string;
+  icone: string;
+  cor: string;
+  categoria: string;
+  meta: number;
+}
+
+/** Conquista desbloqueada por um usuário (tabela `usuario_conquistas`). */
+export interface UsuarioConquista {
+  id: string;
+  usuario_id?: string;
+  conquista_id: string;
+  desbloqueada_em: string;
+  em_destaque: boolean;
+  ordem_destaque: number | null;
+  conquistas: Conquista | null;
+}
+
+/** Categorias de conquista com rótulo em português. */
+export const ROTULOS_CATEGORIA_CONQUISTA: Record<string, string> = {
+  presenca: "Presenças",
+  gols: "Gols",
+  assistencias: "Assistências",
+  nivel: "Nível",
+  xp: "XP total",
+};
+
+export function rotuloCategoriaConquista(categoria: string): string {
+  return ROTULOS_CATEGORIA_CONQUISTA[categoria] ?? categoria;
+}

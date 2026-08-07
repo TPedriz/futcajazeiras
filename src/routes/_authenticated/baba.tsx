@@ -15,6 +15,7 @@ import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
 import { ChegadaGps } from "@/components/ChegadaGps";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
+import { MicroConquistas } from "@/components/MicroConquistas";
 
 import { ConviteConvidado } from "@/components/ConviteConvidado";
 import { SolicitacoesRecebidas } from "@/components/SolicitacoesRecebidas";
@@ -635,6 +636,7 @@ function PresencaCard({
           >
             {nome}
           </p>
+          {!isConvidado && usuarioId && !faltou && <MicroConquistas usuarioId={usuarioId} />}
           {!isConvidado && usuarioId && !faltou && <BadgeDestaque usuarioId={usuarioId} />}
           {faltou && (
             <Badge variant="destructive" className="text-[10px]">

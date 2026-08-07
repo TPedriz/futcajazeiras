@@ -10,6 +10,7 @@ import {
   Info,
   ClipboardList,
   UserCog,
+  Trophy,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const icones = {
   associacao: UserCog,
   auditoria: UserCog,
   lista: ClipboardList,
+  conquista: Trophy,
   geral: Info,
 } as const;
 
