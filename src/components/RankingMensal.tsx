@@ -251,7 +251,7 @@ export function RankingMensal() {
         nome: r.nome ?? "Jogador",
         valor: String(valorDe(r)),
         avatar,
-        destaques: destaquesDoUsuario(data ?? [], r.usuario_id, 3),
+        destaques: destaquesDoUsuario(data ?? [], r.usuario_id ?? undefined, 3),
       });
     }
     const blob = await desenharRanking(mesTexto, categoriaAtual?.rotulo ?? "Gols", linhas);
@@ -331,12 +331,12 @@ export function RankingMensal() {
               <AvatarJogador caminho={avatarDe(r.usuario_id)} nome={r.nome} size="sm" />
               <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1">
                 <NomeJogadorCartinha
-                  nome={r.nome}
+                  nome={r.nome ?? "Jogador"}
                   usuarioId={r.usuario_id}
                   className="truncate text-sm font-semibold"
                 />
                 <MicroConquistas usuarioId={r.usuario_id} />
-                <BadgeDestaque usuarioId={r.usuario_id} />
+                <BadgeDestaque usuarioId={r.usuario_id ?? undefined} />
               </span>
               {categoria === "cartoes" ? (
                 <span className="flex items-center gap-1">

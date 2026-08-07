@@ -18,7 +18,7 @@ export function MicroConquistas({
   size?: "sm" | "lg";
 }) {
   const { data: mapa } = useQuery(conquistasEmDestaqueQuery());
-  const destaques = (usuarioId && mapa?.get(usuarioId)) ?? [];
+  const destaques = (usuarioId ? mapa?.get(usuarioId) : undefined) ?? [];
 
   if (!usuarioId || destaques.length === 0) return null;
 
