@@ -7,6 +7,10 @@ import {
   ROTULOS_TEMA,
   type TemaCarta,
 } from "@/lib/cartinha";
+import escudoAsset from "@/assets/fut-cajazeiras-escudo.png.asset.json";
+
+/** URL do escudo do Fut Cajazeiras (mesma asset usada no ranking do mês). */
+const escudoUrl = escudoAsset.url;
 
 /** Conquista em destaque exibida no rodapé da cartinha. */
 export interface ConquistaMini {
@@ -99,6 +103,8 @@ export const PlayerCard = forwardRef<HTMLDivElement, PlayerCardProps>(function P
 ) {
   const estilo = TEMAS[tema] ?? TEMAS.ouro;
   const atributos = [pac, sho, pas, dri, def, phy];
+  // Tema "icon" tem fundo claro → marca d'água escura; demais usam clara.
+  const filtroEscudo = tema === "icon" ? "brightness(0)" : "brightness(0) invert(1)";
 
   return (
     <div
@@ -113,9 +119,31 @@ export const PlayerCard = forwardRef<HTMLDivElement, PlayerCardProps>(function P
           background: `radial-gradient(circle at 50% 18%, ${estilo.brilho} 0%, transparent 55%)`,
         }}
       />
+      {/* Marca d'água do escudo (mesmo efeito do ranking do mês) */}
+      <img
+        src={escudoUrl}
+        alt=""
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 w-[85%] -translate-x-1/2 -translate-y-1/2 opacity-15"
+        style={{ filter: filtroEscudo }}
+      />
       <div className="relative">
+        {/* Brasão do Fut Cajazeiras no topo */}
+        <div className="flex justify-center">
+          <img
+            src={escudoUrl}
+            alt="Fut Cajazeiras"
+            className="size-10 rounded-full"
+            style={{
+              border: `1px solid ${estilo.borda}`,
+              background: "rgba(0,0,0,0.35)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+            }}
+          />
+        </div>
+
         {/* Linha superior: OVR e posição */}
-        <div className="flex items-start justify-between">
+        <div className="mt-2 flex items-start justify-between">
           <div className="text-left">
             <p
               className="font-display text-5xl font-bold leading-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]"
