@@ -424,9 +424,17 @@ export type Database = {
           id: string
           nivel_atual: number
           nome: string
+          ovr: number
           posicao: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa: number
+          stat_drible: number
+          stat_finalizacao: number
+          stat_fisico: number
+          stat_passe: number
+          stat_ritmo: number
           status_pagamento: Database["public"]["Enums"]["status_pagamento"]
           telefone: string
+          tema_carta: string
           time_coracao: Database["public"]["Enums"]["time_coracao"] | null
           xp_atual: number
         }
@@ -439,9 +447,17 @@ export type Database = {
           id: string
           nivel_atual?: number
           nome: string
+          ovr?: number
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa?: number
+          stat_drible?: number
+          stat_finalizacao?: number
+          stat_fisico?: number
+          stat_passe?: number
+          stat_ritmo?: number
           status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
           telefone?: string
+          tema_carta?: string
           time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
           xp_atual?: number
         }
@@ -454,9 +470,17 @@ export type Database = {
           id?: string
           nivel_atual?: number
           nome?: string
+          ovr?: number
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa?: number
+          stat_drible?: number
+          stat_finalizacao?: number
+          stat_fisico?: number
+          stat_passe?: number
+          stat_ritmo?: number
           status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
           telefone?: string
+          tema_carta?: string
           time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
           xp_atual?: number
         }
@@ -953,6 +977,7 @@ export type Database = {
         Returns: number
       }
       babas_pagos_convidado: { Args: { _user_id: string }; Returns: number }
+      calcula_cartinha: { Args: { usuario: string }; Returns: undefined }
       concede_xp: {
         Args: { quantidade: number; usuario: string }
         Returns: number
