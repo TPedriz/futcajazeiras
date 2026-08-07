@@ -1033,6 +1033,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      reajusta_mensalidades_pendentes: { Args: never; Returns: undefined }
       solicita_convite: {
         Args: { _anfitriao_id: string; _baba_id: string }
         Returns: string
