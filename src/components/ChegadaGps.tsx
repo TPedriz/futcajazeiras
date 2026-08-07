@@ -8,6 +8,7 @@ import { MapPin, Navigation, X, Users } from "lucide-react";
 import { AvatarJogador } from "@/components/AvatarJogador";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
 import { MicroConquistas } from "@/components/MicroConquistas";
+import { NomeJogadorCartinha } from "@/components/NomeJogadorCartinha";
 
 export interface PresencaChegada {
   id: string;
@@ -226,12 +227,14 @@ export function ChegadaGps({ sessao, presencas, minhaPresencaId, jaChegou, isAdm
                     size="sm"
                   />
                   <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1">
-                    <span className="truncate text-sm">
-                      {p.nome_convidado ?? p.perfis?.nome ?? "Jogador"}
-                      {p.nome_convidado && (
-                        <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>
-                      )}
-                    </span>
+                    <NomeJogadorCartinha
+                      nome={p.nome_convidado ?? p.perfis?.nome ?? "Jogador"}
+                      usuarioId={p.nome_convidado ? null : p.usuario_id}
+                      className="truncate text-sm"
+                    />
+                    {p.nome_convidado && (
+                      <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>
+                    )}
                     {!p.nome_convidado && <MicroConquistas usuarioId={p.usuario_id} />}
                     {!p.nome_convidado && <BadgeDestaque usuarioId={p.usuario_id} />}
                   </span>

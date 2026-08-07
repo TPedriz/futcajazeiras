@@ -49,6 +49,16 @@ function UsuariosPage() {
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [posicao, setPosicao] = useState<"linha" | "goleiro">("linha");
+  // Atributos base da cartinha (pré-temporada) — o sistema recalcula nos babas.
+  const [atributos, setAtributos] = useState({
+    ovr: 40,
+    ritmo: 40,
+    finalizacao: 40,
+    passe: 40,
+    drible: 40,
+    defesa: 40,
+    fisico: 40,
+  });
   const [filtro, setFiltro] = useState<FiltroPapel>("todos");
   const [aplicandoPunicao, setAplicandoPunicao] = useState(false);
   const [punicaoUserId, setPunicaoUserId] = useState("");
@@ -83,7 +93,18 @@ function UsuariosPage() {
       if (nome.trim().length < 2) throw new Error("Informe o nome completo");
       const { error } = await supabase
         .from("perfis")
-        .update({ nome: nome.trim(), telefone: normalizaTelefone(telefone), posicao })
+        .update({
+          nome: nome.trim(),
+          telefone: normalizaTelefone(telefone),
+          posicao,
+          ovr: atributos.ovr,
+          stat_ritmo: atributos.ritmo,
+          stat_finalizacao: atributos.finalizacao,
+          stat_passe: atributos.passe,
+          stat_drible: atributos.drible,
+          stat_defesa: atributos.defesa,
+          stat_fisico: atributos.fisico,
+        })
         .eq("id", id);
       if (error) throw error;
     },
@@ -92,6 +113,7 @@ function UsuariosPage() {
       setEditando(null);
       qc.invalidateQueries({ queryKey: ["associados-todos"] });
       qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+      qc.invalidateQueries({ queryKey: ["cartinha-perfil"] });
     },
     onError: (e: Error) => toast.error("Erro ao salvar", { description: e.message }),
   });
@@ -155,6 +177,25 @@ function UsuariosPage() {
       qc.invalidateQueries({ queryKey: ["suspensoes"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  /** Recalcula as cartinhas de todos os jogadores a partir do desempenho real. */
+  const recalcularCartinhas = useMutation({
+    mutationFn: async () => {
+      const ids = (todos ?? []).map((u) => u.id);
+      for (const id of ids) {
+        const { error } = await supabase.rpc("calcula_cartinha", { usuario: id });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Cartinhas recalculadas!", {
+        description: "OVR e atributos atualizados com o desempenho real.",
+      });
+      qc.invalidateQueries({ queryKey: ["associados-todos"] });
+      qc.invalidateQueries({ queryKey: ["cartinha-perfil"] });
+    },
+    onError: (e: Error) => toast.error("Erro ao recalcular", { description: e.message }),
   });
 
   /** Salva o crédito manual de babas pagos do convidado (upsert por usuário). */
@@ -308,6 +349,32 @@ function UsuariosPage() {
 
       <PoliticaSuspensaoCard />
 
+      {/* Cartinhas: recálculo manual de OVR/atributos */}
+      <div className="card-premium space-y-3 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="flex items-center gap-2 text-xs uppercase tracking-widest text-gold">
+              <SlidersHorizontal className="size-4" /> Cartinhas de jogador
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Recalcula o OVR e os atributos (PAC, SHO, PAS, DRI, DEF, PHY) de todos os jogadores a
+              partir do desempenho real. Os ajustes manuais feitos no cadastro são preservados até o
+              próximo lançamento.
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="gold"
+          size="lg"
+          className="w-full"
+          disabled={recalcularCartinhas.isPending}
+          onClick={() => recalcularCartinhas.mutate()}
+        >
+          <SlidersHorizontal className="size-4" />
+          {recalcularCartinhas.isPending ? "Recalculando…" : "Recalcular cartinhas"}
+        </Button>
+      </div>
+
       <FiltroCargo valor={filtro} onChange={setFiltro} total={perfis.length} />
 
       <div className="card-premium p-5 space-y-3">
@@ -451,6 +518,52 @@ function UsuariosPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {/* Atributos base da cartinha (pré-temporada) */}
+                  <div className="space-y-2 rounded-xl border border-gold/25 bg-gold/5 p-3">
+                    <Label className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+                      <SlidersHorizontal className="size-4 text-gold" /> Cartinha (pré-temporada)
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Ajuste os atributos base manualmente. O sistema recalcula automaticamente
+                      conforme os babas acontecem.
+                    </p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {(
+                        [
+                          ["ovr", "OVR"],
+                          ["ritmo", "PAC"],
+                          ["finalizacao", "SHO"],
+                          ["passe", "PAS"],
+                          ["drible", "DRI"],
+                          ["defesa", "DEF"],
+                          ["fisico", "PHY"],
+                        ] as const
+                      ).map(([campo, rotulo]) => (
+                        <div key={campo} className="space-y-0.5">
+                          <Label
+                            htmlFor={`${campo}-${p.id}`}
+                            className="text-[9px] uppercase tracking-widest text-muted-foreground"
+                          >
+                            {rotulo}
+                          </Label>
+                          <Input
+                            id={`${campo}-${p.id}`}
+                            type="number"
+                            min={1}
+                            max={99}
+                            value={atributos[campo]}
+                            onChange={(e) =>
+                              setAtributos((a) => ({
+                                ...a,
+                                [campo]: Math.max(1, Math.min(99, Number(e.target.value) || 1)),
+                              }))
+                            }
+                            className="h-10 px-2 text-center"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       variant="gold"
@@ -494,6 +607,15 @@ function UsuariosPage() {
                       setNome(p.nome);
                       setTelefone(p.telefone ?? "");
                       setPosicao(p.posicao);
+                      setAtributos({
+                        ovr: p.ovr ?? 40,
+                        ritmo: p.stat_ritmo ?? 40,
+                        finalizacao: p.stat_finalizacao ?? 40,
+                        passe: p.stat_passe ?? 40,
+                        drible: p.stat_drible ?? 40,
+                        defesa: p.stat_defesa ?? 40,
+                        fisico: p.stat_fisico ?? 40,
+                      });
                     }}
                   >
                     <Pencil className="size-4" />

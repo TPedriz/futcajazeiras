@@ -719,3 +719,39 @@ export const conquistasEmDestaqueQuery = () =>
       return mapa;
     },
   });
+
+// ==================== CARTINHAS DE JOGADOR ====================
+
+/** Campos do perfil usados para montar a cartinha de um jogador. */
+export const CAMPOS_CARTINHA = [
+  "id",
+  "nome",
+  "avatar_url",
+  "posicao",
+  "nivel_atual",
+  "ovr",
+  "stat_ritmo",
+  "stat_finalizacao",
+  "stat_passe",
+  "stat_drible",
+  "stat_defesa",
+  "stat_fisico",
+  "tema_carta",
+] as const;
+
+/** Dados de um jogador para exibir a cartinha (perfil + atributos calculados). */
+export const cartinhaPerfilQuery = (usuarioId: string | undefined) =>
+  queryOptions({
+    queryKey: ["cartinha-perfil", usuarioId],
+    enabled: !!usuarioId,
+    queryFn: async () => {
+      if (!usuarioId) return null;
+      const { data, error } = await supabase
+        .from("perfis")
+        .select(CAMPOS_CARTINHA.join(", "))
+        .eq("id", usuarioId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
