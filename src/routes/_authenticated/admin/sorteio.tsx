@@ -8,7 +8,6 @@ import {
   sortearTimes,
   sortearBaxVi,
   sortearPrimeiroChegada,
-  sortearSegundoChegada,
   substituirJogador,
   idsAlocados,
   formatarTimesParaWhatsApp,
@@ -115,8 +114,7 @@ function SorteioPage() {
         id: p.id,
         nome: p.nome_convidado ?? p.perfis?.nome ?? "Jogador",
         posicao: (p.nome_convidado ? "linha" : (p.perfis?.posicao ?? "linha")) as
-          | "goleiro"
-          | "linha",
+          "goleiro" | "linha",
         isConvidado: !!p.nome_convidado,
         timeCoracao: p.perfis?.time_coracao ?? null,
         ordemChegada: p.ordem_chegada ?? null,
@@ -125,10 +123,8 @@ function SorteioPage() {
       }));
   }, [presencas]);
 
-  const elegiveis = useMemo(
-    () => (modo === "chegada" ? jogadores.filter((j) => j.ordemChegada != null) : jogadores),
-    [jogadores, modo],
-  );
+  // O sorteio (em qualquer modo) cobre a LISTA COMPLETA de presença confirmada.
+  const elegiveis = jogadores;
 
   /** Goleiros com chegada confirmada — recebem o toggle "Fixo" antes do sorteio. */
   const goleirosChegados = useMemo(
@@ -149,9 +145,6 @@ function SorteioPage() {
   const etapa1Feita = !!estadoChegada;
   const timesAtuais = modo === "chegada" ? estadoChegada?.times : resultado?.times;
   const sobrasAtuais = modo === "chegada" ? [] : (resultado?.sobras ?? []);
-  const novosRetardatarios = estadoChegada
-    ? elegiveis.filter((j) => !estadoChegada.alocados.includes(j.id))
-    : [];
 
   const previa = useMemo(() => {
     if (modo === "baxvi") return { times: 2, reservas: 0 };
@@ -181,40 +174,19 @@ function SorteioPage() {
     toast.success(`${previa.times} times montados!`);
   };
 
-  /** 1ª etapa do sorteio por ordem de chegada (times A, B, C... + goleiros). */
-  const executarPrimeiro = () => {
+  /** Sorteio único por ordem de chegada sobre a LISTA COMPLETA de presença. */
+  const executarSorteioChegada = () => {
     if (elegiveis.length < 2) {
       toast.error("Poucos jogadores", {
-        description: "Ninguém marcou chegada por GPS ainda, ou há menos de 2 confirmados.",
+        description: "Há menos de 2 confirmados na lista.",
       });
       return;
     }
     const estado = sortearPrimeiroChegada(elegiveis, 7);
     setEstadoChegada(estado);
     setResultado(null);
-    toast.success("1º sorteio realizado!", {
-      description: `${estado.times.length} times montados na ordem de chegada.`,
-    });
-    if (estado.deficit) {
-      toast.warning("Sorteio realizado com déficit de goleiros", {
-        description: "Jogadores de linha foram escalados no gol para não travar o sorteio.",
-      });
-    }
-  };
-
-  /** 2ª etapa: encaixa apenas os retardatários (check-ins ainda sem time). */
-  const executarSegundo = () => {
-    if (!estadoChegada) return;
-    if (novosRetardatarios.length === 0) {
-      toast.message("Sem retardatários", {
-        description: "Todos os check-ins já estão alocados em times.",
-      });
-      return;
-    }
-    const estado = sortearSegundoChegada(elegiveis, estadoChegada, 7);
-    setEstadoChegada(estado);
-    toast.success("2º sorteio realizado!", {
-      description: `${novosRetardatarios.length} retardatários foram encaixados.`,
+    toast.success("Sorteio realizado!", {
+      description: `${estado.times.length} times montados com toda a lista de presença.`,
     });
     if (estado.deficit) {
       toast.warning("Sorteio realizado com déficit de goleiros", {
@@ -348,15 +320,18 @@ function SorteioPage() {
           <p className="text-xs uppercase tracking-widest text-gold">Estrutura dos times</p>
           <p className="mt-2 text-sm text-muted-foreground">
             1 goleiro + 6 jogadores de linha por time (7). Os{" "}
-            <strong className="text-foreground">12 primeiros de linha</strong> formam os Times A e B
-            (embaralhados); os demais seguem em ordem de chegada para os Times C em diante.
+            <strong className="text-foreground">12 primeiros de linha</strong> (ordem de chegada)
+            formam os Times A e B (embaralhados entre si).{" "}
+            <strong className="text-foreground">Toda a lista de presença</strong> entra no sorteio:
+            os demais são embaralhados e espalhados nos Times C em diante, evitando panelinha de
+            quem chega tarde.
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            <strong className="text-foreground">{elegiveis.length}</strong> jogadores com chegada
-            confirmada nesse momento —{" "}
+            <strong className="text-foreground">{elegiveis.length}</strong> jogadores na lista de
+            presença —{" "}
             {etapa1Feita
-              ? `${estadoChegada!.times.length} times montados • ${novosRetardatarios.length} retardatários aguardando.`
-              : "clique em “Executar 1º Sorteio” para começar."}
+              ? `${estadoChegada!.times.length} times montados.`
+              : "clique em “Sortear times” para montar todos de uma vez."}
           </p>
         </div>
       )}
@@ -404,22 +379,11 @@ function SorteioPage() {
             variant="hero"
             size="lg"
             className="w-full"
-            disabled={etapa1Feita || elegiveis.length < 2}
-            onClick={executarPrimeiro}
+            disabled={elegiveis.length < 2}
+            onClick={executarSorteioChegada}
           >
-            <Shuffle className="size-4" /> Executar 1º Sorteio (Início)
+            <Shuffle className="size-4" /> Sortear times (lista completa)
           </Button>
-          {etapa1Feita && (
-            <Button
-              variant="gold"
-              size="lg"
-              className="w-full"
-              disabled={novosRetardatarios.length === 0}
-              onClick={executarSegundo}
-            >
-              <Shuffle className="size-4" /> Executar 2º Sorteio (Retardatários)
-            </Button>
-          )}
           <div className="grid grid-cols-2 gap-2">
             <Button variant="goldOutline" size="lg" disabled={!etapa1Feita} onClick={copiar}>
               <Copy className="size-4" /> WhatsApp

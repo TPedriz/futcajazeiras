@@ -6,6 +6,9 @@
  * - Número de times = teto(total / tamanho). O último time pode ficar incompleto.
  * - Goleiros são distribuídos 1 por time; goleiros sobressalentes viram linha.
  * - Modo BAxVI: divide os associados entre Time Bahia e Time Vitória pelo time do coração.
+ * - Modo "Ordem de chegada": SORTEIO ÚNICO sobre a LISTA COMPLETA de presença. Os 12
+ *   primeiros de linha (ordem de chegada) formam os Times A e B; os demais da lista são
+ *   embaralhados e espalhados em rodízio nos times seguintes (anti-panelinha).
  */
 
 export type Posicao = "goleiro" | "linha";
@@ -33,10 +36,10 @@ export interface TimeSorteado {
 }
 
 /**
- * Estado do sorteio "Ordem de Chegada" em duas etapas.
- * - times: times montados até o momento.
- * - alocados: ids (de presença) que já têm time — base do "diff" da 2ª etapa.
- * - fixoIndice: posição do round-robin de goleiros fixos (continua na 2ª etapa).
+ * Estado do sorteio "Ordem de Chegada" (sorteio único sobre a lista completa).
+ * - times: times montados.
+ * - alocados: ids (de presença) que já têm time.
+ * - fixoIndice: posição do round-robin de goleiros fixos.
  * - deficit: true quando faltou goleiro e um jogador de linha foi promovido.
  */
 export interface SorteioEstado {
@@ -177,9 +180,9 @@ function renumerar(times: TimeSorteado[]): TimeSorteado[] {
 }
 
 /**
- * 1ª etapa do sorteio por ordem de chegada.
- * - Times A e B: 12 primeiros jogadores de linha (embaralhados, 6 para cada).
- * - Demais de linha: sequenciais em blocos -> Time C, D, ...
+ * Sorteio por ordem de chegada sobre a LISTA COMPLETA de presença.
+ * - Times A e B: 12 primeiros jogadores de linha (ordem de chegada; embaralhados, 6 para cada).
+ * - Demais da lista: embaralhados e distribuídos em rodízio nos times seguintes (anti-panelinha).
  * - Goleiros: normais em ordem de chegada; depois fixos em round-robin; déficit vira linha promovida.
  */
 export function sortearPrimeiroChegada(
@@ -203,15 +206,19 @@ export function sortearPrimeiroChegada(
       linha: l,
     });
 
-  // Times A e B prioritários: 12 primeiros de linha, embaralhados, 6 para cada.
+  // Times A e B prioritários: 12 primeiros de linha (ordem de chegada), embaralhados, 6 para cada.
   const primeiros = embaralhar(linha.slice(0, linhaPorTime * 2));
   criar(primeiros.slice(0, linhaPorTime));
   criar(primeiros.slice(linhaPorTime));
 
-  // Restante da linha: sequencial em blocos.
-  const restante = linha.slice(linhaPorTime * 2);
-  for (let i = 0; i < restante.length; i += linhaPorTime) {
-    criar(restante.slice(i, i + linhaPorTime));
+  // Demais da LISTA COMPLETA: sorteio — embaralha e distribui em rodízio pelos
+  // times seguintes, espalhando quem chegou tarde (evita "panelinha" de amigos).
+  const restante = embaralhar(linha.slice(linhaPorTime * 2));
+  const qtdTimesNovos = Math.ceil(restante.length / linhaPorTime);
+  for (let t = 0; t < qtdTimesNovos; t++) criar([]);
+  for (let i = 0; i < restante.length; i++) {
+    const alvo = times[times.length - qtdTimesNovos + (i % qtdTimesNovos)];
+    alvo.linha.push(restante[i]);
   }
 
   // Descarta times vazios (caso extremo de poucos jogadores).
@@ -224,86 +231,6 @@ export function sortearPrimeiroChegada(
   const final = distribuirSobras(renumerar(ts), sobrando);
 
   return { times: final, alocados: coletarAlocados(final), fixoIndice, deficit };
-}
-
-/**
- * 2ª etapa do sorteio por ordem de chegada (retardatários).
- * Lista alvo = check-ins atuais - já alocados. Preenche o último time incompleto,
- * cria times novos se precisar e continua o round-robin de goleiros fixos de onde parou.
- */
-export function sortearSegundoChegada(
-  jogadores: JogadorSorteio[],
-  estado: SorteioEstado,
-  tamanhoTime: number = 7,
-): SorteioEstado {
-  const tam = Math.max(2, Math.floor(tamanhoTime));
-  const linhaPorTime = tam - 1;
-
-  const alocadosSet = new Set(estado.alocados);
-  const novos = porChegada(jogadores.filter((j) => !alocadosSet.has(j.id)));
-
-  const times = estado.times.map((t) => ({ ...t, linha: [...t.linha] }));
-
-  const fixos = jogadores.filter((j) => j.posicao === "goleiro" && j.isGoleiroFixo);
-  const goleirosNovos = novos.filter((j) => j.posicao === "goleiro" && !j.isGoleiroFixo);
-  const linhaNovos = novos.filter((j) => j.posicao === "linha");
-
-  // 1) Último time incompleto recebe os retardatários de linha primeiro.
-  let idxIncompleto = -1;
-  for (let i = times.length - 1; i >= 0; i--) {
-    if (times[i].linha.length < linhaPorTime) {
-      idxIncompleto = i;
-      break;
-    }
-  }
-  let iLinha = 0;
-  if (idxIncompleto >= 0) {
-    const t = times[idxIncompleto];
-    while (t.linha.length < linhaPorTime && iLinha < linhaNovos.length) {
-      t.linha.push(linhaNovos[iLinha++]);
-    }
-  }
-
-  // 2) Sobra de linha: novos times.
-  while (iLinha < linhaNovos.length) {
-    const bloco = linhaNovos.slice(iLinha, iLinha + linhaPorTime);
-    iLinha += bloco.length;
-    times.push({
-      numero: times.length + 1,
-      nome: `Time ${LETRAS[times.length] ?? times.length + 1}`,
-      goleiro: null,
-      linha: bloco,
-    });
-  }
-
-  // 3) Goleiros: normais recém-chegados; depois fixos continuando o round-robin.
-  const { fixoIndice, deficit, sobrando } = alocarGoleiros(
-    times,
-    goleirosNovos,
-    fixos,
-    estado.fixoIndice,
-  );
-
-  // Goleiros fixos que já foram alocados na 1ª etapa não podem voltar (evita duplicidade).
-  const jaAlocados = new Set(estado.alocados);
-  const finalTmp = distribuirSobras(
-    renumerar(times),
-    sobrando.filter((s) => !jaAlocados.has(s.id)),
-  );
-
-  // Ninguém fica de fora: retardatário que ainda não entrou em time vira linha.
-  const idsTmp = new Set(coletarAlocados(finalTmp));
-  const restantes = novos
-    .filter((n) => !idsTmp.has(n.id))
-    .map((n) => ({ ...n, posicao: "linha" as const }));
-  const final = distribuirSobras(finalTmp, restantes);
-
-  return {
-    times: final,
-    alocados: coletarAlocados(final),
-    fixoIndice,
-    deficit: estado.deficit || deficit,
-  };
 }
 
 export function sortearTimes(
@@ -410,7 +337,9 @@ export function formatarTimesParaWhatsApp(
 }
 
 /**
- * Modo "Ordem de Chegada" em duas etapas — implementado por:
- * - sortearPrimeiroChegada()  -> 1ª etapa (times A, B, C... + goleiros fixos)
- * - sortearSegundoChegada()   -> 2ª etapa (diff/retardatários)
+ * Modo "Ordem de Chegada" — sorteio ÚNICO sobre a lista completa de presença,
+ * implementado por sortearPrimeiroChegada():
+ * - Times A e B: 12 primeiros de linha (ordem de chegada), embaralhados entre si.
+ * - Demais da lista: embaralhados e distribuídos em rodízio nos times seguintes
+ *   (anti-panelinha: quem chega tarde não se agrupa num time só).
  */

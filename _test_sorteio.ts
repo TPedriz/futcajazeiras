@@ -4,7 +4,6 @@ import {
   sortearTimes,
   sortearBaxVi,
   sortearPrimeiroChegada,
-  sortearSegundoChegada,
   substituirJogador,
   idsAlocados,
   type JogadorSorteio,
@@ -63,42 +62,45 @@ function gerarGoleiro(n, prefixo = "G", fixo = false) {
   ok("aleatório: ninguém ficou de fora (soma = 18)", sizes.reduce((a, b) => a + b, 0) === 18);
 }
 
-// ---------- 2. Ordem de chegada — 1ª etapa ----------
+// ---------- 2. Ordem de chegada — sorteio único da LISTA COMPLETA ----------
 {
-  // 14 primeiros: 12 linha + 2 goleiros
+  // 14 presentes (12 linha + 2 goleiros) + 6 na lista que ainda não chegaram (sem GPS)
   const linha = gerarLinha(12, "L");
   const goleiros = gerarGoleiro(2, "G");
-  const estado = sortearPrimeiroChegada([...linha, ...goleiros], 7);
-  const alocados = idsAlocados(estado.times);
-  ok("1ª etapa: todos os 14 alocados", alocados.length === 14);
-  ok("1ª etapa: 2 times (A e B)", estado.times.length === 2);
+  const naLista = gerarLinha(6, "N").map((j) => ({ ...j, chegouEm: null, ordemChegada: null }));
+  const todos = [...linha, ...goleiros, ...naLista];
+  const estado = sortearPrimeiroChegada(todos, 7);
+  const alocados = new Set(idsAlocados(estado.times));
+  ok("chegada: todos os 20 da lista alocados", alocados.size === 20);
+  ok("chegada: sem duplicidade", alocados.size === new Set(todos.map((j) => j.id)).size);
+  ok("chegada: Times A e B montados", estado.times.length >= 2);
+  const tA = estado.times[0];
+  ok("chegada: Time A tem 7 (goleiro + 6 linha)", !!tA.goleiro && tA.linha.length === 6);
+  // Quem ainda não chegou entra nos times seguintes (não fica de fora)
   ok(
-    "1ª etapa: cada time tem 7 jogadores",
-    estado.times.every((t) => t.linha.length === 6 && t.goleiro),
+    "chegada: não-chegados entram nos times seguintes",
+    estado.times
+      .slice(2)
+      .flatMap((t) => t.linha)
+      .some((j) => j.id.startsWith("N")),
   );
-  ok("1ª etapa: 1 goleiro por time", estado.times.filter((t) => t.goleiro).length === 2);
+  const total = estado.times.reduce((s, t) => s + (t.goleiro ? 1 : 0) + t.linha.length, 0);
+  ok("chegada: soma dos times = 20", total === 20);
 }
 
-// ---------- 3. 2ª etapa: retardatários (o caso que o usuário citou) ----------
+// ---------- 3. Anti-panelinha: retardatários espalhados, não em um time só ----------
 {
-  const linha = gerarLinha(12, "L");
-  const goleiros = gerarGoleiro(2, "G");
-  const estado1 = sortearPrimeiroChegada([...linha, ...goleiros], 7);
-
-  // Chegam mais 4 retardatários (3 linha + 1 goleiro) DEPOIS do 1º sorteio
-  const retardatarios = [...gerarLinha(3, "R"), ...gerarGoleiro(1, "GR", false)];
-  const todos = [...linha, ...goleiros, ...retardatarios];
-  const estado2 = sortearSegundoChegada(todos, estado1, 7);
-
-  const alocados2 = new Set(idsAlocados(estado2.times));
-  ok("2ª etapa: todos os 18 alocados", alocados2.size === 18);
-  ok("2ª etapa: sem duplicidade", alocados2.size === new Set(todos.map((j) => j.id)).size);
-  ok("2ª etapa: retardatário de linha entrou em time", alocados2.has("R1"));
-  ok("2ª etapa: goleiro retardatário entrou", alocados2.has("GR1"));
-  ok(
-    "2ª etapa: time A/B mantiveram seus 7",
-    estado2.times.slice(0, 2).every((t) => t.linha.length === 6 && t.goleiro),
-  );
+  // 12 que chegaram cedo + 12 que chegaram tarde (todos na lista completa)
+  const primeiros = gerarLinha(12, "L");
+  const atrasados = gerarLinha(12, "T").map((j) => ({
+    ...j,
+    chegouEm: new Date(2026, 0, 1, 23).toISOString(), // chegaram no final
+    ordemChegada: 500 + Number(j.id.slice(1)),
+  }));
+  const estado = sortearPrimeiroChegada([...primeiros, ...atrasados], 7);
+  const timesComAtrasados = estado.times.filter((t) => t.linha.some((j) => j.id.startsWith("T")));
+  ok("anti-panelinha: atrasados espalhados em mais de um time", timesComAtrasados.length > 1);
+  ok("anti-panelinha: todos os 24 alocados", idsAlocados(estado.times).length === 24);
 }
 
 // ---------- 4. Substituição em qualquer sorteio ----------
@@ -154,25 +156,7 @@ function gerarGoleiro(n, prefixo = "G", fixo = false) {
   );
 }
 
-// ---------- 6. Substituição na 2ª etapa (retardatários já sorteados) ----------
-{
-  const linha = gerarLinha(12, "L");
-  const goleiros = gerarGoleiro(2, "G");
-  const estado1 = sortearPrimeiroChegada([...linha, ...goleiros], 7);
-  const retardatarios = gerarLinha(2, "R");
-  const estado2 = sortearSegundoChegada([...linha, ...goleiros, ...retardatarios], estado1, 7);
-
-  // Troca um dos retardatários recém-sorteados por outro disponível
-  const reserva2 = { id: "RES2", nome: "Reserva 2", posicao: "linha", isConvidado: false };
-  const sair = estado2.times[2].linha[0].id; // retardatário no time C
-  const novos = substituirJogador(estado2.times, sair, reserva2);
-  const alocados = new Set(idsAlocados(novos));
-  ok("substituir 2ª etapa: reserva entrou", alocados.has("RES2"));
-  ok("substituir 2ª etapa: sorteado antigo saiu", !alocados.has(sair));
-  ok("substituir 2ª etapa: total mantido", alocados.size === 16);
-}
-
-// ---------- 7. BAxVI ----------
+// ---------- 6. BAxVI ----------
 {
   const bahia = gerarLinha(8, "B").map((j) => ({ ...j, timeCoracao: "bahia" }));
   const vitoria = gerarLinha(6, "V").map((j) => ({ ...j, timeCoracao: "vitoria" }));
@@ -186,7 +170,7 @@ function gerarGoleiro(n, prefixo = "G", fixo = false) {
   ok("baxvi: 2 ficam sem time", r.semTime.length === 2);
 }
 
-// ---------- 8. Convidados aprovados entram; pendentes não ----------
+// ---------- 7. Convidados aprovados entram; pendentes não ----------
 {
   const aprovado = { id: "C1", nome: "Conv Aprovado", posicao: "linha", isConvidado: true };
   const r = sortearTimes([...gerarLinha(12), aprovado], 7);
