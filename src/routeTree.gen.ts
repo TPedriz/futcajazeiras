@@ -34,6 +34,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AtualizarCadastroRoute = AtualizarCadastroRouteImport.update({
+  id: '/atualizar-cadastro',
+  path: '/atualizar-cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -133,7 +138,10 @@ const AuthenticatedAdminAjudaRoute = AuthenticatedAdminAjudaRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/atualizar-cadastro': typeof AtualizarCadastroRoute
   '/auth': typeof AuthRoute
+  '/esqueci-senha': typeof EsqueciSenhaRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/ajuda': typeof AuthenticatedAjudaRoute
@@ -148,12 +156,16 @@ export interface FileRoutesByFullPath {
   '/admin/resultados': typeof AuthenticatedAdminResultadosRoute
   '/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/auth/confirmar-email': typeof ApiAuthConfirmarEmailRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/atualizar-cadastro': typeof AtualizarCadastroRoute
   '/auth': typeof AuthRoute
+  '/esqueci-senha': typeof EsqueciSenhaRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ajuda': typeof AuthenticatedAjudaRoute
   '/baba': typeof AuthenticatedBabaRoute
@@ -167,6 +179,7 @@ export interface FileRoutesByTo {
   '/admin/resultados': typeof AuthenticatedAdminResultadosRoute
   '/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/auth/confirmar-email': typeof ApiAuthConfirmarEmailRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
@@ -174,7 +187,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/atualizar-cadastro': typeof AtualizarCadastroRoute
   '/auth': typeof AuthRoute
+  '/esqueci-senha': typeof EsqueciSenhaRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/ajuda': typeof AuthenticatedAjudaRoute
@@ -189,6 +205,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/resultados': typeof AuthenticatedAdminResultadosRoute
   '/_authenticated/admin/sorteio': typeof AuthenticatedAdminSorteioRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/auth/confirmar-email': typeof ApiAuthConfirmarEmailRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -196,7 +213,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/atualizar-cadastro'
     | '/auth'
+    | '/esqueci-senha'
+    | '/recuperar-senha'
     | '/sitemap.xml'
     | '/admin'
     | '/ajuda'
@@ -211,12 +231,16 @@ export interface FileRouteTypes {
     | '/admin/resultados'
     | '/admin/sorteio'
     | '/admin/usuarios'
+    | '/api/auth/confirmar-email'
     | '/api/public/mercadopago-webhook'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/atualizar-cadastro'
     | '/auth'
+    | '/esqueci-senha'
+    | '/recuperar-senha'
     | '/sitemap.xml'
     | '/ajuda'
     | '/baba'
@@ -230,13 +254,17 @@ export interface FileRouteTypes {
     | '/admin/resultados'
     | '/admin/sorteio'
     | '/admin/usuarios'
+    | '/api/auth/confirmar-email'
     | '/api/public/mercadopago-webhook'
     | '/admin'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/atualizar-cadastro'
     | '/auth'
+    | '/esqueci-senha'
+    | '/recuperar-senha'
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/ajuda'
@@ -251,6 +279,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/resultados'
     | '/_authenticated/admin/sorteio'
     | '/_authenticated/admin/usuarios'
+    | '/api/auth/confirmar-email'
     | '/api/public/mercadopago-webhook'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
@@ -258,8 +287,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AtualizarCadastroRoute: typeof AtualizarCadastroRoute
   AuthRoute: typeof AuthRoute
+  EsqueciSenhaRoute: typeof EsqueciSenhaRoute
+  RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiAuthConfirmarEmailRoute: typeof ApiAuthConfirmarEmailRoute
   ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
 }
 
@@ -270,6 +303,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/atualizar-cadastro': {
+      id: '/atualizar-cadastro'
+      path: '/atualizar-cadastro'
+      fullPath: '/atualizar-cadastro'
+      preLoaderRoute: typeof AtualizarCadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -450,8 +490,12 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AtualizarCadastroRoute: AtualizarCadastroRoute,
   AuthRoute: AuthRoute,
+  EsqueciSenhaRoute: EsqueciSenhaRoute,
+  RecuperarSenhaRoute: RecuperarSenhaRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiAuthConfirmarEmailRoute: ApiAuthConfirmarEmailRoute,
   ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
 }
 export const routeTree = rootRouteImport

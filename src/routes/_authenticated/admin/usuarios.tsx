@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { gerarSenhaTemporaria } from "@/lib/auth-admin.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   todosAssociadosQuery,
   papeisTodosQuery,
@@ -27,7 +36,18 @@ import { AprovacoesConvidados } from "@/components/AprovacoesConvidados";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formataTelefone, normalizaTelefone } from "@/lib/telefone";
-import { Pencil, UserMinus, Save, X, Power, Gavel, Trophy, SlidersHorizontal } from "lucide-react";
+import {
+  Pencil,
+  UserMinus,
+  Save,
+  X,
+  Power,
+  Gavel,
+  Trophy,
+  SlidersHorizontal,
+  KeyRound,
+  Copy,
+} from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -44,6 +64,7 @@ function UsuariosPage() {
   const { data: todas } = useQuery(todasSessoesQuery());
   const { data: ajustes } = useQuery(ajustesBabasConvidadoQuery());
   const qc = useQueryClient();
+  const gerarSenha = useServerFn(gerarSenhaTemporaria);
 
   const [editando, setEditando] = useState<string | null>(null);
   const [nome, setNome] = useState("");
@@ -68,6 +89,7 @@ function UsuariosPage() {
   const [ajusteBabasUserId, setAjusteBabasUserId] = useState("");
   const [ajusteBabasValor, setAjusteBabasValor] = useState("");
   const [ajusteBabasObs, setAjusteBabasObs] = useState("");
+  const [senhaTemporaria, setSenhaTemporaria] = useState<string | null>(null);
 
   const babasFuturos = (todas ?? [])
     .filter((b) => new Date(b.data_horario).getTime() > Date.now())
@@ -244,6 +266,20 @@ function UsuariosPage() {
 
   const naLista = (id: string) =>
     (presencas ?? []).some((p) => p.usuario_id === id && !p.nome_convidado);
+
+  const gerarSenhaTemporariaMut = useMutation({
+    mutationFn: async (usuarioId: string) => {
+      const res = await gerarSenha({ data: { usuarioId } });
+      if (!res.ok) {
+        if (res.motivo === "forbidden")
+          throw new Error("Acesso negado: apenas o desenvolvedor pode gerar senhas temporárias.");
+        throw new Error("Não foi possível gerar a senha temporária.");
+      }
+      return res.senha;
+    },
+    onSuccess: (senha) => setSenhaTemporaria(senha),
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
 
   return (
     <div className="space-y-4">
@@ -638,12 +674,53 @@ function UsuariosPage() {
                   >
                     <UserMinus className="size-4" />
                   </Button>
+                  <Button
+                    variant="goldOutline"
+                    size="icon"
+                    aria-label={`Gerar senha temporária para ${p.nome}`}
+                    title="Gerar senha temporária"
+                    disabled={gerarSenhaTemporariaMut.isPending}
+                    onClick={() => gerarSenhaTemporariaMut.mutate(p.id)}
+                  >
+                    <KeyRound className="size-4" />
+                  </Button>
                 </div>
               )}
             </li>
           );
         })}
       </ul>
+
+      <Dialog open={!!senhaTemporaria} onOpenChange={(o) => !o && setSenhaTemporaria(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Senha temporária gerada</DialogTitle>
+            <DialogDescription>
+              Compartilhe com o jogador. Ele usará o WhatsApp como login e esta senha para entrar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-gold/30 bg-gold/5 p-4 text-center">
+              <p className="break-all font-mono text-lg font-bold tracking-widest text-foreground">
+                {senhaTemporaria}
+              </p>
+            </div>
+            <Button
+              variant="gold"
+              className="w-full"
+              onClick={() => {
+                if (senhaTemporaria) void navigator.clipboard.writeText(senhaTemporaria);
+                toast.success("Senha copiada!");
+              }}
+            >
+              <Copy className="size-4" /> Copiar senha
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => setSenhaTemporaria(null)}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
