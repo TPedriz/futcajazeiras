@@ -608,6 +608,23 @@ export const convidadosDaCasaQuery = () =>
     },
   });
 
+/**
+ * Nomes dos convidados por id. Busca direta (colunas liberadas ao associado);
+ * o join embutido do PostgREST não é permitido nessa tabela.
+ */
+async function nomesConvidados(ids: string[]) {
+  const mapa = new Map<string, { id: string; nome: string }>();
+  const unicos = Array.from(new Set(ids.filter(Boolean)));
+  if (unicos.length === 0) return mapa;
+  const { data, error } = await supabase
+    .from("convidados_cadastro")
+    .select("id, nome")
+    .in("id", unicos);
+  if (error) throw error;
+  for (const c of data ?? []) mapa.set(c.id, c);
+  return mapa;
+}
+
 /** Pedidos de convidado que eu (associado) fiz para um baba. */
 export const meusPedidosConvidadoQuery = (userId: string | undefined, babaId: string | undefined) =>
   queryOptions({
@@ -617,12 +634,16 @@ export const meusPedidosConvidadoQuery = (userId: string | undefined, babaId: st
       if (!userId || !babaId) return [];
       const { data, error } = await supabase
         .from("pedidos_convidado")
-        .select("id, status, presenca_id, criado_em, convidados_cadastro(id, nome)")
+        .select("id, status, presenca_id, criado_em, convidado_id")
         .eq("anfitriao_id", userId)
         .eq("baba_id", babaId)
         .order("criado_em", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      const mapa = await nomesConvidados((data ?? []).map((p) => p.convidado_id));
+      return (data ?? []).map((p) => ({
+        ...p,
+        convidados_cadastro: mapa.get(p.convidado_id) ?? null,
+      }));
     },
   });
 
@@ -631,12 +652,19 @@ export const pedidosConvidadoPendentesQuery = () =>
   queryOptions({
     queryKey: ["pedidos-convidado-pendentes"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: brutos, error } = await supabase
         .from("pedidos_convidado")
-        .select("id, status, criado_em, baba_id, anfitriao_id, convidados_cadastro(id, nome)")
+        .select("id, status, criado_em, baba_id, anfitriao_id, convidado_id")
         .eq("status", "pendente")
         .order("criado_em", { ascending: false });
       if (error) throw error;
+
+      const mapa = await nomesConvidados((brutos ?? []).map((p) => p.convidado_id));
+      const data = (brutos ?? []).map((p) => ({
+        ...p,
+        convidados_cadastro: mapa.get(p.convidado_id) ?? null,
+      }));
+
 
       const ids = Array.from(new Set((data ?? []).map((p) => p.anfitriao_id)));
       const nomes = new Map<string, string>();

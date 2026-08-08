@@ -416,79 +416,79 @@ export type Database = {
       };
       perfis: {
         Row: {
-          ativo: boolean;
-          atualizado_em: string;
-          avatar_url: string | null;
-          criado_em: string;
-          email: string | null;
-          email_confirmado: boolean;
-          id: string;
-          nivel_atual: number;
-          nome: string;
-          ovr: number;
-          posicao: Database["public"]["Enums"]["posicao_jogador"];
-          stat_defesa: number;
-          stat_drible: number;
-          stat_finalizacao: number;
-          stat_fisico: number;
-          stat_passe: number;
-          stat_ritmo: number;
-          status_pagamento: Database["public"]["Enums"]["status_pagamento"];
-          telefone: string;
-          tema_carta: string;
-          time_coracao: Database["public"]["Enums"]["time_coracao"] | null;
-          xp_atual: number;
-        };
+          ativo: boolean
+          atualizado_em: string
+          avatar_url: string | null
+          criado_em: string
+          email: string | null
+          email_confirmado: boolean
+          id: string
+          nivel_atual: number
+          nome: string
+          ovr: number
+          posicao: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa: number
+          stat_drible: number
+          stat_finalizacao: number
+          stat_fisico: number
+          stat_passe: number
+          stat_ritmo: number
+          status_pagamento: Database["public"]["Enums"]["status_pagamento"]
+          telefone: string
+          tema_carta: string
+          time_coracao: Database["public"]["Enums"]["time_coracao"] | null
+          xp_atual: number
+        }
         Insert: {
-          ativo?: boolean;
-          atualizado_em?: string;
-          avatar_url?: string | null;
-          criado_em?: string;
-          email?: string | null;
-          email_confirmado?: boolean;
-          id: string;
-          nivel_atual?: number;
-          nome: string;
-          ovr?: number;
-          posicao?: Database["public"]["Enums"]["posicao_jogador"];
-          stat_defesa?: number;
-          stat_drible?: number;
-          stat_finalizacao?: number;
-          stat_fisico?: number;
-          stat_passe?: number;
-          stat_ritmo?: number;
-          status_pagamento?: Database["public"]["Enums"]["status_pagamento"];
-          telefone?: string;
-          tema_carta?: string;
-          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null;
-          xp_atual?: number;
-        };
+          ativo?: boolean
+          atualizado_em?: string
+          avatar_url?: string | null
+          criado_em?: string
+          email?: string | null
+          email_confirmado?: boolean
+          id: string
+          nivel_atual?: number
+          nome: string
+          ovr?: number
+          posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa?: number
+          stat_drible?: number
+          stat_finalizacao?: number
+          stat_fisico?: number
+          stat_passe?: number
+          stat_ritmo?: number
+          status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
+          telefone?: string
+          tema_carta?: string
+          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
+          xp_atual?: number
+        }
         Update: {
-          ativo?: boolean;
-          atualizado_em?: string;
-          avatar_url?: string | null;
-          criado_em?: string;
-          email?: string | null;
-          email_confirmado?: boolean;
-          id?: string;
-          nivel_atual?: number;
-          nome?: string;
-          ovr?: number;
-          posicao?: Database["public"]["Enums"]["posicao_jogador"];
-          stat_defesa?: number;
-          stat_drible?: number;
-          stat_finalizacao?: number;
-          stat_fisico?: number;
-          stat_passe?: number;
-          stat_ritmo?: number;
-          status_pagamento?: Database["public"]["Enums"]["status_pagamento"];
-          telefone?: string;
-          tema_carta?: string;
-          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null;
-          xp_atual?: number;
-        };
-        Relationships: [];
-      };
+          ativo?: boolean
+          atualizado_em?: string
+          avatar_url?: string | null
+          criado_em?: string
+          email?: string | null
+          email_confirmado?: boolean
+          id?: string
+          nivel_atual?: number
+          nome?: string
+          ovr?: number
+          posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa?: number
+          stat_drible?: number
+          stat_finalizacao?: number
+          stat_fisico?: number
+          stat_passe?: number
+          stat_ritmo?: number
+          status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
+          telefone?: string
+          tema_carta?: string
+          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
+          xp_atual?: number
+        }
+        Relationships: []
+      }
       perfis_publicos: {
         Row: {
           ativo: boolean;
@@ -980,9 +980,42 @@ export type Database = {
             referencedRelation: "perfis";
             referencedColumns: ["id"];
           },
-        ];
-      };
-    };
+        ]
+      }
+      verificacoes_email: {
+        Row: {
+          criado_em: string
+          email: string
+          expira_em: string
+          id: string
+          tipo: string
+          token_hash: string
+          usado_em: string | null
+          usuario_id: string
+        }
+        Insert: {
+          criado_em?: string
+          email: string
+          expira_em: string
+          id?: string
+          tipo?: string
+          token_hash: string
+          usado_em?: string | null
+          usuario_id: string
+        }
+        Update: {
+          criado_em?: string
+          email?: string
+          expira_em?: string
+          id?: string
+          tipo?: string
+          token_hash?: string
+          usado_em?: string | null
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+    }
     Views: {
       ranking_mensal: {
         Row: {
