@@ -20,7 +20,17 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Goal, Handshake, Trophy, Trash2, Plus, Save, User } from "lucide-react";
+import {
+  Goal,
+  Handshake,
+  Trophy,
+  Trash2,
+  Plus,
+  Save,
+  User,
+  ShieldAlert,
+  CircleSlash,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/estatisticas")({
   loader: ({ context }) =>
@@ -37,7 +47,9 @@ type Campo =
   | "penaltis_defendidos"
   | "cartoes_amarelos"
   | "cartoes_azuis"
-  | "cartoes_vermelhos";
+  | "cartoes_vermelhos"
+  | "faltas"
+  | "gols_contra";
 
 const CAMPOS: { campo: Campo; rotulo: string; icone: typeof Goal; cor: string }[] = [
   { campo: "gols", rotulo: "Gols", icone: Goal, cor: "text-gold" },
@@ -46,6 +58,8 @@ const CAMPOS: { campo: Campo; rotulo: string; icone: typeof Goal; cor: string }[
   { campo: "cartoes_amarelos", rotulo: "Amarelos", icone: Trophy, cor: "text-yellow-400" },
   { campo: "cartoes_azuis", rotulo: "Azuis", icone: Trophy, cor: "text-blue-400" },
   { campo: "cartoes_vermelhos", rotulo: "Vermelhos", icone: Trophy, cor: "text-destructive" },
+  { campo: "faltas", rotulo: "Faltas", icone: ShieldAlert, cor: "text-amber-500" },
+  { campo: "gols_contra", rotulo: "Gols contra", icone: CircleSlash, cor: "text-slate-400" },
 ];
 
 function EstatisticasPage() {
@@ -66,6 +80,8 @@ function EstatisticasPage() {
     cartoes_amarelos: 0,
     cartoes_azuis: 0,
     cartoes_vermelhos: 0,
+    faltas: 0,
+    gols_contra: 0,
   });
 
   const definirUsuario = (id: string) => {
@@ -78,6 +94,8 @@ function EstatisticasPage() {
       cartoes_amarelos: s?.cartoes_amarelos ?? 0,
       cartoes_azuis: s?.cartoes_azuis ?? 0,
       cartoes_vermelhos: s?.cartoes_vermelhos ?? 0,
+      faltas: s?.faltas ?? 0,
+      gols_contra: s?.gols_contra ?? 0,
     });
   };
 
@@ -124,6 +142,8 @@ function EstatisticasPage() {
         cartoes_amarelos: 0,
         cartoes_azuis: 0,
         cartoes_vermelhos: 0,
+        faltas: 0,
+        gols_contra: 0,
       });
       invalidar();
     },
@@ -190,7 +210,7 @@ function EstatisticasPage() {
                 <span className="ml-2 text-[11px] text-muted-foreground">(já tem lançamento)</span>
               )}
             </p>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {CAMPOS.map(({ campo, rotulo, icone: Icone, cor }) => (
                 <div key={campo} className="rounded-md bg-background p-2 text-center">
                   <p
@@ -282,7 +302,8 @@ function EstatisticasPage() {
                   </span>
                   <span className="text-[11px] text-muted-foreground">
                     ⚽ {s.gols} • 🅰️ {s.assistencias} • 🟨 {s.cartoes_amarelos} • 🟦{" "}
-                    {s.cartoes_azuis} • 🟥 {s.cartoes_vermelhos}
+                    {s.cartoes_azuis} • 🟥 {s.cartoes_vermelhos} • 🟫 {s.faltas} • ⛔{" "}
+                    {s.gols_contra}
                   </span>
                 </button>
               </li>

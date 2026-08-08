@@ -129,7 +129,7 @@ function LandingPage() {
           <FeatureCard
             Icon={Zap}
             title="XP e níveis"
-            text="Cada presença confirmada vale +10 XP, cada gol +5 XP e cada assistência +3 XP. Suba de nível e acompanhe seu progresso no Perfil."
+            text="Cada presença confirmada vale +15 XP, cada gol +8 XP e cada assistência +5 XP. Suba de nível e acompanhe seu progresso no Perfil."
           />
           <FeatureCard
             Icon={Sparkles}

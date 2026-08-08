@@ -121,7 +121,9 @@ function ResultadosPage() {
         | "penaltis_defendidos"
         | "cartoes_amarelos"
         | "cartoes_azuis"
-        | "cartoes_vermelhos";
+        | "cartoes_vermelhos"
+        | "faltas"
+        | "gols_contra";
       delta: number;
     }) => {
       if (!babaId) throw new Error("Selecione um baba");
@@ -133,6 +135,8 @@ function ResultadosPage() {
         cartoes_amarelos: atual?.cartoes_amarelos ?? 0,
         cartoes_azuis: atual?.cartoes_azuis ?? 0,
         cartoes_vermelhos: atual?.cartoes_vermelhos ?? 0,
+        faltas: atual?.faltas ?? 0,
+        gols_contra: atual?.gols_contra ?? 0,
       };
       const novo = { ...base, [campo]: Math.max(0, base[campo] + delta) };
       const { error } = await supabase
@@ -289,7 +293,7 @@ function ResultadosPage() {
                     )}
                   </div>
                   {j.usuario_id && (
-                    <div className="mt-2 grid grid-cols-6 gap-1">
+                    <div className="mt-2 grid grid-cols-4 gap-1">
                       <StatBtn
                         label="Gol"
                         valor={s?.gols ?? 0}
@@ -400,6 +404,44 @@ function ResultadosPage() {
                           lancarEstatistica.mutate({
                             usuarioId: j.usuario_id!,
                             campo: "cartoes_vermelhos",
+                            delta: -1,
+                          })
+                        }
+                      />
+                      <StatBtn
+                        label="Faltas"
+                        valor={s?.faltas ?? 0}
+                        cor="bg-amber-600/15 text-amber-500"
+                        onAdd={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "faltas",
+                            delta: 1,
+                          })
+                        }
+                        onSub={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "faltas",
+                            delta: -1,
+                          })
+                        }
+                      />
+                      <StatBtn
+                        label="G. contra"
+                        valor={s?.gols_contra ?? 0}
+                        cor="bg-slate-500/15 text-slate-400"
+                        onAdd={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "gols_contra",
+                            delta: 1,
+                          })
+                        }
+                        onSub={() =>
+                          lancarEstatistica.mutate({
+                            usuarioId: j.usuario_id!,
+                            campo: "gols_contra",
                             delta: -1,
                           })
                         }

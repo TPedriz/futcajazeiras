@@ -9,6 +9,7 @@ import { SinoNotificacoes } from "@/components/SinoNotificacoes";
 import { AvatarJogador } from "@/components/AvatarJogador";
 import { RodapeApp } from "@/components/RodapeApp";
 import { CartinhaProvider } from "@/components/CartinhaModal";
+import { BubbleConquista } from "@/components/BubbleConquista";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -67,6 +68,7 @@ function AuthenticatedLayout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <BubbleConquista userId={data?.user.id} />
       {/* Header mobile */}
       <header className="sticky top-0 z-30 border-b border-border/50 bg-surface/95 backdrop-blur-lg">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">

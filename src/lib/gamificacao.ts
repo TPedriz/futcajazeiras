@@ -108,9 +108,9 @@ export function iconeDestaque(categoria: CategoriaDestaque): string {
 
 /** XP concedido por evento (espelha os triggers do banco). */
 export const XP_POR_EVENTO = {
-  presenca: 10,
-  gol: 5,
-  assistencia: 3,
+  presenca: 15,
+  gol: 8,
+  assistencia: 5,
 } as const;
 
 export type EventoXp = keyof typeof XP_POR_EVENTO;
@@ -121,17 +121,18 @@ export function ganhoXp(evento: EventoXp): number {
 
 /**
  * XP cumulativo necessário para alcançar um nível.
- * Regra do banco: 100 * nivel * (nivel - 1) / 2.
+ * Regra do banco: 75 * nivel * (nivel - 1) / 2.
+ * Nível 1 = 0, nível 2 = 75, nível 3 = 225, nível 4 = 450, nível 5 = 750...
  */
 export function xpNecessariaParaNivel(nivel: number): number {
   if (nivel <= 1) return 0;
-  return (100 * nivel * (nivel - 1)) / 2;
+  return (75 * nivel * (nivel - 1)) / 2;
 }
 
 /** Nível correspondente a um total de XP (inverso de xpNecessariaParaNivel). */
 export function nivelParaXp(xp: number): number {
   const seguro = Math.max(0, Math.floor(xp));
-  return Math.floor((1 + Math.sqrt(1 + (8 * seguro) / 100)) / 2);
+  return Math.floor((1 + Math.sqrt(1 + (8 * seguro) / 75)) / 2);
 }
 
 export interface ProgressoNivel {

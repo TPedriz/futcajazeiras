@@ -32,7 +32,7 @@ O diferencial que torna o baba viciante:
 
 | Recurso                       | Descrição                                                                                                      |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| ⚡ **XP e níveis**            | +10 XP por presença, +5 por gol, +3 por assistência. Suba de nível acompanhando a barra de progresso.          |
+| ⚡ **XP e níveis**            | +15 XP por presença, +8 por gol, +5 por assistência. Suba de nível acompanhando a barra de progresso.          |
 | 🏅 **Conquistas**             | Medalhas automáticas (Primeira Presença, Artilheiro, Nível 3, Veterano…) com notificação no sino.              |
 | ⭐ **Conquistas em destaque** | Escolha até 3 medalhas para exibir ao lado do seu nome em todo o app.                                          |
 | 🃏 **Cartinhas de jogador**   | OVR e atributos (RIT, FIN, PAS, DRI, DEF, FÍS) calculados do desempenho real, com visual de Ultimate Team.     |

@@ -103,21 +103,21 @@ ok("d: sem destaques", destaquesDoUsuario(linhas, "d", 3).length === 0);
 ok("usuário inexistente: sem destaques", destaquesDoUsuario(linhas, "zzz", 3).length === 0);
 
 // ---------- XP por evento ----------
-ok("xp presença = 10", ganhoXp("presenca") === 10);
-ok("xp gol = 5", ganhoXp("gol") === 5);
-ok("xp assistência = 3", ganhoXp("assistencia") === 3);
+ok("xp presença = 15", ganhoXp("presenca") === 15);
+ok("xp gol = 8", ganhoXp("gol") === 8);
+ok("xp assistência = 5", ganhoXp("assistencia") === 5);
 
-// ---------- Níveis (regra do banco: 100 * n * (n-1) / 2) ----------
+// ---------- Níveis (regra do banco: 75 * n * (n-1) / 2) ----------
 ok("nivel 1 exige 0 xp", xpNecessariaParaNivel(1) === 0);
-ok("nivel 2 exige 100 xp", xpNecessariaParaNivel(2) === 100);
-ok("nivel 3 exige 300 xp", xpNecessariaParaNivel(3) === 300);
-ok("nivel 5 exige 1000 xp", xpNecessariaParaNivel(5) === 1000);
+ok("nivel 2 exige 75 xp", xpNecessariaParaNivel(2) === 75);
+ok("nivel 3 exige 225 xp", xpNecessariaParaNivel(3) === 225);
+ok("nivel 5 exige 750 xp", xpNecessariaParaNivel(5) === 750);
 
 ok("0 xp -> nivel 1", nivelParaXp(0) === 1);
-ok("99 xp -> nivel 1", nivelParaXp(99) === 1);
-ok("100 xp -> nivel 2", nivelParaXp(100) === 2);
-ok("299 xp -> nivel 2", nivelParaXp(299) === 2);
-ok("300 xp -> nivel 3", nivelParaXp(300) === 3);
+ok("74 xp -> nivel 1", nivelParaXp(74) === 1);
+ok("75 xp -> nivel 2", nivelParaXp(75) === 2);
+ok("224 xp -> nivel 2", nivelParaXp(224) === 2);
+ok("225 xp -> nivel 3", nivelParaXp(225) === 3);
 ok("1000 xp -> nivel 5", nivelParaXp(1000) === 5);
 ok("xp negativo -> nivel 1", nivelParaXp(-50) === 1);
 
@@ -125,18 +125,18 @@ ok("xp negativo -> nivel 1", nivelParaXp(-50) === 1);
 {
   const p = progressoNivel(150);
   ok("150 xp -> nivel 2", p.nivel === 2);
-  ok("150 xp: xpNoNivel = 50", p.xpNoNivel === 50);
-  ok("nivel 2: xpParaProximo = 200 (300 - 100)", p.xpParaProximo === 200);
-  ok("nivel 2: progresso = 0.25", Math.abs(p.progresso - 0.25) < 1e-9);
+  ok("150 xp: xpNoNivel = 75", p.xpNoNivel === 75);
+  ok("nivel 2: xpParaProximo = 150 (225 - 75)", p.xpParaProximo === 150);
+  ok("nivel 2: progresso = 0.5", Math.abs(p.progresso - 0.5) < 1e-9);
 }
 {
   const p = progressoNivel(0);
   ok("0 xp: progresso = 0", p.progresso === 0);
-  ok("0 xp: xpParaProximo = 100", p.xpParaProximo === 100);
+  ok("0 xp: xpParaProximo = 75", p.xpParaProximo === 75);
 }
 {
-  const p = progressoNivel(100);
-  ok("100 xp: nivel 2 e progresso 0", p.nivel === 2 && p.progresso === 0);
+  const p = progressoNivel(225);
+  ok("225 xp: nivel 3 e progresso 0", p.nivel === 3 && p.progresso === 0);
 }
 
 console.log(`\n${total - falhas}/${total} testes passaram`);
