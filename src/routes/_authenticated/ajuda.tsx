@@ -196,15 +196,15 @@ const secoes = [
     itens: [
       [
         "O que é XP e como eu ganho?",
-        "XP é a pontuação de experiência de cada jogador, calculada automaticamente conforme você joga: +10 XP por presença confirmada (check-in), +5 XP por cada gol e +3 XP por cada assistência lançados nas estatísticas do baba. Você acompanha seu XP total e a barra de progresso no Perfil.",
+        "XP é a pontuação de experiência de cada jogador, calculada automaticamente conforme você joga: +15 XP por presença confirmada (check-in), +8 XP por cada gol e +5 XP por cada assistência lançados nas estatísticas do baba. Você acompanha seu XP total e a barra de progresso no Perfil. Faltas cometidas e gols contra não dão XP — eles pesam contra na sua cartinha.",
       ],
       [
         "Como funcionam os níveis?",
-        "Seu nível sobe conforme o XP acumulado: nível 2 a partir de 100 XP, nível 3 com 300, nível 4 com 600, nível 5 com 1000 e assim por diante. Quanto mais alto o nível, maior o bônus aplicado no OVR da sua cartinha (até +5).",
+        "Seu nível sobe conforme o XP acumulado: nível 2 a partir de 75 XP, nível 3 com 225, nível 4 com 450, nível 5 com 750 e assim por diante. Quanto mais alto o nível, maior o bônus aplicado no OVR da sua cartinha (até +5). Ao subir de nível, uma bolha comemorativa aparece na tela!",
       ],
       [
         "O que são conquistas e como desbloqueio?",
-        "Conquistas são medalhas liberadas automaticamente quando você atinge marcas reais: presenças confirmadas, gols, assistências, níveis e XP total (ex.: Primeira Presença, Artilheiro, Nível 3, Veterano). Quando você desbloqueia uma, recebe uma notificação no sino.",
+        "Conquistas são medalhas liberadas automaticamente quando você atinge marcas reais: presenças confirmadas, gols, assistências, níveis e XP total (ex.: Primeira Presença, Artilheiro, Nível 3, Veterano). Quando você desbloqueia uma, uma bolha comemorativa aparece na tela e a notificação chega no sino.",
       ],
       [
         "Como destaco minhas conquistas?",
@@ -226,7 +226,7 @@ const secoes = [
       ],
       [
         "Como os atributos são calculados?",
-        "Automaticamente, a partir do seu desempenho real: RIT pela frequência nos babas, FIN pela média de gols, PAS pela média de assistências, DRI por vitórias nos times sorteados, DEF por vitórias com desconto de cartões e FÍS por pênaltis defendidos + bônus de goleiro + nível de XP. O OVR é a média dos atributos somada a um bônus de nível.",
+        "Automaticamente, a partir do seu desempenho real (estatísticas lançadas pela diretoria):\n• RIT (Ritmo/Presença): frequência de presenças confirmadas (presenças ÷ babas realizados).\n• FIN (Finalização): média de gols por baba.\n• PAS (Passe): média de assistências por baba.\n• DRI (Drible): vitórias nos times sorteados por baba + leve bônus por gols.\n• DEF (Defesa/Disciplina): vitórias por baba, com desconto por cartões (amarelo −2, azul −3, vermelho −6), faltas cometidas (−1 cada) e gols contra (−3 cada).\n• FÍS (Físico/Raça): pênaltis defendidos (+8 cada), bônus de goleiro (+15), nível de XP (+2 por nível, até +20), com desconto por faltas cometidas (−1 cada).\nO OVR é a média dos 6 atributos somada a um bônus de nível (até +5).",
       ],
       [
         "O que significam os temas da cartinha?",

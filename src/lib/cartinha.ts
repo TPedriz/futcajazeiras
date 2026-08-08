@@ -74,6 +74,8 @@ export interface TotaisParaCartinha {
   cartoesAmarelos: number;
   cartoesAzuis: number;
   cartoesVermelhos: number;
+  faltas: number;
+  golsContra: number;
   vitorias: number;
   nivel: number;
   posicao: "goleiro" | "linha";
@@ -109,10 +111,16 @@ export function calculaAtributos(t: TotaisParaCartinha): {
       porBaba(t.vitorias) * 10 -
       t.cartoesAmarelos * 2 -
       t.cartoesAzuis * 3 -
-      t.cartoesVermelhos * 6,
+      t.cartoesVermelhos * 6 -
+      t.faltas * 1 -
+      t.golsContra * 3,
   );
   const phy = clamp(
-    40 + t.penaltisDefendidos * 8 + (t.posicao === "goleiro" ? 15 : 0) + Math.min(20, t.nivel * 2),
+    40 +
+      t.penaltisDefendidos * 8 +
+      (t.posicao === "goleiro" ? 15 : 0) +
+      Math.min(20, t.nivel * 2) -
+      t.faltas * 1,
   );
 
   const ovrBase = Math.round((pac + sho + pas + dri + def + phy) / 6);
@@ -122,12 +130,12 @@ export function calculaAtributos(t: TotaisParaCartinha): {
 
 /** Rótulo em português de cada atributo (para tooltip/legenda). */
 export const ROTULOS_ATRIBUTO: Record<SiglaAtributo, string> = {
-  RIT: "Ritmo / Presença",
-  FIN: "Finalização",
-  PAS: "Passe",
-  DRI: "Drible / Habilidade",
-  DEF: "Defesa / Disciplina",
-  FÍS: "Físico / Raça",
+  RIT: "Ritmo / Presença (frequência de presenças confirmadas)",
+  FIN: "Finalização (média de gols por baba)",
+  PAS: "Passe (média de assistências por baba)",
+  DRI: "Drible / Habilidade (vitórias nos times sorteados + gols)",
+  DEF: "Defesa / Disciplina (vitórias − cartões − faltas cometidas − gols contra)",
+  FÍS: "Físico / Raça (pênaltis defendidos + goleiro + nível − faltas cometidas)",
 };
 
 /** Rótulo do tema da carta em português. */

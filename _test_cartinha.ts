@@ -55,6 +55,8 @@ ok("bonus nivel 20 = 5 (máx)", bonusNivel(20) === 5);
     cartoesAmarelos: 0,
     cartoesAzuis: 0,
     cartoesVermelhos: 0,
+    faltas: 0,
+    golsContra: 0,
     vitorias: 0,
     nivel: 1,
     posicao: "linha",
@@ -74,6 +76,8 @@ ok("bonus nivel 20 = 5 (máx)", bonusNivel(20) === 5);
     cartoesAmarelos: 1,
     cartoesAzuis: 0,
     cartoesVermelhos: 0,
+    faltas: 0,
+    golsContra: 0,
     vitorias: 6, // 0.6 vitórias por baba
     nivel: 3,
     posicao: "linha",
@@ -104,6 +108,8 @@ ok("bonus nivel 20 = 5 (máx)", bonusNivel(20) === 5);
     cartoesAmarelos: 0,
     cartoesAzuis: 0,
     cartoesVermelhos: 0,
+    faltas: 0,
+    golsContra: 0,
     vitorias: 2,
     nivel: 2,
     posicao: "goleiro",
@@ -123,6 +129,8 @@ ok("bonus nivel 20 = 5 (máx)", bonusNivel(20) === 5);
     cartoesAmarelos: 2,
     cartoesAzuis: 0,
     cartoesVermelhos: 1,
+    faltas: 0,
+    golsContra: 0,
     vitorias: 0,
     nivel: 1,
     posicao: "linha",
@@ -142,11 +150,36 @@ ok("bonus nivel 20 = 5 (máx)", bonusNivel(20) === 5);
     cartoesAmarelos: 0,
     cartoesAzuis: 0,
     cartoesVermelhos: 10,
+    faltas: 0,
+    golsContra: 0,
     vitorias: 0,
     nivel: 1,
     posicao: "linha",
   });
   ok("clamp: DEF >= 1 (60 vermelhos)", r.def >= 1);
+}
+
+// ---------- Faltas e gols contra baixam DEF e FÍS ----------
+{
+  const r = calculaAtributos({
+    babasTotal: 5,
+    presencas: 5,
+    gols: 0,
+    assistencias: 0,
+    penaltisDefendidos: 0,
+    cartoesAmarelos: 0,
+    cartoesAzuis: 0,
+    cartoesVermelhos: 0,
+    faltas: 4,
+    golsContra: 2,
+    vitorias: 0,
+    nivel: 1,
+    posicao: "linha",
+  });
+  // DEF = 40 + 0 - 0 - 4*1 - 2*3 = 40 - 10 = 30
+  // FÍS = 40 + 0 + 0 + min(20,2) - 4 = 40 + 2 - 4 = 38
+  ok("faltas/gc: DEF = 30", r.def === 30);
+  ok("faltas/gc: FÍS = 38", r.phy === 38);
 }
 
 console.log(`\n${total - falhas}/${total} testes passaram`);
