@@ -20,10 +20,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
-# Segredos e variáveis locais (NUNCA versionar — contém chaves de API)
-.env
-.env.*
-!.env.example
+# Variaveis locais com segredos (nao versionar)
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*
