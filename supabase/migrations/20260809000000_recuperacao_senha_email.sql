@@ -39,8 +39,9 @@ ALTER TABLE public.verificacoes_email ENABLE ROW LEVEL SECURITY;
 --    O trigger passa a gravar NULL quando o Auth usa o placeholder @wa.futcajazeiras.local.
 CREATE OR REPLACE FUNCTION public.cria_perfil_novo_usuario()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE tel text;
-DECLARE email_real text;
+DECLARE
+  tel text;
+  email_real text;
 BEGIN
   tel := COALESCE(NEW.raw_user_meta_data ->> 'telefone', '');
   email_real := NEW.email;
