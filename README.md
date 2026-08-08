@@ -133,7 +133,7 @@ node _test_cartinha.ts       # atributos, OVR e temas das cartinhas
 
 ## 🤝 Sobre
 
-Desenvolvido com [Lovable](https://lovable.dev) para o **Fut Cajazeiras** — futebol amador com
+Desenvolvido com carinho para o **Fut Cajazeiras** — futebol amador com
 organização de time premium. Conectado ao GitHub; mudanças feitas no Lovable são commitadas direto
 no repositório.
 

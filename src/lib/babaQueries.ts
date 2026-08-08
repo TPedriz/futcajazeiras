@@ -701,6 +701,15 @@ export const minhasConquistasQuery = (usuarioId: string | undefined) =>
     },
   });
 
+/** Conquista em destaque exibida nas micro-badges. */
+export interface ConquistaDestaque {
+  id: string;
+  codigo: string;
+  nome: string;
+  icone: string;
+  cor: string;
+}
+
 /** Conquistas em destaque de todos os usuários (para micro-badges globais). */
 export const conquistasEmDestaqueQuery = () =>
   queryOptions({
@@ -713,11 +722,13 @@ export const conquistasEmDestaqueQuery = () =>
         .order("ordem_destaque", { ascending: true });
       if (error) throw error;
 
-      const mapa = new Map<string, NonNullable<(typeof data)[number]["conquistas"]>[]>();
+      const mapa = new Map<string, ConquistaDestaque[]>();
       for (const uc of data ?? []) {
-        if (!uc.conquistas) continue;
+        const c = uc.conquistas as ConquistaDestaque | ConquistaDestaque[] | null;
+        if (!c) continue;
+        const itens = Array.isArray(c) ? c : [c];
         const lista = mapa.get(uc.usuario_id) ?? [];
-        lista.push(uc.conquistas);
+        lista.push(...itens);
         mapa.set(uc.usuario_id, lista);
       }
       return mapa;
@@ -727,21 +738,8 @@ export const conquistasEmDestaqueQuery = () =>
 // ==================== CARTINHAS DE JOGADOR ====================
 
 /** Campos do perfil usados para montar a cartinha de um jogador. */
-export const CAMPOS_CARTINHA = [
-  "id",
-  "nome",
-  "avatar_url",
-  "posicao",
-  "nivel_atual",
-  "ovr",
-  "stat_ritmo",
-  "stat_finalizacao",
-  "stat_passe",
-  "stat_drible",
-  "stat_defesa",
-  "stat_fisico",
-  "tema_carta",
-] as const;
+export const CAMPOS_CARTINHA =
+  "id, nome, avatar_url, posicao, nivel_atual, ovr, stat_ritmo, stat_finalizacao, stat_passe, stat_drible, stat_defesa, stat_fisico, tema_carta";
 
 /** Dados de um jogador para exibir a cartinha (perfil + atributos calculados). */
 export const cartinhaPerfilQuery = (usuarioId: string | undefined) =>
@@ -752,10 +750,13 @@ export const cartinhaPerfilQuery = (usuarioId: string | undefined) =>
       if (!usuarioId) return null;
       const { data, error } = await supabase
         .from("perfis")
-        .select(CAMPOS_CARTINHA.join(", "))
+        .select(
+          "id, nome, avatar_url, posicao, nivel_atual, ovr, stat_ritmo, stat_finalizacao, stat_passe, stat_drible, stat_defesa, stat_fisico, tema_carta",
+        )
         .eq("id", usuarioId)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
+
