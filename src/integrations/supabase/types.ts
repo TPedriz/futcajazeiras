@@ -420,7 +420,8 @@ export type Database = {
           atualizado_em: string
           avatar_url: string | null
           criado_em: string
-          email: string
+          email: string | null
+          email_confirmado: boolean
           id: string
           nivel_atual: number
           nome: string
@@ -443,7 +444,8 @@ export type Database = {
           atualizado_em?: string
           avatar_url?: string | null
           criado_em?: string
-          email: string
+          email?: string | null
+          email_confirmado?: boolean
           id: string
           nivel_atual?: number
           nome: string
@@ -466,7 +468,8 @@ export type Database = {
           atualizado_em?: string
           avatar_url?: string | null
           criado_em?: string
-          email?: string
+          email?: string | null
+          email_confirmado?: boolean
           id?: string
           nivel_atual?: number
           nome?: string
@@ -943,6 +946,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      verificacoes_email: {
+        Row: {
+          criado_em: string
+          email: string
+          expira_em: string
+          id: string
+          tipo: string
+          token_hash: string
+          usado_em: string | null
+          usuario_id: string
+        }
+        Insert: {
+          criado_em?: string
+          email: string
+          expira_em: string
+          id?: string
+          tipo?: string
+          token_hash: string
+          usado_em?: string | null
+          usuario_id: string
+        }
+        Update: {
+          criado_em?: string
+          email?: string
+          expira_em?: string
+          id?: string
+          tipo?: string
+          token_hash?: string
+          usado_em?: string | null
+          usuario_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
