@@ -109,6 +109,15 @@ export const solicitarVerificacaoEmail = createServerFn({ method: "POST" })
       .update({ email, email_confirmado: false })
       .eq("id", context.userId);
 
+    // Invalida links antigos ainda pendentes (ex.: um e-mail digitado errado
+    // antes). Assim um link velho não sobrescreve o e-mail corrigido depois.
+    const agora = new Date().toISOString();
+    await supabaseAdmin
+      .from("verificacoes_email")
+      .update({ usado_em: agora })
+      .eq("usuario_id", context.userId)
+      .is("usado_em", null);
+
     const token = randomBytes(32).toString("base64url");
     await supabaseAdmin.from("verificacoes_email").insert({
       usuario_id: context.userId,
@@ -157,4 +166,107 @@ export const gerarSenhaTemporaria = createServerFn({ method: "POST" })
       return { ok: false, motivo: "erro" };
     }
     return { ok: true, senha };
+  });
+
+export interface ResultadoAdminEmail {
+  ok: boolean;
+  motivo?: "forbidden" | "erro";
+  confirmado?: boolean;
+}
+
+/**
+ * 4) Painel Admin (diretoria): corrige o e-mail de um usuário e, opcionalmente,
+ * confirma manualmente (identidade validada por WhatsApp) ou envia um novo link
+ * de confirmação. Resolve o caso de quem digitou um e-mail errado/inacessível
+ * e ficou preso na tela de validação de cadastro.
+ */
+export const adminAtualizarEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        usuarioId: z.string().uuid(),
+        email: z.string(),
+        confirmar: z.boolean().default(false),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<ResultadoAdminEmail> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Apenas a diretoria pode corrigir/confirmar e-mail de outro usuário.
+    const { data: papel } = await supabaseAdmin
+      .from("papeis_usuario")
+      .select("user_id")
+      .eq("user_id", context.userId)
+      .eq("papel", "administrador")
+      .maybeSingle();
+    if (!papel) return { ok: false, motivo: "forbidden" };
+
+    const email = data.email.trim().toLowerCase();
+    if (!EMAIL_VALIDO.test(email)) throw new Error("Informe um e-mail válido.");
+    if (emailSintetico(email))
+      throw new Error("Informe um e-mail real (não o gerado pelo WhatsApp).");
+
+    // Não deixa usar um e-mail que já pertence a outro perfil.
+    const { data: usado } = await supabaseAdmin
+      .from("perfis")
+      .select("id")
+      .eq("email", email)
+      .neq("id", data.usuarioId)
+      .maybeSingle();
+    if (usado) throw new Error("Este e-mail já está cadastrado para outro usuário.");
+
+    const { data: perfil } = await supabaseAdmin
+      .from("perfis")
+      .select("id, nome")
+      .eq("id", data.usuarioId)
+      .maybeSingle();
+    if (!perfil) throw new Error("Usuário não encontrado.");
+
+    const agora = new Date().toISOString();
+
+    if (data.confirmar) {
+      // Confirma manualmente (a diretoria validou a identidade pelo WhatsApp).
+      await supabaseAdmin
+        .from("perfis")
+        .update({ email, email_confirmado: true })
+        .eq("id", data.usuarioId);
+      // Invalida qualquer link pendente para não regredir o e-mail depois.
+      await supabaseAdmin
+        .from("verificacoes_email")
+        .update({ usado_em: agora })
+        .eq("usuario_id", data.usuarioId)
+        .is("usado_em", null);
+      return { ok: true, confirmado: true };
+    }
+
+    // Grava o e-mail (ainda não confirmado) e envia um novo link.
+    await supabaseAdmin
+      .from("perfis")
+      .update({ email, email_confirmado: false })
+      .eq("id", data.usuarioId);
+    await supabaseAdmin
+      .from("verificacoes_email")
+      .update({ usado_em: agora })
+      .eq("usuario_id", data.usuarioId)
+      .is("usado_em", null);
+
+    const token = randomBytes(32).toString("base64url");
+    await supabaseAdmin.from("verificacoes_email").insert({
+      usuario_id: data.usuarioId,
+      email,
+      token_hash: hashToken(token),
+      tipo: "email",
+      expira_em: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    });
+
+    const link = `${urlBase()}/api/auth/confirmar-email?token=${encodeURIComponent(token)}`;
+    await enviarEmail({
+      to: email,
+      subject: "Confirme seu e-mail — Fut Cajazeiras",
+      html: htmlValidacaoEmail({ nome: perfil.nome ?? "Jogador", link }),
+    });
+
+    return { ok: true, confirmado: false };
   });

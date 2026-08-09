@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Mail, MailCheck, LogOut } from "lucide-react";
+import { Mail, MailCheck, LogOut, Pencil } from "lucide-react";
 
 export const Route = createFileRoute("/atualizar-cadastro")({
   ssr: false,
@@ -151,6 +151,18 @@ function AtualizarCadastroPage() {
               >
                 Reenviar link
               </Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                disabled={loading}
+                onClick={() => setAguardando(false)}
+              >
+                <Pencil className="size-4" /> Usar outro e-mail
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Digitou o e-mail errado ou não recebeu o link? Toque em "Usar outro e-mail" para
+                corrigir e reenviar a confirmação.
+              </p>
               <button
                 type="button"
                 onClick={sair}

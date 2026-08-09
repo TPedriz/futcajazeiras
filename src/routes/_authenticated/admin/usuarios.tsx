@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { gerarSenhaTemporaria } from "@/lib/auth-admin.functions";
+import { gerarSenhaTemporaria, adminAtualizarEmail } from "@/lib/auth-admin.functions";
+import { emailReal } from "@/lib/email";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,10 @@ import {
   SlidersHorizontal,
   KeyRound,
   Copy,
+  Mail,
+  MailCheck,
+  MailX,
+  Send,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -65,6 +70,7 @@ function UsuariosPage() {
   const { data: ajustes } = useQuery(ajustesBabasConvidadoQuery());
   const qc = useQueryClient();
   const gerarSenha = useServerFn(gerarSenhaTemporaria);
+  const atualizarEmail = useServerFn(adminAtualizarEmail);
 
   const [editando, setEditando] = useState<string | null>(null);
   const [nome, setNome] = useState("");
@@ -90,6 +96,7 @@ function UsuariosPage() {
   const [ajusteBabasValor, setAjusteBabasValor] = useState("");
   const [ajusteBabasObs, setAjusteBabasObs] = useState("");
   const [senhaTemporaria, setSenhaTemporaria] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
 
   const babasFuturos = (todas ?? [])
     .filter((b) => new Date(b.data_horario).getTime() > Date.now())
@@ -109,6 +116,13 @@ function UsuariosPage() {
     return "convidado";
   };
   const perfis = todos.filter((p) => filtro === "todos" || papelDe(p.id) === filtro);
+
+  const statusEmailDe = (p: { email: string | null; email_confirmado: boolean }) => {
+    const real = p.email ? emailReal(p.email) : null;
+    if (!real) return { tipo: "sem" as const, email: null as string | null };
+    if (p.email_confirmado) return { tipo: "ok" as const, email: real };
+    return { tipo: "pendente" as const, email: real };
+  };
 
   const salvar = useMutation({
     mutationFn: async (id: string) => {
@@ -279,6 +293,57 @@ function UsuariosPage() {
     },
     onSuccess: (senha) => setSenhaTemporaria(senha),
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  /** Corrige o e-mail de um usuário: envia link de confirmação ou confirma na hora. */
+  const salvarEmail = useMutation({
+    mutationFn: async ({
+      usuarioId,
+      email,
+      confirmar,
+    }: {
+      usuarioId: string;
+      email: string;
+      confirmar: boolean;
+    }) => {
+      const res = await atualizarEmail({ data: { usuarioId, email, confirmar } });
+      if (!res.ok) {
+        if (res.motivo === "forbidden")
+          throw new Error("Acesso negado: apenas a diretoria pode corrigir e-mails.");
+        throw new Error("Não foi possível atualizar o e-mail.");
+      }
+      return res;
+    },
+    onSuccess: (res) => {
+      toast.success(res.confirmado ? "E-mail confirmado!" : "Link de confirmação enviado!", {
+        description: res.confirmado
+          ? "O jogador já pode acessar a plataforma."
+          : "O jogador receberá um e-mail para confirmar.",
+      });
+      setEditando(null);
+      qc.invalidateQueries({ queryKey: ["associados-todos"] });
+    },
+    onError: (e: Error) => toast.error("Erro ao atualizar e-mail", { description: e.message }),
+  });
+
+  /** Reenvia o link de confirmação para o e-mail já cadastrado do usuário. */
+  const reenviarConfirmacao = useMutation({
+    mutationFn: async (usuarioId: string) => {
+      const alvo = (todos ?? []).find((u) => u.id === usuarioId);
+      const real = alvo?.email ? emailReal(alvo.email) : null;
+      if (!real) throw new Error("Usuário sem e-mail real cadastrado.");
+      const res = await atualizarEmail({ data: { usuarioId, email: real, confirmar: false } });
+      if (!res.ok) {
+        if (res.motivo === "forbidden")
+          throw new Error("Acesso negado: apenas a diretoria pode corrigir e-mails.");
+        throw new Error("Não foi possível reenviar.");
+      }
+    },
+    onSuccess: () =>
+      toast.success("Link reenviado!", {
+        description: "O jogador receberá um e-mail para confirmar o cadastro.",
+      }),
+    onError: (e: Error) => toast.error("Erro ao reenviar", { description: e.message }),
   });
 
   return (
@@ -517,6 +582,7 @@ function UsuariosPage() {
       <ul className="space-y-2">
         {perfis.map((p) => {
           const emEdicao = editando === p.id;
+          const st = statusEmailDe(p);
           return (
             <li key={p.id} className="card-premium p-4">
               {emEdicao ? (
@@ -600,6 +666,61 @@ function UsuariosPage() {
                       ))}
                     </div>
                   </div>
+                  {/* E-mail de acesso (corrige/reenvia/confirma manualmente) */}
+                  <div className="space-y-2 rounded-xl border border-gold/25 bg-gold/5 p-3">
+                    <Label
+                      htmlFor={`email-${p.id}`}
+                      className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"
+                    >
+                      <Mail className="size-4 text-gold" /> E-mail de acesso
+                    </Label>
+                    <Input
+                      id={`email-${p.id}`}
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="voce@email.com"
+                      className="h-11"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Acesso exige e-mail confirmado. "Enviar link" manda a confirmação para o
+                      e-mail acima. "Confirmar agora" libera na hora (use quando a identidade já foi
+                      validada, ex.: jogador que digitou e-mail errado e não consegue acessar a
+                      caixa de entrada).
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="gold"
+                        size="sm"
+                        disabled={salvarEmail.isPending || !email.trim()}
+                        onClick={() =>
+                          salvarEmail.mutate({
+                            usuarioId: p.id,
+                            email: email.trim(),
+                            confirmar: false,
+                          })
+                        }
+                      >
+                        <Send className="size-4" /> Enviar link
+                      </Button>
+                      <Button
+                        variant="goldOutline"
+                        size="sm"
+                        disabled={salvarEmail.isPending || !email.trim()}
+                        onClick={() =>
+                          salvarEmail.mutate({
+                            usuarioId: p.id,
+                            email: email.trim(),
+                            confirmar: true,
+                          })
+                        }
+                      >
+                        <MailCheck className="size-4" /> Confirmar agora
+                      </Button>
+                    </div>
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       variant="gold"
@@ -633,6 +754,29 @@ function UsuariosPage() {
                       </Badge>
                       {!p.ativo && <Badge variant="destructive">Inativo</Badge>}
                     </div>
+                    {st.tipo === "ok" && (
+                      <p className="mt-1 flex items-center gap-1 text-[11px] text-emerald-400">
+                        <MailCheck className="size-3" /> {st.email}
+                      </p>
+                    )}
+                    {st.tipo === "pendente" && (
+                      <p className="mt-1 flex items-center gap-1 text-[11px] text-amber-300">
+                        <Mail className="size-3" /> {st.email} · aguardando confirmação
+                        <button
+                          type="button"
+                          className="ml-1 text-gold underline"
+                          disabled={reenviarConfirmacao.isPending}
+                          onClick={() => reenviarConfirmacao.mutate(p.id)}
+                        >
+                          Reenviar
+                        </button>
+                      </p>
+                    )}
+                    {st.tipo === "sem" && (
+                      <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <MailX className="size-3" /> sem e-mail cadastrado
+                      </p>
+                    )}
                   </div>
                   <Button
                     variant="ghost"
@@ -643,6 +787,7 @@ function UsuariosPage() {
                       setNome(p.nome);
                       setTelefone(p.telefone ?? "");
                       setPosicao(p.posicao);
+                      setEmail(p.email ?? "");
                       setAtributos({
                         ovr: p.ovr ?? 40,
                         ritmo: p.stat_ritmo ?? 40,
