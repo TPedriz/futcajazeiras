@@ -10,6 +10,7 @@ import { AvatarJogador } from "@/components/AvatarJogador";
 import { RodapeApp } from "@/components/RodapeApp";
 import { CartinhaProvider } from "@/components/CartinhaModal";
 import { BubbleConquista } from "@/components/BubbleConquista";
+import { AppSidebar } from "@/components/AppSidebar";
 import { NotificacoesProvider } from "@/components/NotificacoesProvider";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -69,15 +70,23 @@ function AuthenticatedLayout() {
 
   return (
     <NotificacoesProvider userId={data?.user.id}>
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="min-h-screen bg-background">
         <BubbleConquista />
+
+        <AppSidebar
+          isAdmin={isAdmin}
+          nome={data?.perfil?.nome}
+          rotulo={data?.rotuloPapel}
+          avatar={data?.perfil?.avatar_url}
+        />
+
         {/* Header mobile */}
-        <header className="sticky top-0 z-30 border-b border-border/50 bg-surface/95 backdrop-blur-lg">
-          <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-2">
+        <header className="fixed top-0 left-0 right-0 z-40 h-16 border-b border-border bg-surface/90 backdrop-blur-lg md:hidden">
+          <div className="mx-auto flex h-16 max-w-md items-center justify-between px-4">
+            <div className="flex min-w-0 items-center gap-2">
               <BrandLogo size="sm" />
-              <div className="leading-tight">
-                <p className="font-display text-lg tracking-wider text-foreground">
+              <div className="min-w-0 leading-tight">
+                <p className="truncate font-display text-lg tracking-wider text-foreground">
                   Fut Cajazeiras
                 </p>
                 <p className="text-[10px] uppercase tracking-widest text-gold">
@@ -85,7 +94,7 @@ function AuthenticatedLayout() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <SinoNotificacoes />
               <Link
                 to="/perfil"
@@ -103,16 +112,20 @@ function AuthenticatedLayout() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-md flex-1 px-4 pt-4 pb-10">
-          <CartinhaProvider>
-            <Outlet />
-          </CartinhaProvider>
-        </main>
+        <div className="flex min-h-screen flex-col pt-16 pb-20 md:ml-64 md:pt-0 md:pb-0">
+          {/* Barra superior desktop */}
+          <header className="sticky top-0 z-30 hidden h-16 items-center justify-end border-b border-border/50 bg-surface/90 px-6 backdrop-blur-lg md:flex">
+            <SinoNotificacoes />
+          </header>
 
-        <RodapeApp />
+          <main className="mx-auto w-full max-w-md flex-1 px-4 pt-4 pb-10 md:max-w-4xl md:px-8">
+            <CartinhaProvider>
+              <Outlet />
+            </CartinhaProvider>
+          </main>
 
-        {/* Espaço reservado para a barra de navegação inferior fixa (não sobrepõe o rodapé) */}
-        <div className="h-20 shrink-0" aria-hidden />
+          <RodapeApp />
+        </div>
 
         <BottomNav isAdmin={isAdmin} />
       </div>
