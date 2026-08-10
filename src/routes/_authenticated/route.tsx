@@ -123,7 +123,8 @@ function AuthenticatedLayout() {
         <RodapeApp />
       </div>
 
-      <BottomNav isAdmin={isAdmin} />
-    </div>
+        <BottomNav isAdmin={isAdmin} />
+      </div>
+    </NotificacoesProvider>
   );
 }

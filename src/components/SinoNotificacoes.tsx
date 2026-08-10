@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Bell,
@@ -15,9 +13,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { supabase } from "@/integrations/supabase/client";
-import { notificacoesQuery } from "@/lib/babaQueries";
 import { formatDistanceToNow } from "date-fns";
+import { useNotificacoes } from "@/components/NotificacoesProvider";
 import { ptBR } from "date-fns/locale";
 
 const icones = {
@@ -31,37 +28,9 @@ const icones = {
   geral: Info,
 } as const;
 
-export function SinoNotificacoes({ userId }: { userId: string | undefined }) {
-  const qc = useQueryClient();
+export function SinoNotificacoes() {
   const navigate = useNavigate();
-  const { data: notificacoes } = useQuery(notificacoesQuery(userId));
-
-  useEffect(() => {
-    if (!userId) return;
-    const canal = supabase
-      .channel("notificacoes-usuario")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notificacoes", filter: `usuario_id=eq.${userId}` },
-        () => qc.invalidateQueries({ queryKey: ["notificacoes", userId] }),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(canal);
-    };
-  }, [userId, qc]);
-
-  const naoLidas = (notificacoes ?? []).filter((n) => !n.lida);
-
-  const marcarTodas = async () => {
-    if (!userId || naoLidas.length === 0) return;
-    await supabase
-      .from("notificacoes")
-      .update({ lida: true })
-      .eq("usuario_id", userId)
-      .eq("lida", false);
-    qc.invalidateQueries({ queryKey: ["notificacoes", userId] });
-  };
+  const { notificacoes, naoLidas, marcarTodasLidas, marcarLida } = useNotificacoes();
 
   return (
     <Popover>
@@ -83,7 +52,7 @@ export function SinoNotificacoes({ userId }: { userId: string | undefined }) {
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <p className="text-xs uppercase tracking-widest text-gold">Notificações</p>
           {naoLidas.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={marcarTodas}>
+            <Button variant="ghost" size="sm" onClick={marcarTodasLidas}>
               <CheckCheck className="size-4" /> Marcar lidas
             </Button>
           )}
@@ -98,10 +67,7 @@ export function SinoNotificacoes({ userId }: { userId: string | undefined }) {
               {(notificacoes ?? []).map((n) => {
                 const Icone = icones[(n.tipo as keyof typeof icones) ?? "geral"] ?? Info;
                 const abrir = async () => {
-                  if (!n.lida) {
-                    await supabase.from("notificacoes").update({ lida: true }).eq("id", n.id);
-                    qc.invalidateQueries({ queryKey: ["notificacoes", userId] });
-                  }
+                  if (!n.lida) await marcarLida(n.id);
                   if (n.link) navigate({ to: n.link as never });
                 };
                 return (
