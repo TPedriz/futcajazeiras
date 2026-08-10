@@ -359,6 +359,8 @@ function UsuariosPage() {
 
       <AprovacoesConvidados />
 
+      <AprovacoesAssociacao />
+
       <div className="card-premium p-5 space-y-3">
         <div className="flex items-center justify-between">
           <p className="font-display text-xl">Punições</p>
