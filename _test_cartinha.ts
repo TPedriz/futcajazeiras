@@ -97,6 +97,31 @@ ok("bonus nivel 20 = 5 (máx)", bonusNivel(20) === 5);
   ok("valores esperados: DRI 53 / DEF 44 / PHY 46", r.dri === 53 && r.def === 44 && r.phy === 46);
 }
 
+// ---------- Suspensões ativas derrubam bastante a nota da cartinha ----------
+{
+  const r = calculaAtributos({
+    babasTotal: 10,
+    presencas: 10, // 100% de frequência
+    gols: 20,
+    assistencias: 5,
+    penaltisDefendidos: 0,
+    cartoesAmarelos: 1,
+    cartoesAzuis: 0,
+    cartoesVermelhos: 0,
+    faltas: 0,
+    golsContra: 0,
+    vitorias: 6,
+    nivel: 3,
+    posicao: "linha",
+    suspensoesAtivas: 3,
+  });
+  // Sem suspensão: DEF 44 / FÍS 46 / OVR 61
+  // Com 3 suspensões ativas (desconto 15): DEF 29 / FÍS 31 / OVR 41
+  ok("suspensões: DEF cai para 29", r.def === 29);
+  ok("suspensões: FÍS cai para 31", r.phy === 31);
+  ok("suspensões: OVR cai bastante (61 -> 41)", r.ovr === 41);
+}
+
 // ---------- Goleiro com pênaltis defendidos ----------
 {
   const r = calculaAtributos({
