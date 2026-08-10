@@ -2,7 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { gerarSenhaTemporaria, adminAtualizarEmail } from "@/lib/auth-admin.functions";
+import {
+  gerarSenhaTemporaria,
+  adminAtualizarEmail,
+  excluirUsuarioPermanente,
+} from "@/lib/auth-admin.functions";
 import { emailReal } from "@/lib/email";
 import {
   Dialog,
@@ -53,6 +57,7 @@ import {
   MailCheck,
   MailX,
   Send,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -72,6 +77,7 @@ function UsuariosPage() {
   const qc = useQueryClient();
   const gerarSenha = useServerFn(gerarSenhaTemporaria);
   const atualizarEmail = useServerFn(adminAtualizarEmail);
+  const excluirUsuario = useServerFn(excluirUsuarioPermanente);
 
   const [editando, setEditando] = useState<string | null>(null);
   const [nome, setNome] = useState("");
@@ -98,6 +104,8 @@ function UsuariosPage() {
   const [ajusteBabasObs, setAjusteBabasObs] = useState("");
   const [senhaTemporaria, setSenhaTemporaria] = useState<string | null>(null);
   const [email, setEmail] = useState("");
+  const [excluindo, setExcluindo] = useState<{ id: string; nome: string } | null>(null);
+  const [nomeConfirmacao, setNomeConfirmacao] = useState("");
 
   const babasFuturos = (todas ?? [])
     .filter((b) => new Date(b.data_horario).getTime() > Date.now())
@@ -277,6 +285,33 @@ function UsuariosPage() {
       qc.invalidateQueries({ queryKey: ["ajustes-babas-convidado"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  /** Exclui PERMANENTEMENTE um usuário (conta + todos os dados vinculados). */
+  const excluirPermanente = useMutation({
+    mutationFn: async (usuarioId: string) => {
+      const res = await excluirUsuario({ data: { usuarioId } });
+      if (!res.ok) {
+        if (res.motivo === "forbidden")
+          throw new Error(
+            "Acesso negado: apenas a diretoria pode excluir contas (e você não pode excluir a si mesmo nem o desenvolvedor).",
+          );
+        if (res.motivo === "nao_encontrado") throw new Error("Usuário não encontrado.");
+        throw new Error("Não foi possível excluir o usuário.");
+      }
+    },
+    onSuccess: () => {
+      toast.success("Usuário excluído permanentemente", {
+        description: "Conta e todos os dados vinculados foram removidos.",
+      });
+      setExcluindo(null);
+      setNomeConfirmacao("");
+      qc.invalidateQueries({ queryKey: ["associados-todos"] });
+      qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+      qc.invalidateQueries({ queryKey: ["vagas-associados"] });
+      qc.invalidateQueries({ queryKey: ["presencas", sessao?.id] });
+    },
+    onError: (e: Error) => toast.error("Erro ao excluir", { description: e.message }),
   });
 
   const naLista = (id: string) =>
@@ -832,6 +867,19 @@ function UsuariosPage() {
                   >
                     <KeyRound className="size-4" />
                   </Button>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    aria-label={`Excluir permanentemente ${p.nome}`}
+                    title="Excluir permanentemente (sem volta)"
+                    disabled={excluirPermanente.isPending}
+                    onClick={() => {
+                      setExcluindo({ id: p.id, nome: p.nome });
+                      setNomeConfirmacao("");
+                    }}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
                 </div>
               )}
             </li>
@@ -865,6 +913,45 @@ function UsuariosPage() {
             </Button>
             <Button variant="outline" className="w-full" onClick={() => setSenhaTemporaria(null)}>
               Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!excluindo} onOpenChange={(o) => !o && setExcluindo(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Excluir usuário permanentemente</DialogTitle>
+            <DialogDescription>
+              Isso remove a conta, o login e <strong>todos os dados</strong> de{" "}
+              <strong className="text-foreground">{excluindo?.nome ?? "este usuário"}</strong>:
+              presenças, estatísticas, mensalidades, convidados, notificações e histórico.{" "}
+              <strong>Não há volta.</strong> Digite o nome completo para confirmar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              value={nomeConfirmacao}
+              onChange={(e) => setNomeConfirmacao(e.target.value)}
+              placeholder={excluindo?.nome ?? "Nome do usuário"}
+              autoComplete="off"
+              className="h-11"
+            />
+            <Button
+              variant="destructive"
+              className="w-full"
+              disabled={
+                !excluindo ||
+                nomeConfirmacao.trim().toLowerCase() !== excluindo.nome.trim().toLowerCase() ||
+                excluirPermanente.isPending
+              }
+              onClick={() => excluindo && excluirPermanente.mutate(excluindo.id)}
+            >
+              <Trash2 className="size-4" />
+              {excluirPermanente.isPending ? "Excluindo…" : "Excluir permanentemente"}
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => setExcluindo(null)}>
+              Cancelar
             </Button>
           </div>
         </DialogContent>

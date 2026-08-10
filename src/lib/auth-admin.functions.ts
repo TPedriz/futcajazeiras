@@ -270,3 +270,68 @@ export const adminAtualizarEmail = createServerFn({ method: "POST" })
 
     return { ok: true, confirmado: false };
   });
+
+export type ResultadoExclusaoUsuario =
+  { ok: true } | { ok: false; motivo: "forbidden" | "nao_encontrado" | "erro" };
+
+/**
+ * Painel Admin (diretoria): exclui PERMANENTEMENTE um usuário do sistema.
+ *
+ * Remove a conta (auth.users) e TODOS os dados vinculados — perfis, papéis,
+ * presenças, estatísticas, mensalidades, convidados, notificações, suspensões,
+ * solicitações etc. Não é o mesmo que "desativar" (perfis.ativo = false) e não
+ * tem volta.
+ */
+export const excluirUsuarioPermanente = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ usuarioId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<ResultadoExclusaoUsuario> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Apenas a diretoria pode excluir contas.
+    const { data: papel } = await supabaseAdmin
+      .from("papeis_usuario")
+      .select("user_id")
+      .eq("user_id", context.userId)
+      .eq("papel", "administrador")
+      .maybeSingle();
+    if (!papel) return { ok: false, motivo: "forbidden" };
+
+    // Proteções: não se auto-exclui nem exclui a conta do desenvolvedor.
+    if (data.usuarioId === context.userId || data.usuarioId === idDesenvolvedor()) {
+      return { ok: false, motivo: "forbidden" };
+    }
+
+    // Garante que a conta existe antes de apagar.
+    const { data: alvo } = await supabaseAdmin.auth.admin.getUserById(data.usuarioId);
+    if (!alvo?.user) return { ok: false, motivo: "nao_encontrado" };
+
+    // 1) Limpa tabelas sem FK/cascade (não acompanhariam a exclusão do auth).
+    const limpezas = [
+      supabaseAdmin.from("notificacoes").delete().eq("usuario_id", data.usuarioId),
+      supabaseAdmin.from("suspensoes").delete().eq("usuario_id", data.usuarioId),
+      supabaseAdmin.from("presencas").delete().eq("convidado_user_id", data.usuarioId),
+      supabaseAdmin
+        .from("solicitacoes_associacao")
+        .delete()
+        .or(`usuario_id.eq.${data.usuarioId},decidido_por.eq.${data.usuarioId}`),
+      supabaseAdmin
+        .from("solicitacoes_convidado")
+        .delete()
+        .or(`solicitante_id.eq.${data.usuarioId},anfitriao_id.eq.${data.usuarioId}`),
+      supabaseAdmin.from("convidados_cadastro").delete().eq("user_id", data.usuarioId),
+    ];
+    const resultados = await Promise.all(limpezas);
+    const falha = resultados.find((r) => r.error);
+    if (falha?.error) {
+      console.error("[auth-admin] falha ao limpar dados do usuário", falha.error);
+    }
+
+    // 2) Remove a conta (cascateia perfis + tabelas com ON DELETE CASCADE).
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.usuarioId);
+    if (error) {
+      console.error("[auth-admin] falha ao excluir usuário", error);
+      return { ok: false, motivo: "erro" };
+    }
+    return { ok: true };
+  });
