@@ -10,6 +10,7 @@ import { AvatarJogador } from "@/components/AvatarJogador";
 import { RodapeApp } from "@/components/RodapeApp";
 import { CartinhaProvider } from "@/components/CartinhaModal";
 import { BubbleConquista } from "@/components/BubbleConquista";
+import { AppSidebar } from "@/components/AppSidebar";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
