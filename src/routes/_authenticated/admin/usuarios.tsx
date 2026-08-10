@@ -34,6 +34,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
 import { AprovacoesConvidados } from "@/components/AprovacoesConvidados";
+import { AprovacoesAssociacao } from "@/components/AprovacoesAssociacao";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formataTelefone, normalizaTelefone } from "@/lib/telefone";
@@ -358,6 +359,8 @@ function UsuariosPage() {
       </div>
 
       <AprovacoesConvidados />
+
+      <AprovacoesAssociacao />
 
       <div className="card-premium p-5 space-y-3">
         <div className="flex items-center justify-between">
