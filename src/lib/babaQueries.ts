@@ -24,9 +24,7 @@ export const perfilAtualQuery = () =>
         isAssociado: isAdmin || lista.includes("associado"),
         isConvidado,
         papelPrincipal: (isAdmin ? "administrador" : isConvidado ? "convidado" : "associado") as
-          | "administrador"
-          | "associado"
-          | "convidado",
+          "administrador" | "associado" | "convidado",
         rotuloPapel: isAdmin ? "Diretoria" : isConvidado ? "Convidado" : "Associado",
       };
     },
@@ -338,19 +336,40 @@ export const notificacoesQuery = (userId: string | undefined) =>
     },
   });
 
-/** Mural de punições: suspensões ativas e recentes. */
+/**
+ * Mural de punições: mostra apenas suspensões ATIVAS — ou seja, cujo baba
+ * bloqueado ainda não aconteceu. Quando a suspensão termina (o baba passa),
+ * o nome sai do mural automaticamente, sem expor o jogador por mais tempo.
+ */
 export const suspensoesQuery = () =>
   queryOptions({
     queryKey: ["suspensoes"],
     queryFn: async () => {
+      const agora = Date.now();
       const { data, error } = await supabase
         .from("suspensoes")
         .select("*")
         .order("criado_em", { ascending: false })
-        .limit(30);
+        .limit(100);
       if (error) throw error;
 
-      const ids = Array.from(new Set((data ?? []).map((s) => s.usuario_id)));
+      // Babas bloqueados ainda no futuro = suspensões em vigor.
+      const idsBabas = Array.from(
+        new Set((data ?? []).map((s) => s.baba_bloqueado_id).filter((id): id is string => !!id)),
+      );
+      const futuros = new Set<string>();
+      if (idsBabas.length > 0) {
+        const { data: babas } = await supabase
+          .from("sessoes_baba")
+          .select("id, data_horario")
+          .in("id", idsBabas);
+        for (const b of babas ?? []) {
+          if (new Date(b.data_horario).getTime() > agora) futuros.add(b.id);
+        }
+      }
+      const ativas = (data ?? []).filter((s) => futuros.has(s.baba_bloqueado_id ?? ""));
+
+      const ids = Array.from(new Set(ativas.map((s) => s.usuario_id)));
       const nomes = new Map<string, string>();
       if (ids.length > 0) {
         const { data: perfis } = await supabase
@@ -359,7 +378,7 @@ export const suspensoesQuery = () =>
           .in("id", ids);
         for (const p of perfis ?? []) nomes.set(p.id, p.nome);
       }
-      return (data ?? []).map((s) => ({ ...s, nome: nomes.get(s.usuario_id) ?? "Jogador" }));
+      return ativas.map((s) => ({ ...s, nome: nomes.get(s.usuario_id) ?? "Jogador" }));
     },
   });
 
@@ -665,7 +684,6 @@ export const pedidosConvidadoPendentesQuery = () =>
         convidados_cadastro: mapa.get(p.convidado_id) ?? null,
       }));
 
-
       const ids = Array.from(new Set((data ?? []).map((p) => p.anfitriao_id)));
       const nomes = new Map<string, string>();
       if (ids.length > 0) {
@@ -787,4 +805,3 @@ export const cartinhaPerfilQuery = (usuarioId: string | undefined) =>
       return data;
     },
   });
-
