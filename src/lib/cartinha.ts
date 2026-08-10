@@ -108,8 +108,8 @@ export function calculaAtributos(t: TotaisParaCartinha): {
   const sho = clamp(40 + porBaba(t.gols) * 15);
   const pas = clamp(40 + porBaba(t.assistencias) * 15);
   const dri = clamp(40 + porBaba(t.vitorias) * 12 + porBaba(t.gols) * 3);
-  // Desconto por SUSPENSÕES ATIVAS: cada suspensão derruba bastante a nota
-  // (máx -20), espelhando `public.calcula_cartinha` do banco.
+  // Suspensão ativa derruba APENAS o OVR (-5 por suspensão, máx -20),
+  // espelhando `public.calcula_cartinha` do banco. DEF e FÍS não mudam.
   const descontoSuspensao = Math.min(20, (t.suspensoesAtivas ?? 0) * 5);
   const def = clamp(
     40 +
@@ -118,16 +118,14 @@ export function calculaAtributos(t: TotaisParaCartinha): {
       t.cartoesAzuis * 3 -
       t.cartoesVermelhos * 6 -
       t.faltas * 1 -
-      t.golsContra * 3 -
-      descontoSuspensao,
+      t.golsContra * 3,
   );
   const phy = clamp(
     40 +
       t.penaltisDefendidos * 8 +
       (t.posicao === "goleiro" ? 15 : 0) +
       Math.min(20, t.nivel * 2) -
-      t.faltas * 1 -
-      descontoSuspensao,
+      t.faltas * 1,
   );
 
   const ovrBase = Math.round((pac + sho + pas + dri + def + phy) / 6);

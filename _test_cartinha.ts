@@ -116,10 +116,10 @@ ok("bonus nivel 20 = 5 (máx)", bonusNivel(20) === 5);
     suspensoesAtivas: 3,
   });
   // Sem suspensão: DEF 44 / FÍS 46 / OVR 61
-  // Com 3 suspensões ativas (desconto 15): DEF 29 / FÍS 31 / OVR 41
-  ok("suspensões: DEF cai para 29", r.def === 29);
-  ok("suspensões: FÍS cai para 31", r.phy === 31);
-  ok("suspensões: OVR cai bastante (61 -> 41)", r.ovr === 41);
+  // Com 3 suspensões ativas (desconto 15, só no OVR): DEF/FÍS mantidos, OVR 46
+  ok("suspensões: DEF mantida em 44", r.def === 44);
+  ok("suspensões: FÍS mantida em 46", r.phy === 46);
+  ok("suspensões: OVR cai -15 (61 -> 46)", r.ovr === 46);
 }
 
 // ---------- Goleiro com pênaltis defendidos ----------
