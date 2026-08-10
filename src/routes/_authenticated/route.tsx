@@ -10,6 +10,7 @@ import { AvatarJogador } from "@/components/AvatarJogador";
 import { RodapeApp } from "@/components/RodapeApp";
 import { CartinhaProvider } from "@/components/CartinhaModal";
 import { BubbleConquista } from "@/components/BubbleConquista";
+import { NotificacoesProvider } from "@/components/NotificacoesProvider";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -67,50 +68,54 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <BubbleConquista userId={data?.user.id} />
-      {/* Header mobile */}
-      <header className="sticky top-0 z-30 border-b border-border/50 bg-surface/95 backdrop-blur-lg">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <BrandLogo size="sm" />
-            <div className="leading-tight">
-              <p className="font-display text-lg tracking-wider text-foreground">Fut Cajazeiras</p>
-              <p className="text-[10px] uppercase tracking-widest text-gold">
-                {data?.rotuloPapel ?? "Convidado"}
-              </p>
+    <NotificacoesProvider userId={data?.user.id}>
+      <div className="flex min-h-screen flex-col bg-background">
+        <BubbleConquista />
+        {/* Header mobile */}
+        <header className="sticky top-0 z-30 border-b border-border/50 bg-surface/95 backdrop-blur-lg">
+          <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2">
+              <BrandLogo size="sm" />
+              <div className="leading-tight">
+                <p className="font-display text-lg tracking-wider text-foreground">
+                  Fut Cajazeiras
+                </p>
+                <p className="text-[10px] uppercase tracking-widest text-gold">
+                  {data?.rotuloPapel ?? "Convidado"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <SinoNotificacoes />
+              <Link
+                to="/perfil"
+                aria-label="Meu perfil"
+                title="Meu perfil"
+                className="shrink-0 transition-opacity hover:opacity-80"
+              >
+                <AvatarJogador
+                  caminho={data?.perfil?.avatar_url}
+                  nome={data?.perfil?.nome}
+                  size="sm"
+                />
+              </Link>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <SinoNotificacoes userId={data?.user.id} />
-            <Link
-              to="/perfil"
-              aria-label="Meu perfil"
-              title="Meu perfil"
-              className="shrink-0 transition-opacity hover:opacity-80"
-            >
-              <AvatarJogador
-                caminho={data?.perfil?.avatar_url}
-                nome={data?.perfil?.nome}
-                size="sm"
-              />
-            </Link>
-          </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto w-full max-w-md flex-1 px-4 pt-4 pb-10">
-        <CartinhaProvider>
-          <Outlet />
-        </CartinhaProvider>
-      </main>
+        <main className="mx-auto w-full max-w-md flex-1 px-4 pt-4 pb-10">
+          <CartinhaProvider>
+            <Outlet />
+          </CartinhaProvider>
+        </main>
 
-      <RodapeApp />
+        <RodapeApp />
 
-      {/* Espaço reservado para a barra de navegação inferior fixa (não sobrepõe o rodapé) */}
-      <div className="h-20 shrink-0" aria-hidden />
+        {/* Espaço reservado para a barra de navegação inferior fixa (não sobrepõe o rodapé) */}
+        <div className="h-20 shrink-0" aria-hidden />
 
-      <BottomNav isAdmin={isAdmin} />
-    </div>
+        <BottomNav isAdmin={isAdmin} />
+      </div>
+    </NotificacoesProvider>
   );
 }

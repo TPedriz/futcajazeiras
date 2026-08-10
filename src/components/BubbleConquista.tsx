@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Zap } from "lucide-react";
+import { useNotificacoes } from "@/components/NotificacoesProvider";
 
 /**
  * Bolha comemorativa: aparece com efeitos quando o usuário sobe de nível
@@ -16,51 +16,15 @@ interface ItemBolha {
   mensagem: string;
 }
 
-export function BubbleConquista({ userId }: { userId: string | undefined }) {
-  const [fila, setFila] = useState<ItemBolha[]>([]);
+export function BubbleConquista() {
+  const { filaCelebracao, removerCelebracao } = useNotificacoes();
 
-  useEffect(() => {
-    if (!userId) return;
-    const canal = supabase
-      .channel("bolha-conquista")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notificacoes",
-          filter: `usuario_id=eq.${userId}`,
-        },
-        (payload) => {
-          const n = payload.new as {
-            id?: string;
-            tipo?: string;
-            titulo?: string;
-            mensagem?: string;
-          };
-          if (!n?.id) return;
-          if (n.tipo !== "conquista" && n.tipo !== "nivel") return;
-          const tipo = n.tipo;
-          setFila((f) => [
-            ...f,
-            { id: n.id!, tipo, titulo: n.titulo ?? "", mensagem: n.mensagem ?? "" },
-          ]);
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(canal);
-    };
-  }, [userId]);
-
-  const remover = (id: string) => setFila((f) => f.filter((x) => x.id !== id));
-
-  if (fila.length === 0) return null;
+  if (filaCelebracao.length === 0) return null;
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-20 z-[100] flex flex-col items-center gap-3 px-4">
-      {fila.map((item) => (
-        <BubbleCard key={item.id} item={item} onDone={remover} />
+      {filaCelebracao.map((item) => (
+        <BubbleCard key={item.id} item={item} onDone={removerCelebracao} />
       ))}
       <style>{`
         @keyframes fc-pop {
