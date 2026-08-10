@@ -16,18 +16,12 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AtualizarCadastroRouteImport } from './routes/atualizar-cadastro'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AtualizarCadastroRouteImport } from './routes/atualizar-cadastro'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
-import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
-import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/baba'
-import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
-import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
+import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
+import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
+import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/baba'
+import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago-webhook'
 import { Route as ApiAuthConfirmarEmailRouteImport } from './routes/api/auth/confirmar-email'
@@ -38,22 +32,10 @@ import { Route as AuthenticatedAdminFinanceiroRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminEstatisticasRouteImport } from './routes/_authenticated/admin/estatisticas'
 import { Route as AuthenticatedAdminCargosRouteImport } from './routes/_authenticated/admin/cargos'
 import { Route as AuthenticatedAdminAjudaRouteImport } from './routes/_authenticated/admin/ajuda'
-import { Route as AuthenticatedAdminCargosRouteImport } from './routes/_authenticated/admin/cargos'
-import { Route as AuthenticatedAdminEstatisticasRouteImport } from './routes/_authenticated/admin/estatisticas'
-import { Route as AuthenticatedAdminFinanceiroRouteImport } from './routes/_authenticated/admin/financeiro'
-import { Route as AuthenticatedAdminResultadosRouteImport } from './routes/_authenticated/admin/resultados'
-import { Route as AuthenticatedAdminSorteioRouteImport } from './routes/_authenticated/admin/sorteio'
-import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin/usuarios'
-import { Route as ApiAuthConfirmarEmailRouteImport } from './routes/api/auth/confirmar-email'
-import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago-webhook'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
@@ -80,34 +62,14 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
-  id: '/recuperar-senha',
-  path: '/recuperar-senha',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAjudaRoute = AuthenticatedAjudaRouteImport.update({
-  id: '/ajuda',
-  path: '/ajuda',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBabaRoute = AuthenticatedBabaRouteImport.update({
-  id: '/baba',
-  path: '/baba',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
-  id: '/inicio',
-  path: '/inicio',
+const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
@@ -115,9 +77,24 @@ const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
   path: '/pagamentos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
+const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
+  id: '/inicio',
+  path: '/inicio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBabaRoute = AuthenticatedBabaRouteImport.update({
+  id: '/baba',
+  path: '/baba',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAjudaRoute = AuthenticatedAjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -125,16 +102,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const AuthenticatedAdminAjudaRoute = AuthenticatedAdminAjudaRouteImport.update({
-  id: '/ajuda',
-  path: '/ajuda',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminCargosRoute =
-  AuthenticatedAdminCargosRouteImport.update({
-    id: '/cargos',
-    path: '/cargos',
-    getParentRoute: () => AuthenticatedAdminRoute,
+const ApiPublicMercadopagoWebhookRoute =
+  ApiPublicMercadopagoWebhookRouteImport.update({
+    id: '/api/public/mercadopago-webhook',
+    path: '/api/public/mercadopago-webhook',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiAuthConfirmarEmailRoute = ApiAuthConfirmarEmailRouteImport.update({
   id: '/api/auth/confirmar-email',
@@ -145,18 +117,6 @@ const AuthenticatedAdminUsuariosRoute =
   AuthenticatedAdminUsuariosRouteImport.update({
     id: '/usuarios',
     path: '/usuarios',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminFinanceiroRoute =
-  AuthenticatedAdminFinanceiroRouteImport.update({
-    id: '/financeiro',
-    path: '/financeiro',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminResultadosRoute =
-  AuthenticatedAdminResultadosRouteImport.update({
-    id: '/resultados',
-    path: '/resultados',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminSorteioRoute =
@@ -165,23 +125,35 @@ const AuthenticatedAdminSorteioRoute =
     path: '/sorteio',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminUsuariosRoute =
-  AuthenticatedAdminUsuariosRouteImport.update({
-    id: '/usuarios',
-    path: '/usuarios',
+const AuthenticatedAdminResultadosRoute =
+  AuthenticatedAdminResultadosRouteImport.update({
+    id: '/resultados',
+    path: '/resultados',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const ApiAuthConfirmarEmailRoute = ApiAuthConfirmarEmailRouteImport.update({
-  id: '/api/auth/confirmar-email',
-  path: '/api/auth/confirmar-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicMercadopagoWebhookRoute =
-  ApiPublicMercadopagoWebhookRouteImport.update({
-    id: '/api/public/mercadopago-webhook',
-    path: '/api/public/mercadopago-webhook',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAdminFinanceiroRoute =
+  AuthenticatedAdminFinanceiroRouteImport.update({
+    id: '/financeiro',
+    path: '/financeiro',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminEstatisticasRoute =
+  AuthenticatedAdminEstatisticasRouteImport.update({
+    id: '/estatisticas',
+    path: '/estatisticas',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminCargosRoute =
+  AuthenticatedAdminCargosRouteImport.update({
+    id: '/cargos',
+    path: '/cargos',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminAjudaRoute = AuthenticatedAdminAjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -345,18 +317,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recuperar-senha': {
@@ -394,46 +359,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/recuperar-senha': {
-      id: '/recuperar-senha'
-      path: '/recuperar-senha'
-      fullPath: '/recuperar-senha'
-      preLoaderRoute: typeof RecuperarSenhaRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/ajuda': {
-      id: '/_authenticated/ajuda'
-      path: '/ajuda'
-      fullPath: '/ajuda'
-      preLoaderRoute: typeof AuthenticatedAjudaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/baba': {
-      id: '/_authenticated/baba'
-      path: '/baba'
-      fullPath: '/baba'
-      preLoaderRoute: typeof AuthenticatedBabaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inicio': {
-      id: '/_authenticated/inicio'
-      path: '/inicio'
-      fullPath: '/inicio'
-      preLoaderRoute: typeof AuthenticatedInicioRouteImport
+    '/_authenticated/perfil': {
+      id: '/_authenticated/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/pagamentos': {
@@ -443,11 +380,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPagamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/perfil': {
-      id: '/_authenticated/perfil'
-      path: '/perfil'
-      fullPath: '/perfil'
-      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
+    '/_authenticated/inicio': {
+      id: '/_authenticated/inicio'
+      path: '/inicio'
+      fullPath: '/inicio'
+      preLoaderRoute: typeof AuthenticatedInicioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/baba': {
+      id: '/_authenticated/baba'
+      path: '/baba'
+      fullPath: '/baba'
+      preLoaderRoute: typeof AuthenticatedBabaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ajuda': {
+      id: '/_authenticated/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AuthenticatedAjudaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/': {
@@ -478,25 +436,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/cargos': {
-      id: '/_authenticated/admin/cargos'
-      path: '/cargos'
-      fullPath: '/admin/cargos'
-      preLoaderRoute: typeof AuthenticatedAdminCargosRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/estatisticas': {
-      id: '/_authenticated/admin/estatisticas'
-      path: '/estatisticas'
-      fullPath: '/admin/estatisticas'
-      preLoaderRoute: typeof AuthenticatedAdminEstatisticasRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/financeiro': {
-      id: '/_authenticated/admin/financeiro'
-      path: '/financeiro'
-      fullPath: '/admin/financeiro'
-      preLoaderRoute: typeof AuthenticatedAdminFinanceiroRouteImport
+    '/_authenticated/admin/sorteio': {
+      id: '/_authenticated/admin/sorteio'
+      path: '/sorteio'
+      fullPath: '/admin/sorteio'
+      preLoaderRoute: typeof AuthenticatedAdminSorteioRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/resultados': {
@@ -506,33 +450,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminResultadosRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/sorteio': {
-      id: '/_authenticated/admin/sorteio'
-      path: '/sorteio'
-      fullPath: '/admin/sorteio'
-      preLoaderRoute: typeof AuthenticatedAdminSorteioRouteImport
+    '/_authenticated/admin/financeiro': {
+      id: '/_authenticated/admin/financeiro'
+      path: '/financeiro'
+      fullPath: '/admin/financeiro'
+      preLoaderRoute: typeof AuthenticatedAdminFinanceiroRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/usuarios': {
-      id: '/_authenticated/admin/usuarios'
-      path: '/usuarios'
-      fullPath: '/admin/usuarios'
-      preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
+    '/_authenticated/admin/estatisticas': {
+      id: '/_authenticated/admin/estatisticas'
+      path: '/estatisticas'
+      fullPath: '/admin/estatisticas'
+      preLoaderRoute: typeof AuthenticatedAdminEstatisticasRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/api/auth/confirmar-email': {
-      id: '/api/auth/confirmar-email'
-      path: '/api/auth/confirmar-email'
-      fullPath: '/api/auth/confirmar-email'
-      preLoaderRoute: typeof ApiAuthConfirmarEmailRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/cargos': {
+      id: '/_authenticated/admin/cargos'
+      path: '/cargos'
+      fullPath: '/admin/cargos'
+      preLoaderRoute: typeof AuthenticatedAdminCargosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/api/public/mercadopago-webhook': {
-      id: '/api/public/mercadopago-webhook'
-      path: '/api/public/mercadopago-webhook'
-      fullPath: '/api/public/mercadopago-webhook'
-      preLoaderRoute: typeof ApiPublicMercadopagoWebhookRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/ajuda': {
+      id: '/_authenticated/admin/ajuda'
+      path: '/ajuda'
+      fullPath: '/admin/ajuda'
+      preLoaderRoute: typeof AuthenticatedAdminAjudaRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
   }
 }
