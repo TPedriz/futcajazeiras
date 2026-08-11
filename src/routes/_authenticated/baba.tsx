@@ -13,6 +13,7 @@ import {
 } from "@/lib/babaQueries";
 import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
+import { BadgeBaxvi } from "@/components/BadgeBaxvi";
 import { ChegadaGps } from "@/components/ChegadaGps";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
 import { MicroConquistas } from "@/components/MicroConquistas";
@@ -54,9 +55,7 @@ import {
 export const Route = createFileRoute("/_authenticated/baba")({
   head: ({ loaderData }) => {
     const sessao = loaderData as
-      | { id: string; data_horario: string; local: string }
-      | null
-      | undefined;
+      { id: string; data_horario: string; local: string } | null | undefined;
     const scripts = sessao
       ? [
           {
@@ -268,11 +267,23 @@ function BabaPage() {
   return (
     <div className="space-y-5">
       {/* Info do baba */}
-      <div className="card-premium p-5">
-        <p className="text-xs uppercase tracking-widest text-gold">Próximo Baba</p>
+      <div className={`card-premium p-5 ${sessao.tipo === "baxvi" ? "border-gold/50" : ""}`}>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs uppercase tracking-widest text-gold">Próximo Baba</p>
+          {sessao.tipo === "baxvi" && <BadgeBaxvi />}
+        </div>
         <h1 className="mt-1 font-display text-3xl text-foreground">
           {format(new Date(sessao.data_horario), "EEEE, dd 'de' MMM", { locale: ptBR })}
         </h1>
+        {sessao.tipo === "baxvi" && (
+          <div className="mt-3 rounded-lg border border-gold/30 bg-gold/5 p-3">
+            <p className="font-display text-lg text-gold">⚔️ Bahia × Vitória</p>
+            <p className="text-xs text-muted-foreground">
+              Dia de BAxVI! O sorteio vai dividir os times entre Bahia e Vitória pelo time do
+              coração de cada associado.
+            </p>
+          </div>
+        )}
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Clock className="size-4 text-gold" />

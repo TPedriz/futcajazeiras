@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RankingMensal } from "@/components/RankingMensal";
+import { BadgeBaxvi } from "@/components/BadgeBaxvi";
 import { tempoDeAssociado } from "@/lib/associado";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -177,7 +178,10 @@ function InicioPage() {
       {proxSessao ? (
         <Link to="/baba">
           <div className="card-premium p-5 hover:border-gold/40 transition-colors">
-            <p className="text-xs uppercase tracking-widest text-gold">Próximo Baba</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs uppercase tracking-widest text-gold">Próximo Baba</p>
+              {proxSessao.tipo === "baxvi" && <BadgeBaxvi />}
+            </div>
             <h2 className="mt-1 font-display text-2xl text-foreground">
               {format(new Date(proxSessao.data_horario), "EEEE, dd 'de' MMMM", { locale: ptBR })}
             </h2>
@@ -245,6 +249,7 @@ function InicioPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">
                     {format(new Date(s.data_horario), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                    {s.tipo === "baxvi" && <BadgeBaxvi className="ml-2" />}
                   </p>
                   <p className="truncate text-[11px] text-muted-foreground">
                     {format(new Date(s.data_horario), "HH:mm", { locale: ptBR })} • {s.local}
