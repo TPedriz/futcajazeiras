@@ -668,6 +668,7 @@ export type Database = {
           longitude: number;
           mostrar_lista_chegada: boolean;
           raio_metros: number;
+          tipo: string;
         };
         Insert: {
           abertura_lista?: string | null;
@@ -682,6 +683,7 @@ export type Database = {
           longitude?: number;
           mostrar_lista_chegada?: boolean;
           raio_metros?: number;
+          tipo?: string;
         };
         Update: {
           abertura_lista?: string | null;
@@ -696,6 +698,7 @@ export type Database = {
           longitude?: number;
           mostrar_lista_chegada?: boolean;
           raio_metros?: number;
+          tipo?: string;
         };
         Relationships: [];
       };

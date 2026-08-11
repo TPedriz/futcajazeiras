@@ -9,6 +9,7 @@ import {
   aberturaEfetivo,
 } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
+import { BadgeBaxvi } from "@/components/BadgeBaxvi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +54,7 @@ function AdminSessoes() {
   const [lat, setLat] = useState("-12.898243032071784");
   const [lng, setLng] = useState("-38.39820393037823");
   const [raio, setRaio] = useState("1000");
+  const [tipo, setTipo] = useState<"comum" | "baxvi">("comum");
 
   const [mostrarNovoLocal, setMostrarNovoLocal] = useState(false);
   const [novoLocal, setNovoLocal] = useState({
@@ -78,6 +80,7 @@ function AdminSessoes() {
     raio: "",
     abertura: "",
     fechamento: "",
+    tipo: "comum" as "comum" | "baxvi",
   });
 
   const iniciarEdicao = (s: (typeof sessoes)[number]) => {
@@ -90,6 +93,7 @@ function AdminSessoes() {
       raio: String(s.raio_metros ?? ""),
       abertura: format(aberturaEfetivo(s), "yyyy-MM-dd'T'HH:mm"),
       fechamento: format(fechamentoEfetivo(s), "yyyy-MM-dd'T'HH:mm"),
+      tipo: (s.tipo as "comum" | "baxvi") ?? "comum",
     });
   };
 
@@ -104,6 +108,7 @@ function AdminSessoes() {
           latitude: Number(editForm.lat),
           longitude: Number(editForm.lng),
           raio_metros: Math.max(100, Number(editForm.raio) || 1000),
+          tipo: editForm.tipo,
           abertura_lista: editForm.abertura ? new Date(editForm.abertura).toISOString() : null,
           fechamento_lista: editForm.fechamento
             ? new Date(editForm.fechamento).toISOString()
@@ -224,6 +229,7 @@ function AdminSessoes() {
       const { error } = await supabase.from("sessoes_baba").insert({
         data_horario: jogo.toISOString(),
         local,
+        tipo,
         fechamento_lista: fechamento.toISOString(),
         abertura_lista: abertura.toISOString(),
         latitude: Number(lat),
@@ -381,6 +387,21 @@ function AdminSessoes() {
             className="h-12"
             inputMode="numeric"
           />
+        </div>
+        <div>
+          <Label htmlFor="tipo-baba">Tipo de baba</Label>
+          <Select value={tipo} onValueChange={(v) => setTipo(v as "comum" | "baxvi")}>
+            <SelectTrigger id="tipo-baba" className="h-12">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="comum">Baba comum</SelectItem>
+              <SelectItem value="baxvi">BAxVI (Bahia × Vitória)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            BAxVI = sorteio automático em Bahia × Vitória pelo time do coração.
+          </p>
         </div>
         <Button variant="goldOutline" size="lg" className="w-full" onClick={usarMinhaLocalizacao}>
           <Navigation className="size-4" /> Usar minha localização atual
@@ -598,6 +619,23 @@ function AdminSessoes() {
                         onChange={(e) => setEditForm({ ...editForm, raio: e.target.value })}
                       />
                     </div>
+                    <div>
+                      <Label htmlFor={`e-tipo-${s.id}`}>Tipo de baba</Label>
+                      <Select
+                        value={editForm.tipo}
+                        onValueChange={(v) =>
+                          setEditForm({ ...editForm, tipo: v as "comum" | "baxvi" })
+                        }
+                      >
+                        <SelectTrigger id={`e-tipo-${s.id}`} className="h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="comum">Baba comum</SelectItem>
+                          <SelectItem value="baxvi">BAxVI (Bahia × Vitória)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label htmlFor={`e-abert-${s.id}`}>Abertura da lista</Label>
@@ -642,6 +680,7 @@ function AdminSessoes() {
                         {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", {
                           locale: ptBR,
                         })}
+                        {s.tipo === "baxvi" && <BadgeBaxvi />}
                       </div>
                       <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                         <MapPin className="size-3" /> {s.local}

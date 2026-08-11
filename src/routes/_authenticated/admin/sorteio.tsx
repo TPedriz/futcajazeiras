@@ -46,7 +46,9 @@ function SorteioPage() {
   } | null>(null);
   const [estadoChegada, setEstadoChegada] = useState<SorteioEstado | null>(null);
   const [tamanho, setTamanho] = useState<number>(7);
-  const [modo, setModo] = useState<"aleatorio" | "chegada" | "baxvi">("aleatorio");
+  const [modo, setModo] = useState<"aleatorio" | "chegada" | "baxvi">(
+    sessao?.tipo === "baxvi" ? "baxvi" : "aleatorio",
+  );
   const [substituindoId, setSubstituindoId] = useState<string | null>(null);
   const [substitutoId, setSubstitutoId] = useState<string>("");
 
