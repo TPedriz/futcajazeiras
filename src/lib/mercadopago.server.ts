@@ -22,7 +22,7 @@ function token() {
 }
 
 export function urlBase() {
-  return process.env.APP_PUBLIC_URL || "https://futcajazeiras.lovable.app";
+  return process.env.APP_PUBLIC_URL || "https://www.futcajazeiras.com.br";
 }
 
 export function urlWebhook() {

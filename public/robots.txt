@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://futcajazeiras.lovable.app/sitemap.xml
+Sitemap: https://www.futcajazeiras.com.br/sitemap.xml

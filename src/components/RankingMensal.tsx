@@ -193,7 +193,7 @@ async function desenharRanking(
   ctx.textAlign = "center";
   ctx.fillStyle = "#8c8c92";
   ctx.font = "32px Inter, system-ui, sans-serif";
-  ctx.fillText("futcajazeiras.lovable.app", L / 2, A - 90);
+  ctx.fillText("www.futcajazeiras.com.br", L / 2, A - 90);
 
   if (brasao) ctx.drawImage(brasao, L / 2 - 55, 40, 110, 110);
 

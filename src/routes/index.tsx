@@ -20,9 +20,9 @@ export const Route = createFileRoute("/")({
         content: "Confirme presença, leve seu convidado e acompanhe o baba direto pelo celular.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://futcajazeiras.lovable.app/" },
+      { property: "og:url", content: "https://www.futcajazeiras.com.br/" },
     ],
-    links: [{ rel: "canonical", href: "https://futcajazeiras.lovable.app/" }],
+    links: [{ rel: "canonical", href: "https://www.futcajazeiras.com.br/" }],
     scripts: [
       {
         type: "application/ld+json",
@@ -32,13 +32,13 @@ export const Route = createFileRoute("/")({
             {
               "@type": "SportsOrganization",
               name: "Fut Cajazeiras",
-              url: "https://futcajazeiras.lovable.app/",
+              url: "https://www.futcajazeiras.com.br/",
               sport: "Soccer",
             },
             {
               "@type": "WebSite",
               name: "Fut Cajazeiras",
-              url: "https://futcajazeiras.lovable.app/",
+              url: "https://www.futcajazeiras.com.br/",
               description:
                 "Plataforma de gestão do baba do Fut Cajazeiras: presenças, convidados, mensalidades e sorteio de times.",
             },
