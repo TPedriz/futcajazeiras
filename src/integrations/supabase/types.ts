@@ -1006,6 +1006,23 @@ export type Database = {
         }
         Relationships: []
       }
+      ranking_cartinhas: {
+        Row: {
+          avatar_url: string | null
+          id: string
+          nome: string
+          ovr: number | null
+          posicao: Database["public"]["Enums"]["posicao_jogador"] | null
+          stat_defesa: number | null
+          stat_drible: number | null
+          stat_finalizacao: number | null
+          stat_fisico: number | null
+          stat_passe: number | null
+          stat_ritmo: number | null
+          tema_carta: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       aplica_suspensao: {

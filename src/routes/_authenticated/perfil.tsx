@@ -44,6 +44,8 @@ import { AvatarJogador, avatarUrlQuery } from "@/components/AvatarJogador";
 import { EditorFotoPerfil } from "@/components/EditorFotoPerfil";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
 import { GerenciadorConquistas } from "@/components/GerenciadorConquistas";
+import { EstatisticasJogador } from "@/components/EstatisticasJogador";
+import { RankingCartinhas } from "@/components/RankingCartinhas";
 import { progressoNivel, xpNecessariaParaNivel } from "@/lib/gamificacao";
 import { useState, useRef } from "react";
 import { formataTelefone } from "@/lib/telefone";
@@ -513,6 +515,12 @@ function PerfilPage() {
 
       {/* Minha Cartinha (estilo FUT) */}
       <MinhaCartinha perfil={perfil} usuarioId={perfil?.id} />
+
+      {/* Estatísticas individuais + janela de cartões amarelos */}
+      <EstatisticasJogador usuarioId={perfil?.id} />
+
+      {/* Ranking das cartinhas (top 3 por categoria) */}
+      <RankingCartinhas />
 
       {/* Minhas Conquistas (gamificação) */}
       <div className="card-premium space-y-3 p-4">
