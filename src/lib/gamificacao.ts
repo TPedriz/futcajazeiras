@@ -190,6 +190,11 @@ export const ROTULOS_CATEGORIA_CONQUISTA: Record<string, string> = {
   assistencias: "Assistências",
   nivel: "Nível",
   xp: "XP total",
+  penaltis: "Pênaltis defendidos",
+  vitorias: "Vitórias",
+  cartoes: "Cartões amarelos",
+  faltas: "Faltas",
+  gols_contra: "Gols contra",
 };
 
 export function rotuloCategoriaConquista(categoria: string): string {

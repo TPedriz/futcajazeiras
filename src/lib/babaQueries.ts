@@ -256,6 +256,75 @@ export const estatisticasDoBabaQuery = (babaId: string | undefined) =>
     },
   });
 
+/** Estatísticas acumuladas de um usuário (todas as colunas somadas). */
+export const estatisticasDoUsuarioQuery = (usuarioId: string | undefined) =>
+  queryOptions({
+    queryKey: ["estatisticas-usuario", usuarioId],
+    enabled: !!usuarioId,
+    queryFn: async () => {
+      if (!usuarioId) return null;
+      const { data, error } = await supabase
+        .from("estatisticas_baba")
+        .select(
+          "gols, assistencias, penaltis_defendidos, cartoes_amarelos, cartoes_azuis, cartoes_vermelhos, faltas, gols_contra",
+        )
+        .eq("usuario_id", usuarioId);
+      if (error) throw error;
+      const linhas = data ?? [];
+      const somar = (campo: keyof (typeof linhas)[number]) =>
+        linhas.reduce((s, l) => s + (l[campo] ?? 0), 0);
+      return {
+        babasComEstatistica: linhas.length,
+        gols: somar("gols"),
+        assistencias: somar("assistencias"),
+        penaltisDefendidos: somar("penaltis_defendidos"),
+        cartoesAmarelos: somar("cartoes_amarelos"),
+        cartoesAzuis: somar("cartoes_azuis"),
+        cartoesVermelhos: somar("cartoes_vermelhos"),
+        faltas: somar("faltas"),
+        golsContra: somar("gols_contra"),
+      };
+    },
+  });
+
+/** Cartões amarelos do usuário por baba (para a janela de aviso no perfil). */
+export const cartoesDoUsuarioQuery = (usuarioId: string | undefined) =>
+  queryOptions({
+    queryKey: ["cartoes-usuario", usuarioId],
+    enabled: !!usuarioId,
+    queryFn: async () => {
+      if (!usuarioId) return [];
+      const { data, error } = await supabase
+        .from("estatisticas_baba")
+        .select("baba_id, cartoes_amarelos")
+        .eq("usuario_id", usuarioId)
+        .gt("cartoes_amarelos", 0);
+      if (error) throw error;
+      return (data ?? []).map((l) => ({
+        baba_id: l.baba_id,
+        cartoesAmarelos: l.cartoes_amarelos ?? 0,
+      }));
+    },
+  });
+
+/**
+ * Todas as cartinhas (view pública `ranking_cartinhas`) para o ranking top 3.
+ * Em caso de erro (view ainda não criada no banco), devolve lista vazia.
+ */
+export const todasCartinhasQuery = () =>
+  queryOptions({
+    queryKey: ["todas-cartinhas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ranking_cartinhas")
+        .select(
+          "id, nome, avatar_url, posicao, ovr, stat_ritmo, stat_finalizacao, stat_passe, stat_drible, stat_defesa, stat_fisico, tema_carta",
+        );
+      if (error) return [];
+      return data ?? [];
+    },
+  });
+
 export const perfisPublicosQuery = () =>
   queryOptions({
     queryKey: ["perfis-publicos"],
@@ -395,6 +464,9 @@ export const politicaSuspensaoQuery = () =>
           "janela_faltas",
           "suspensao_faltas_babas",
           "suspensao_vermelho_babas",
+          "janela_amarelos",
+          "limite_amarelos",
+          "suspensao_amarelos_babas",
         ]);
       if (error) throw error;
       const m = new Map((data ?? []).map((c) => [c.chave, Number(c.valor)]));
@@ -403,6 +475,9 @@ export const politicaSuspensaoQuery = () =>
         janelaFaltas: m.get("janela_faltas") ?? 5,
         suspensaoFaltasBabas: m.get("suspensao_faltas_babas") ?? 1,
         suspensaoVermelhoBabas: m.get("suspensao_vermelho_babas") ?? 1,
+        janelaAmarelos: m.get("janela_amarelos") ?? 5,
+        limiteAmarelos: m.get("limite_amarelos") ?? 3,
+        suspensaoAmarelosBabas: m.get("suspensao_amarelos_babas") ?? 1,
       };
     },
   });

@@ -1007,6 +1007,30 @@ function PoliticaSuspensaoCard() {
       min: 0,
       max: 10,
     },
+    {
+      chave: "janela_amarelos",
+      rotulo: "Janela de amarelos (babas)",
+      desc: "Quantos babas recentes contam para o limite de cartões amarelos",
+      atual: pol?.janelaAmarelos ?? 5,
+      min: 1,
+      max: 30,
+    },
+    {
+      chave: "limite_amarelos",
+      rotulo: "Limite de amarelos",
+      desc: "Cartões amarelos na janela que suspendem (3 = suspende no 3º)",
+      atual: pol?.limiteAmarelos ?? 3,
+      min: 1,
+      max: 20,
+    },
+    {
+      chave: "suspensao_amarelos_babas",
+      rotulo: "Suspensão por amarelos",
+      desc: "Por quantos babas o acumulador fica fora (0 = desligado)",
+      atual: pol?.suspensaoAmarelosBabas ?? 1,
+      min: 0,
+      max: 10,
+    },
   ];
 
   const salvar = useMutation({
@@ -1024,6 +1048,10 @@ function PoliticaSuspensaoCard() {
       const janela = valores.janela_faltas ?? pol?.janelaFaltas ?? 5;
       if (janela < limite)
         throw new Error("A janela de babas não pode ser menor que o limite de faltas.");
+      const janelaAmarelos = valores.janela_amarelos ?? pol?.janelaAmarelos ?? 5;
+      const limiteAmarelos = valores.limite_amarelos ?? pol?.limiteAmarelos ?? 3;
+      if (janelaAmarelos < limiteAmarelos)
+        throw new Error("A janela de amarelos não pode ser menor que o limite de amarelos.");
       for (const [chave, valor] of Object.entries(valores)) {
         const { error } = await supabase
           .from("configuracoes")

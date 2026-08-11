@@ -1,18 +1,18 @@
 -- ============================================================
--- Fut Cajazeiras — Suspensões: mural só com ativas + penalidade na cartinha
+-- Fut Cajazeiras — CORREÇÃO: penalidade de suspensão só no OVR
 -- ------------------------------------------------------------
 -- Rode no SQL editor do Lovable (Supabase). Idempotente (pode rodar de novo).
 --
 -- O que faz:
---   1. `calcula_cartinha` passa a descontar da nota por SUSPENSÕES ATIVAS
---      (baba bloqueado ainda no futuro). Cada suspensão ativa = -5 no OVR
---      (máx -20), além de derrubar DEF e FÍS.
---   2. Recalcula a cartinha automaticamente quando uma suspensão é criada
---      ou removida (triggers).
---   3. Recalcula todas as cartinhas agora (backfill do novo desconto).
+--   1. Restaura a fórmula original da cartinha (DEF/FÍS com base 40) —
+--      corrige o bug anterior que deixou a DEF de todo mundo em 1.
+--   2. Suspensão ativa derruba APENAS o OVR: -5 por suspensão (máx -20).
+--      DEF e FÍS não mudam por causa de suspensão.
+--   3. Recalcula a cartinha automaticamente ao criar/remover suspensão
+--      (triggers) e recalcula todas agora (backfill).
 --
 -- Obs.: a saída do MURAL de suspensões (nome some quando o baba passa) é
--- feita na query do app (`suspensoesQuery`), sem necessidade de mudança aqui.
+-- feita na query do app (`suspensoesQuery`), sem mudança aqui.
 -- ============================================================
 
 -- 1. Função de cálculo da cartinha com desconto por suspensões ativas.
@@ -114,21 +114,21 @@ BEGIN
       ELSE 0 END)));
 
   -- DEF (Defesa/Disciplina): vitórias por baba com desconto por cartões,
-  -- faltas cometidas, gols contra e SUSPENSÕES ATIVAS.
-  v_def := LEAST(99, GREATEST(1, round(
+  -- faltas cometidas e gols contra (suspensão NÃO derruba DEF).
+  v_def := LEAST(99, GREATEST(1, 40 + round(
     CASE WHEN v_presencas > 0 THEN (v_vitorias::numeric / v_presencas) * 10 ELSE 0 END)
-    - v_ca * 2 - v_caz * 3 - v_cv * 6 - v_faltas * 1 - v_gc * 3 - v_desconto));
+    - v_ca * 2 - v_caz * 3 - v_cv * 6 - v_faltas * 1 - v_gc * 3));
 
   -- PHY (Físico): pênaltis defendidos + bônus de goleiro + nível de XP,
-  -- com desconto por faltas cometidas e SUSPENSÕES ATIVAS.
+  -- com pequeno desconto por faltas cometidas (suspensão NÃO derruba FÍS).
   v_phy := LEAST(99, GREATEST(1,
     40 + v_penaltis * 8
       + CASE WHEN v_posicao = 'goleiro' THEN 15 ELSE 0 END
       + LEAST(20, v_nivel * 2)
-      - v_faltas * 1 - v_desconto));
+      - v_faltas * 1));
 
-  -- OVR base = média dos 6 atributos; bônus de nível (máx +5) e desconto
-  -- por suspensões ativas (derruba bastante a nota).
+  -- OVR base = média dos 6 atributos; bônus de nível (máx +5). A suspensão
+  -- ativa derruba APENAS o OVR (-5 por suspensão, máx -20).
   v_base := round((v_pac + v_sho + v_pas + v_dri + v_def + v_phy)::numeric / 6);
   v_bonus := LEAST(5, floor(v_nivel / 3.0));
   v_ovr := LEAST(99, GREATEST(1, v_base + v_bonus - v_desconto));
