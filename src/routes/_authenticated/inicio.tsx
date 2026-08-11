@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RankingMensal } from "@/components/RankingMensal";
+import { RankingCartinhas } from "@/components/RankingCartinhas";
 import { BadgeBaxvi } from "@/components/BadgeBaxvi";
 import { tempoDeAssociado } from "@/lib/associado";
 import { format } from "date-fns";
@@ -94,194 +95,205 @@ function InicioPage() {
     modoLista(Date.now(), abertura, fechamento, !!proxSessao?.esta_fechado) === "fecha";
 
   return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Boa!</p>
-        <h1 className="font-display text-4xl leading-tight text-foreground">
-          {nome.split(" ")[0]}
-        </h1>
-        {tempo && (
-          <p className="mt-1 text-sm text-muted-foreground">
-            <span className="text-gold">{tempo.apelido}</span> — no baba há{" "}
-            <strong className="text-foreground">{tempo.texto}</strong>.
-          </p>
+    <div className="space-y-5 md:grid md:grid-cols-[minmax(0,1fr)_20rem] md:items-start md:gap-6">
+      {/* Coluna principal (mobile: tudo empilhado; desktop: esquerda) */}
+      <div className="space-y-5 md:col-start-1">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Boa!</p>
+          <h1 className="font-display text-4xl leading-tight text-foreground">
+            {nome.split(" ")[0]}
+          </h1>
+          {tempo && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              <span className="text-gold">{tempo.apelido}</span> — no baba há{" "}
+              <strong className="text-foreground">{tempo.texto}</strong>.
+            </p>
+          )}
+        </div>
+
+        {/* Status financeiro */}
+        <div className={emDia ? "card-vip p-5" : "card-premium border-destructive/40 p-5"}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                {isConvidado ? "Diária de convidado" : "Mensalidade"}
+              </p>
+              <p
+                className={`mt-1 font-display text-3xl ${emDia ? "text-gold" : isConvidado ? "" : "text-destructive"}`}
+              >
+                {isConvidado ? "Paga a diária por baba" : emDia ? "Em dia" : "Pendente"}
+              </p>
+            </div>
+            <div
+              className={`flex size-14 items-center justify-center rounded-full ${
+                isConvidado ? "bg-gold/10" : emDia ? "bg-gold/10" : "bg-destructive/10"
+              }`}
+            >
+              {isConvidado ? (
+                <CheckCircle2 className="size-7 text-gold" />
+              ) : emDia ? (
+                <CheckCircle2 className="size-7 text-gold" />
+              ) : (
+                <AlertCircle className="size-7 text-destructive" />
+              )}
+            </div>
+          </div>
+          {isConvidado ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Convidados não pagam mensalidade — apenas a diária de cada baba que participam.
+            </p>
+          ) : !emDia ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Regularize sua mensalidade com a diretoria para manter a prioridade no check-in.
+            </p>
+          ) : null}
+        </div>
+
+        {/* Caminho para virar associado (convidados) */}
+        {isConvidado && (
+          <Link to="/perfil">
+            <div className="card-premium p-5 hover:border-gold/40 transition-colors">
+              <div className="flex items-center justify-between">
+                <p className="flex items-center gap-2 text-xs uppercase tracking-widest text-gold">
+                  <Trophy className="size-4" /> Caminho para virar Associado
+                </p>
+                <ArrowRight className="size-4 text-muted-foreground" />
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Faltam{" "}
+                <strong className="font-display text-2xl text-gold">
+                  {META_CONVIDADO - jogados}
+                </strong>{" "}
+                {META_CONVIDADO - jogados === 1 ? "baba pago" : "babas pagos"} para liberar o
+                pedido.
+              </p>
+              <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>
+                  {jogados}/{META_CONVIDADO} babas pagos
+                </span>
+                <span>Toque para ver como funciona</span>
+              </div>
+              <Progress value={(jogados / META_CONVIDADO) * 100} className="mt-1 h-2" />
+            </div>
+          </Link>
+        )}
+
+        {/* Próximo Baba */}
+        {proxSessao ? (
+          <Link to="/baba">
+            <div className="card-premium p-5 hover:border-gold/40 transition-colors">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs uppercase tracking-widest text-gold">Próximo Baba</p>
+                {proxSessao.tipo === "baxvi" && <BadgeBaxvi />}
+              </div>
+              <h2 className="mt-1 font-display text-2xl text-foreground">
+                {format(new Date(proxSessao.data_horario), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+              </h2>
+              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Clock className="size-4 text-gold" />
+                  <span>
+                    {format(new Date(proxSessao.data_horario), "HH:mm", { locale: ptBR })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="size-4 text-gold" />
+                  <span>{proxSessao.local}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="size-4 text-gold" />
+                  <span>{totalConfirmados} associados confirmados</span>
+                </div>
+                {abertura && fechamento && (
+                  <div className="flex items-center gap-2">
+                    <CalendarClock className="size-4 text-gold" />
+                    <span>
+                      Abre {format(abertura, "dd/MM 'às' HH:mm", { locale: ptBR })} · Fecha{" "}
+                      {format(fechamento, "dd/MM 'às' HH:mm", { locale: ptBR })}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <ListaStatus
+                abertura={abertura}
+                fechamento={fechamento}
+                fechadaPelaDiretoria={proxSessao.esta_fechado}
+              />
+              <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-gold">
+                Ver detalhes <ArrowRight className="size-4" />
+              </div>
+            </div>
+          </Link>
+        ) : (
+          <div className="card-premium p-6 text-center">
+            <Calendar className="mx-auto size-10 text-muted-foreground/50" />
+            <p className="mt-3 font-display text-xl">Nenhum baba agendado</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Aguarde a diretoria marcar a próxima sessão.
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-3">
+          <Link to="/baba">
+            <Button variant="hero" size="xl" className="w-full">
+              {listaAberta ? "Confirmar minha presença" : "Ver detalhes do baba"}
+            </Button>
+          </Link>
+        </div>
+
+        {proximas.length > 0 && (
+          <div className="card-premium p-5">
+            <p className="text-xs uppercase tracking-widest text-gold">Próximos babas</p>
+            <ul className="mt-3 space-y-2">
+              {proximas.map((s) => (
+                <li
+                  key={s.id}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface p-3"
+                >
+                  <Calendar className="size-4 shrink-0 text-gold" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">
+                      {format(new Date(s.data_horario), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                      {s.tipo === "baxvi" && <BadgeBaxvi className="ml-2" />}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {format(new Date(s.data_horario), "HH:mm", { locale: ptBR })} • {s.local}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {(passados?.length ?? 0) > 0 && (
+          <div className="card-premium p-5">
+            <p className="text-xs uppercase tracking-widest text-gold">Babas passados</p>
+            <ul className="mt-3 space-y-2">
+              {(passados ?? []).map((s) => (
+                <li
+                  key={s.id}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface p-3 opacity-80"
+                >
+                  <Calendar className="size-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-muted-foreground">
+                      {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">{s.local}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
 
-      {/* Status financeiro */}
-      <div className={emDia ? "card-vip p-5" : "card-premium border-destructive/40 p-5"}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">
-              {isConvidado ? "Diária de convidado" : "Mensalidade"}
-            </p>
-            <p
-              className={`mt-1 font-display text-3xl ${emDia ? "text-gold" : isConvidado ? "" : "text-destructive"}`}
-            >
-              {isConvidado ? "Paga a diária por baba" : emDia ? "Em dia" : "Pendente"}
-            </p>
-          </div>
-          <div
-            className={`flex size-14 items-center justify-center rounded-full ${
-              isConvidado ? "bg-gold/10" : emDia ? "bg-gold/10" : "bg-destructive/10"
-            }`}
-          >
-            {isConvidado ? (
-              <CheckCircle2 className="size-7 text-gold" />
-            ) : emDia ? (
-              <CheckCircle2 className="size-7 text-gold" />
-            ) : (
-              <AlertCircle className="size-7 text-destructive" />
-            )}
-          </div>
-        </div>
-        {isConvidado ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Convidados não pagam mensalidade — apenas a diária de cada baba que participam.
-          </p>
-        ) : !emDia ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Regularize sua mensalidade com a diretoria para manter a prioridade no check-in.
-          </p>
-        ) : null}
-      </div>
-
-      {/* Caminho para virar associado (convidados) */}
-      {isConvidado && (
-        <Link to="/perfil">
-          <div className="card-premium p-5 hover:border-gold/40 transition-colors">
-            <div className="flex items-center justify-between">
-              <p className="flex items-center gap-2 text-xs uppercase tracking-widest text-gold">
-                <Trophy className="size-4" /> Caminho para virar Associado
-              </p>
-              <ArrowRight className="size-4 text-muted-foreground" />
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Faltam{" "}
-              <strong className="font-display text-2xl text-gold">
-                {META_CONVIDADO - jogados}
-              </strong>{" "}
-              {META_CONVIDADO - jogados === 1 ? "baba pago" : "babas pagos"} para liberar o pedido.
-            </p>
-            <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>
-                {jogados}/{META_CONVIDADO} babas pagos
-              </span>
-              <span>Toque para ver como funciona</span>
-            </div>
-            <Progress value={(jogados / META_CONVIDADO) * 100} className="mt-1 h-2" />
-          </div>
-        </Link>
-      )}
-
-      {/* Próximo Baba */}
-      {proxSessao ? (
-        <Link to="/baba">
-          <div className="card-premium p-5 hover:border-gold/40 transition-colors">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs uppercase tracking-widest text-gold">Próximo Baba</p>
-              {proxSessao.tipo === "baxvi" && <BadgeBaxvi />}
-            </div>
-            <h2 className="mt-1 font-display text-2xl text-foreground">
-              {format(new Date(proxSessao.data_horario), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-            </h2>
-            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Clock className="size-4 text-gold" />
-                <span>{format(new Date(proxSessao.data_horario), "HH:mm", { locale: ptBR })}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="size-4 text-gold" />
-                <span>{proxSessao.local}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="size-4 text-gold" />
-                <span>{totalConfirmados} associados confirmados</span>
-              </div>
-              {abertura && fechamento && (
-                <div className="flex items-center gap-2">
-                  <CalendarClock className="size-4 text-gold" />
-                  <span>
-                    Abre {format(abertura, "dd/MM 'às' HH:mm", { locale: ptBR })} · Fecha{" "}
-                    {format(fechamento, "dd/MM 'às' HH:mm", { locale: ptBR })}
-                  </span>
-                </div>
-              )}
-            </div>
-            <ListaStatus
-              abertura={abertura}
-              fechamento={fechamento}
-              fechadaPelaDiretoria={proxSessao.esta_fechado}
-            />
-            <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-gold">
-              Ver detalhes <ArrowRight className="size-4" />
-            </div>
-          </div>
-        </Link>
-      ) : (
-        <div className="card-premium p-6 text-center">
-          <Calendar className="mx-auto size-10 text-muted-foreground/50" />
-          <p className="mt-3 font-display text-xl">Nenhum baba agendado</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Aguarde a diretoria marcar a próxima sessão.
-          </p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-3">
-        <Link to="/baba">
-          <Button variant="hero" size="xl" className="w-full">
-            {listaAberta ? "Confirmar minha presença" : "Ver detalhes do baba"}
-          </Button>
-        </Link>
-      </div>
-
-      {proximas.length > 0 && (
-        <div className="card-premium p-5">
-          <p className="text-xs uppercase tracking-widest text-gold">Próximos babas</p>
-          <ul className="mt-3 space-y-2">
-            {proximas.map((s) => (
-              <li
-                key={s.id}
-                className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface p-3"
-              >
-                <Calendar className="size-4 shrink-0 text-gold" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">
-                    {format(new Date(s.data_horario), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                    {s.tipo === "baxvi" && <BadgeBaxvi className="ml-2" />}
-                  </p>
-                  <p className="truncate text-[11px] text-muted-foreground">
-                    {format(new Date(s.data_horario), "HH:mm", { locale: ptBR })} • {s.local}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {(passados?.length ?? 0) > 0 && (
-        <div className="card-premium p-5">
-          <p className="text-xs uppercase tracking-widest text-gold">Babas passados</p>
-          <ul className="mt-3 space-y-2">
-            {(passados ?? []).map((s) => (
-              <li
-                key={s.id}
-                className="flex items-center gap-3 rounded-lg border border-border/60 bg-surface p-3 opacity-80"
-              >
-                <Calendar className="size-4 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-muted-foreground">
-                    {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                  </p>
-                  <p className="truncate text-[11px] text-muted-foreground">{s.local}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Lateral (desktop): ranking de cartinhas fixo na coluna direita */}
+      <aside className="md:col-start-2 md:row-start-1 md:self-start md:sticky md:top-4">
+        <RankingCartinhas />
+      </aside>
 
       <RankingMensal />
     </div>
