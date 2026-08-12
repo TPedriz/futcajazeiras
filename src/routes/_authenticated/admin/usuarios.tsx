@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/badge";
 import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
 import { AprovacoesConvidados } from "@/components/AprovacoesConvidados";
 import { AprovacoesAssociacao } from "@/components/AprovacoesAssociacao";
+import { EditorEstatisticasAdmin } from "@/components/EditorEstatisticasAdmin";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formataTelefone, normalizaTelefone } from "@/lib/telefone";
@@ -58,6 +59,7 @@ import {
   MailX,
   Send,
   Trash2,
+  BarChart3,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -106,6 +108,7 @@ function UsuariosPage() {
   const [email, setEmail] = useState("");
   const [excluindo, setExcluindo] = useState<{ id: string; nome: string } | null>(null);
   const [nomeConfirmacao, setNomeConfirmacao] = useState("");
+  const [estatisticasDe, setEstatisticasDe] = useState<{ id: string; nome: string } | null>(null);
 
   const babasFuturos = (todas ?? [])
     .filter((b) => new Date(b.data_horario).getTime() > Date.now())
@@ -880,6 +883,15 @@ function UsuariosPage() {
                   >
                     <Trash2 className="size-4" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Editar estatísticas de ${p.nome}`}
+                    title="Editar estatísticas (gols, cartões…)"
+                    onClick={() => setEstatisticasDe({ id: p.id, nome: p.nome })}
+                  >
+                    <BarChart3 className="size-4" />
+                  </Button>
                 </div>
               )}
             </li>
@@ -954,6 +966,24 @@ function UsuariosPage() {
               Cancelar
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!estatisticasDe} onOpenChange={(o) => !o && setEstatisticasDe(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Estatísticas do jogador</DialogTitle>
+            <DialogDescription>
+              Edite gols, assistências, cartões, faltas e gols contra de{" "}
+              {estatisticasDe?.nome ?? "este jogador"} em um baba específico.
+            </DialogDescription>
+          </DialogHeader>
+          {estatisticasDe && (
+            <EditorEstatisticasAdmin
+              usuarioId={estatisticasDe.id}
+              nome={estatisticasDe.nome}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

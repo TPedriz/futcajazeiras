@@ -24,10 +24,12 @@ import {
   Lock,
   CalendarClock,
   Trophy,
+  Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RankingMensal } from "@/components/RankingMensal";
 import { RankingCartinhas } from "@/components/RankingCartinhas";
+import { TodasCartinhas } from "@/components/TodasCartinhas";
 import { BadgeBaxvi } from "@/components/BadgeBaxvi";
 import { tempoDeAssociado } from "@/lib/associado";
 import { format } from "date-fns";
@@ -290,12 +292,27 @@ function InicioPage() {
         )}
       </div>
 
-      {/* Lateral (desktop): ranking de cartinhas fixo na coluna direita */}
-      <aside className="md:col-start-2 md:row-start-1 md:self-start md:sticky md:top-4">
+      {/* Todas as cartinhas (desktop): browser completo no fim da coluna esquerda */}
+      <div className="hidden md:col-start-1 md:block">
+        <TodasCartinhas />
+      </div>
+
+      {/* Mobile: acesso à tela dedicada de todas as cartinhas */}
+      <Link to="/cartinhas" className="md:hidden">
+        <Button variant="goldOutline" size="lg" className="w-full">
+          <Sparkles className="size-4" /> Ver todas as cartinhas
+        </Button>
+      </Link>
+
+      {/* Ranking mensal (coluna esquerda, abaixo das cartinhas) */}
+      <div className="md:col-start-1">
+        <RankingMensal />
+      </div>
+
+      {/* Lateral (desktop): ranking por categoria fixo na coluna direita */}
+      <aside className="hidden md:col-start-2 md:row-start-1 md:self-start md:sticky md:top-4 md:block">
         <RankingCartinhas />
       </aside>
-
-      <RankingMensal />
     </div>
   );
 }
