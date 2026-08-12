@@ -135,7 +135,8 @@ export function EditorEstatisticasAdmin({
           <SelectTrigger className="h-11">
             <SelectValue placeholder="Selecione o baba" />
           </SelectTrigger>
-          <SelectContent>
+          {/* position="popper" evita o dropdown sumir atrás do overlay do Dialog */}
+          <SelectContent position="popper" className="z-[70]">
             {(sessoes ?? []).map((s) => (
               <SelectItem key={s.id} value={s.id}>
                 {format(new Date(s.data_horario), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
@@ -143,6 +144,11 @@ export function EditorEstatisticasAdmin({
             ))}
           </SelectContent>
         </Select>
+        {sessoes && sessoes.length === 0 && (
+          <p className="text-[11px] text-muted-foreground">
+            Nenhum baba cadastrado ainda — crie um baba para lançar estatísticas.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2">
