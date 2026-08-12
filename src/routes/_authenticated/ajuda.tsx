@@ -150,6 +150,10 @@ const secoes = [
         "E o time do coração?",
         "A escolha entre Bahia e Vitória é definitiva; depois só a diretoria altera.",
       ],
+      [
+        "O que é a seção “Minhas estatísticas”?",
+        "No Perfil, logo abaixo da cartinha, você confere seus números individuais: gols, assistências, pênaltis defendidos, cartões amarelos, azuis e vermelhos, faltas e gols contra. Abaixo deles fica o painel “Janela de cartões amarelos”, que mostra sua situação com os amarelos em tempo real — veja a seção de Regras.",
+      ],
     ],
   },
   {
@@ -171,6 +175,14 @@ const secoes = [
       [
         "Cartão vermelho, e agora?",
         "Suspensão automática de 1 baba: você fica fora do próximo jogo e aparece no mural de punições.",
+      ],
+      [
+        "E os cartões amarelos? Posso acumular?",
+        "Cuidado: cartão amarelo acumula entre babas. Se você tomar o limite (padrão: 3 cartões amarelos, mesmo em babas diferentes) dentro da janela de babas recentes definida pela diretoria, a suspensão é automática — você fica fora do próximo baba, como no Brasileirão. No Perfil, o painel “Janela de cartões amarelos” mostra sua situação na hora: quantos amarelos estão na janela, se você está em risco (1 cartão de atingir o limite — aí você não pode tomar outro amarelo até o mais antigo sair da janela) e se já está suspenso.",
+      ],
+      [
+        "E o cartão azul?",
+        "O cartão azul é uma punição leve: ele não suspende sozinho, mas pesa contra na sua cartinha (DEF). Aparece nas suas estatísticas no Perfil, junto com os demais cartões.",
       ],
       [
         "E quem dá faltas?",
@@ -214,6 +226,10 @@ const secoes = [
         "Por que algumas conquistas aparecem cinza?",
         "Cinza e opacas são as conquistas ainda bloqueadas: você ainda não atingiu o requisito (o texto descreve exatamente o que falta). Conquistas desbloqueadas ficam coloridas, com brilho.",
       ],
+      [
+        "Existem conquistas novas além de presenças e gols?",
+        "Sim. A lista cobre mais categorias: pênaltis defendidos, vitórias nos times, cartões (amarelos), faltas e gols contra — além de presenças, gols, assistências, níveis e XP total. Algumas são “ruins” de propósito, tipo a “Infiltrado”, que você desbloqueia marcando um gol contra 😅. Bloqueadas ficam cinza, e a descrição diz exatamente o que fazer para destravar.",
+      ],
     ],
   },
   {
@@ -239,6 +255,18 @@ const secoes = [
       [
         "Como vejo a cartinha de outro jogador?",
         "Toque no nome do jogador em qualquer lugar do site (ranking da Home, lista de presença, chegada GPS ou times sorteados) e a cartinha dele abre em um modal.",
+      ],
+      [
+        "Como vejo todas as cartinhas de uma vez?",
+        "Na Home (computador, coluna da esquerda) e na página “Cartinhas” (celular) fica o mural “Todas as cartinhas”: as 3 melhores notas gerais (OVR) aparecem no topo com borda de destaque (ouro, prata e bronze) e as demais seguem em ordem alfabética. Toque em qualquer uma para abrir o card completo.",
+      ],
+      [
+        "O que é o ranking de cartinhas da Home?",
+        "No computador, o ranking por categoria fica na coluna da direita da Home: o top 3 de cada atributo (OVR, RIT, FIN, PAS, DRI, DEF e FÍS). No celular, o mesmo conteúdo está na página “Cartinhas”.",
+      ],
+      [
+        "Suspensão afeta minha cartinha?",
+        "Sim. Enquanto houver uma suspensão ativa, o OVR da cartinha cai -5 por suspensão (até -20 no total). Os atributos individuais (RIT, FIN, PAS, DRI, DEF, FÍS) continuam iguais — o desconto incide só na nota geral. Quando a suspensão termina, o OVR volta ao normal.",
       ],
       [
         "A diretoria pode ajustar meus atributos?",
