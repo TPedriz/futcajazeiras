@@ -118,7 +118,7 @@ function AuthenticatedLayout() {
             <SinoNotificacoes />
           </header>
 
-          <main className="mx-auto w-full max-w-md flex-1 px-4 pt-4 pb-10 md:max-w-4xl md:px-8">
+          <main className="mx-auto w-full max-w-md flex-1 px-4 pt-4 pb-10 md:max-w-6xl md:px-8">
             <CartinhaProvider>
               <Outlet />
             </CartinhaProvider>
