@@ -31,6 +31,10 @@ const secoes = [
         "Em Sessões → Novo baba: informe data/horário, local, latitude/longitude (ou “Usar minha localização”) e o raio do check-in GPS (mínimo 100 m).",
       ],
       [
+        "O que é o “Tipo de baba”?",
+        "Ao criar ou editar um baba, você escolhe o tipo: Baba comum ou BAxVI. No tipo BAxVI, o sorteio já abre no modo Bahia × Vitória (pelo time do coração dos jogadores). Na lista de babas, os BAxVI aparecem com o selo “⚔️ BAxVI”.",
+      ],
+      [
         "Quando a lista abre e fecha?",
         "Automático: abre às 22h do dia anterior e fecha 3h antes do jogo (fuso America/Bahia). Dá para ajustar por baba nos campos Abertura e Fechamento da lista.",
       ],
@@ -163,6 +167,10 @@ const secoes = [
         "Escolha o baba e o usuário, ajuste os números e toque em Salvar. O ranking do mês recalcula na hora. Há também o botão Remover para apagar o lançamento.",
       ],
       [
+        "Tem um atalho para editar um usuário específico?",
+        "Sim: na aba Usuários, o botão de gráfico (📊) abre o editor individual — escolha o baba, ajuste e salve sem precisar percorrer baba por baba.",
+      ],
+      [
         "Pênaltis defendidos é só para goleiros?",
         "Não. Qualquer jogador pode ir pro gol quando não há goleiro, então o campo está disponível para todos.",
       ],
@@ -217,6 +225,14 @@ const secoes = [
       [
         "Faltas suspendem automaticamente?",
         "Sim. Ao completar o limite de faltas (padrão 3) nos últimos babas (janela padrão 5), o jogador é suspenso automaticamente do próximo baba (ou dos próximos, conforme a duração configurada) e notificado. Tudo isso é ajustável no painel Usuários → Política de suspensões: limite de faltas, janela de babas, duração da suspensão por faltas e por cartão vermelho (0 desliga). Se você desfizer a falta, a suspensão automática daquele baba some sozinha.",
+      ],
+      [
+        "E cartões amarelos suspendem automaticamente?",
+        "Sim, com a mesma lógica de janela: na Política de suspensões você configura a janela de cartões amarelos (padrão 5 babas), o limite (padrão 3 amarelos) e a duração da suspensão (padrão 1 baba; 0 desliga). Ao atingir o limite somando amarelos de babas diferentes dentro da janela, o jogador é suspenso automaticamente do próximo baba, notificado e entra no mural de punições. O painel valida que a janela seja maior ou igual ao limite antes de salvar.",
+      ],
+      [
+        "Como edito as estatísticas de um único usuário?",
+        "Na aba Usuários, toque no botão de gráfico (📊) ao lado do jogador: abre um editor onde você escolhe o baba, ajusta gols, assistências, pênaltis defendidos, cartões (amarelo, azul, vermelho), faltas e gols contra, e salva — com botão de limpar. O ranking e as cartinhas recalculam na hora. O mesmo lançamento também está disponível na aba Estatísticas.",
       ],
       [
         "Como marco falta de quem não apareceu?",

@@ -97,9 +97,14 @@ function InicioPage() {
     modoLista(Date.now(), abertura, fechamento, !!proxSessao?.esta_fechado) === "fecha";
 
   return (
-    <div className="space-y-5 md:grid md:grid-cols-[minmax(0,1fr)_20rem] md:items-start md:gap-6">
-      {/* Coluna principal (mobile: tudo empilhado; desktop: esquerda) */}
-      <div className="space-y-5 md:col-start-1">
+    <div className="space-y-5 md:grid md:grid-cols-[18rem_minmax(0,1fr)_18rem] md:items-start md:gap-6">
+      {/* Lateral esquerda (desktop): todas as cartinhas fixas ao lado */}
+      <aside className="hidden md:col-start-1 md:row-start-1 md:self-start md:sticky md:top-4 md:block">
+        <TodasCartinhas compact />
+      </aside>
+
+      {/* Coluna central (mobile: tudo empilhado; desktop: meio) */}
+      <div className="space-y-5 md:col-start-2">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Boa!</p>
           <h1 className="font-display text-4xl leading-tight text-foreground">
@@ -292,11 +297,6 @@ function InicioPage() {
         )}
       </div>
 
-      {/* Todas as cartinhas (desktop): browser completo no fim da coluna esquerda */}
-      <div className="hidden md:col-start-1 md:block">
-        <TodasCartinhas />
-      </div>
-
       {/* Mobile: acesso à tela dedicada de todas as cartinhas */}
       <Link to="/cartinhas" className="md:hidden">
         <Button variant="goldOutline" size="lg" className="w-full">
@@ -304,13 +304,13 @@ function InicioPage() {
         </Button>
       </Link>
 
-      {/* Ranking mensal (coluna esquerda, abaixo das cartinhas) */}
-      <div className="md:col-start-1">
+      {/* Ranking mensal (coluna central, abaixo do conteúdo) */}
+      <div className="md:col-start-2">
         <RankingMensal />
       </div>
 
-      {/* Lateral (desktop): ranking por categoria fixo na coluna direita */}
-      <aside className="hidden md:col-start-2 md:row-start-1 md:self-start md:sticky md:top-4 md:block">
+      {/* Lateral direita (desktop): ranking por categoria fixo */}
+      <aside className="hidden md:col-start-3 md:row-start-1 md:self-start md:sticky md:top-4 md:block">
         <RankingCartinhas />
       </aside>
     </div>

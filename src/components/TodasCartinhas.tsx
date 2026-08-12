@@ -21,7 +21,7 @@ const BORDAS_DESTAQUE = [
  * Browser de cartinhas: top 3 por Overall em destaque (com borda gradual pela
  * posição) e o restante em ordem alfabética. Toque/click abre a cartinha.
  */
-export function TodasCartinhas() {
+export function TodasCartinhas({ compact = false }: { compact?: boolean }) {
   const { data: cartinhas = [] } = useQuery(todasCartinhasQuery());
   const { abrirCartinha } = useCartinha();
 
@@ -68,7 +68,7 @@ export function TodasCartinhas() {
 
       {/* Demais cartinhas, em ordem alfabética */}
       {restantes.length > 0 ? (
-        <ul className="grid gap-2 sm:grid-cols-2">
+        <ul className={`grid gap-2 ${compact ? "grid-cols-1" : "sm:grid-cols-2"}`}>
           {restantes.map((c) => (
             <li key={c.id}>
               <button
