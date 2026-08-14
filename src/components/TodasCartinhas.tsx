@@ -30,7 +30,7 @@ export function TodasCartinhas({ compact = false }: { compact?: boolean }) {
   const top3Ids = new Set(top3.map((c) => c.id));
   const restantes: LinhaCartinha[] = [...cartinhas]
     .filter((c) => !top3Ids.has(c.id))
-    .sort((a, b) => a.nome.localeCompare(b.nome));
+    .sort((a, b) => (a.nome ?? "").localeCompare(b.nome ?? ""));
 
   return (
     <div className="card-premium space-y-3 p-4">
