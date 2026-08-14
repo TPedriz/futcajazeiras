@@ -47,7 +47,7 @@ export function TodasCartinhas({ compact = false }: { compact?: boolean }) {
           <button
             key={c.id}
             type="button"
-            onClick={() => abrirCartinha(c.id)}
+            onClick={() => c.id && abrirCartinha(c.id)}
             className={cn(
               "flex w-full items-center gap-3 rounded-xl bg-surface p-3 text-left transition-colors hover:bg-surface-elevated",
               BORDAS_DESTAQUE[i],
@@ -73,7 +73,7 @@ export function TodasCartinhas({ compact = false }: { compact?: boolean }) {
             <li key={c.id}>
               <button
                 type="button"
-                onClick={() => abrirCartinha(c.id)}
+                onClick={() => c.id && abrirCartinha(c.id)}
                 className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-surface p-2.5 text-left transition-colors hover:bg-surface-elevated"
               >
                 <AvatarJogador caminho={c.avatar_url} nome={c.nome} size="sm" />
