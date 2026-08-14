@@ -400,7 +400,8 @@ function AdminSessoes() {
             </SelectContent>
           </Select>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            BAxVI = sorteio automático em Bahia × Vitória pelo time do coração.
+            BAxVI = clássico Bahia × Vitória. Os times são montados pela diretoria na aba Sorteio,
+            escolhendo os relacionados de cada time — como no Brasileirão.
           </p>
         </div>
         <Button variant="goldOutline" size="lg" className="w-full" onClick={usarMinhaLocalizacao}>

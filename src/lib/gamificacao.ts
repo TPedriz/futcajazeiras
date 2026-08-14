@@ -195,6 +195,10 @@ export const ROTULOS_CATEGORIA_CONQUISTA: Record<string, string> = {
   cartoes: "Cartões amarelos",
   faltas: "Faltas",
   gols_contra: "Gols contra",
+  bavi_presenca: "BAxVI — Relacionados",
+  bavi_vitorias: "BAxVI — Vitórias",
+  bavi_gols: "BAxVI — Gols",
+  bavi_assistencias: "BAxVI — Assistências",
 };
 
 export function rotuloCategoriaConquista(categoria: string): string {

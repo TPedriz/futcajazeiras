@@ -10,6 +10,7 @@ import {
   DIA_VENCIMENTO,
   fechamentoEfetivo,
   aberturaEfetivo,
+  baviRelacionadosQuery,
 } from "@/lib/babaQueries";
 import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
@@ -55,7 +56,9 @@ import {
 export const Route = createFileRoute("/_authenticated/baba")({
   head: ({ loaderData }) => {
     const sessao = loaderData as
-      { id: string; data_horario: string; local: string } | null | undefined;
+      | { id: string; data_horario: string; local: string }
+      | null
+      | undefined;
     const scripts = sessao
       ? [
           {
@@ -102,6 +105,12 @@ function BabaPage() {
   const { data: presencas } = useQuery(presencasDaSessaoQuery(sessao?.id));
   const { data: todos } = useQuery(todosAssociadosQuery());
   const { data: situacao } = useQuery(situacaoCheckinQuery(perfilData?.user.id, sessao?.id));
+  const { data: relacionadosBavi } = useQuery(
+    baviRelacionadosQuery(sessao?.tipo === "baxvi" ? sessao?.id : undefined),
+  );
+  const nomesBavi = new Map((todos ?? []).map((u) => [u.id, u.nome]));
+  const relacionadosBahia = (relacionadosBavi ?? []).filter((r) => r.time_nome === "bahia");
+  const relacionadosVitoria = (relacionadosBavi ?? []).filter((r) => r.time_nome === "vitoria");
   const queryClient = useQueryClient();
 
   const userId = perfilData?.user.id;
@@ -279,8 +288,8 @@ function BabaPage() {
           <div className="mt-3 rounded-lg border border-gold/30 bg-gold/5 p-3">
             <p className="font-display text-lg text-gold">⚔️ Bahia × Vitória</p>
             <p className="text-xs text-muted-foreground">
-              Dia de BAxVI! O sorteio vai dividir os times entre Bahia e Vitória pelo time do
-              coração de cada associado.
+              Dia de BAxVI! A diretoria monta a escalação escolhendo os relacionados de cada time —
+              como a lista de relacionados do Brasileirão. Confira abaixo quem está em campo.
             </p>
           </div>
         )}
@@ -300,6 +309,52 @@ function BabaPage() {
           fechado={sessao.esta_fechado}
         />
       </div>
+
+      {/* Escalação do clássico (relacionados) */}
+      {sessao.tipo === "baxvi" && (
+        <div className="card-premium p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs uppercase tracking-widest text-gold">⚔️ Escalação do clássico</p>
+            <BadgeBaxvi />
+          </div>
+          {(relacionadosBavi ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              A diretoria ainda não fechou a escalação. Fique de olho — o clássico é levado a sério!
+            </p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                { nome: "Bahia", cor: "bahia", lista: relacionadosBahia },
+                { nome: "Vitória", cor: "vitoria", lista: relacionadosVitoria },
+              ].map(({ nome, cor, lista }) => (
+                <div
+                  key={nome}
+                  className={`rounded-xl border p-3 ${
+                    cor === "bahia"
+                      ? "border-red-500/30 bg-red-500/5"
+                      : "border-blue-500/30 bg-blue-500/5"
+                  }`}
+                >
+                  <p className="font-display text-lg">
+                    {cor === "bahia" ? "🔴" : "🔵"} {nome}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      {lista.length} jogadores
+                    </span>
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {lista.map((r) => (
+                      <li key={r.id} className="flex items-center gap-2 text-sm">
+                        {r.posicao === "goleiro" ? "🧤" : "•"}{" "}
+                        <span>{nomesBavi.get(r.usuario_id) ?? "Jogador"}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Ações */}
       {listaFechada ? (

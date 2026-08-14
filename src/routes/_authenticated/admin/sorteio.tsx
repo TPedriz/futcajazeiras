@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { proximaSessaoQuery, presencasDaSessaoQuery } from "@/lib/babaQueries";
+import {
+  proximaSessaoQuery,
+  presencasDaSessaoQuery,
+  todosAssociadosQuery,
+  baviRelacionadosQuery,
+} from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   sortearTimes,
-  sortearBaxVi,
   sortearPrimeiroChegada,
   substituirJogador,
   idsAlocados,
@@ -16,8 +20,19 @@ import {
   type TimeSorteado,
   type SorteioEstado,
 } from "@/lib/sorteio";
-import { useState, useMemo } from "react";
-import { Shuffle, Copy, HandMetal, User, Save, Lock, ArrowLeftRight } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import {
+  Shuffle,
+  Copy,
+  HandMetal,
+  User,
+  Save,
+  Lock,
+  ArrowLeftRight,
+  Check,
+  Heart,
+  Users,
+} from "lucide-react";
 import { MicroConquistas } from "@/components/MicroConquistas";
 import { NomeJogadorCartinha } from "@/components/NomeJogadorCartinha";
 import {
@@ -51,8 +66,138 @@ function SorteioPage() {
   );
   const [substituindoId, setSubstituindoId] = useState<string | null>(null);
   const [substitutoId, setSubstitutoId] = useState<string>("");
+  const [relacionados, setRelacionados] = useState<Record<string, "bahia" | "vitoria">>({});
 
   const qc = useQueryClient();
+
+  const { data: todos } = useQuery(todosAssociadosQuery());
+  const { data: relacionadosSalvos } = useQuery(
+    baviRelacionadosQuery(sessao?.tipo === "baxvi" ? sessao?.id : undefined),
+  );
+
+  // Carrega a escalação já salva quando a tela abre (ou após salvar).
+  useEffect(() => {
+    if (!relacionadosSalvos) return;
+    const inicial: Record<string, "bahia" | "vitoria"> = {};
+    for (const r of relacionadosSalvos) {
+      if (r.time_nome === "bahia" || r.time_nome === "vitoria") inicial[r.usuario_id] = r.time_nome;
+    }
+    setRelacionados(inicial);
+  }, [relacionadosSalvos]);
+
+  /** Associados ativos elegíveis para o clássico (ordem alfabética). */
+  const poolBavi = useMemo(
+    () =>
+      (todos ?? []).filter((u) => u.ativo !== false).sort((a, b) => a.nome.localeCompare(b.nome)),
+    [todos],
+  );
+
+  const selecionarRelacionado = (usuarioId: string, time: "bahia" | "vitoria") => {
+    setRelacionados((r) => {
+      const atual = r[usuarioId];
+      if (atual === time) {
+        const { [usuarioId]: _removido, ...resto } = r;
+        return resto;
+      }
+      return { ...r, [usuarioId]: time };
+    });
+  };
+
+  const autoPreencherPorCoracao = () => {
+    const novo: Record<string, "bahia" | "vitoria"> = {};
+    for (const u of poolBavi) {
+      if (u.time_coracao === "bahia") novo[u.id] = "bahia";
+      else if (u.time_coracao === "vitoria") novo[u.id] = "vitoria";
+    }
+    setRelacionados(novo);
+    toast.success("Escalação sugerida pelo time do coração", {
+      description: "Ajuste manualmente quem você quiser antes de salvar.",
+    });
+  };
+
+  const salvarRelacionados = useMutation({
+    mutationFn: async () => {
+      if (!sessao) throw new Error("Sem sessão");
+      const bahia = poolBavi.filter((u) => relacionados[u.id] === "bahia");
+      const vitoria = poolBavi.filter((u) => relacionados[u.id] === "vitoria");
+      if (bahia.length === 0 || vitoria.length === 0)
+        throw new Error("Selecione pelo menos um jogador em cada time.");
+
+      // 1. Salva a lista de relacionados (escalação).
+      const { error: eDelRel } = await supabase
+        .from("bavi_relacionados")
+        .delete()
+        .eq("baba_id", sessao.id);
+      if (eDelRel) throw eDelRel;
+      const rel = [
+        ...bahia.map((u) => ({
+          baba_id: sessao.id,
+          usuario_id: u.id,
+          time_nome: "bahia",
+          posicao: u.posicao,
+        })),
+        ...vitoria.map((u) => ({
+          baba_id: sessao.id,
+          usuario_id: u.id,
+          time_nome: "vitoria",
+          posicao: u.posicao,
+        })),
+      ];
+      const { error: eRel } = await supabase.from("bavi_relacionados").insert(rel);
+      if (eRel) throw eRel;
+
+      // 2. Salva os times (para resultados/estatísticas) a partir dos relacionados.
+      await supabase.from("times_baba").delete().eq("baba_id", sessao.id);
+      for (const [nome, jogadores] of [
+        ["Time Bahia", bahia],
+        ["Time Vitória", vitoria],
+      ] as const) {
+        const { data: time, error } = await supabase
+          .from("times_baba")
+          .insert({ baba_id: sessao.id, nome })
+          .select("id")
+          .single();
+        if (error) throw error;
+        const linhas = jogadores.map((j) => ({
+          time_id: time.id,
+          usuario_id: j.id,
+          nome_convidado: null,
+          posicao: j.posicao,
+        }));
+        if (linhas.length > 0) {
+          const { error: e2 } = await supabase.from("times_jogadores").insert(linhas);
+          if (e2) throw e2;
+        }
+      }
+    },
+    onSuccess: () => {
+      toast.success("Relacionados do BAxVI salvos!", {
+        description: "Times prontos para lançar resultados e estatísticas.",
+      });
+      qc.invalidateQueries({ queryKey: ["bavi-relacionados", sessao?.id] });
+      qc.invalidateQueries({ queryKey: ["times-baba", sessao?.id] });
+    },
+    onError: (e: Error) => toast.error("Erro ao salvar relacionados", { description: e.message }),
+  });
+
+  const copiarRelacionados = async () => {
+    if (!sessao) return;
+    const bahia = poolBavi.filter((u) => relacionados[u.id] === "bahia");
+    const vitoria = poolBavi.filter((u) => relacionados[u.id] === "vitoria");
+    const linhas: string[] = [];
+    linhas.push("⚔️ *BAxVI — ESCALAÇÃO OFICIAL* ⚔️");
+    linhas.push(
+      `📅 ${format(new Date(sessao.data_horario), "dd/MM 'às' HH:mm", { locale: ptBR })}`,
+    );
+    linhas.push("");
+    linhas.push(`🔴 *Time Bahia* (${bahia.length})`);
+    bahia.forEach((u) => linhas.push(`${u.posicao === "goleiro" ? "🧤 " : "• "}${u.nome}`));
+    linhas.push("");
+    linhas.push(`🔵 *Time Vitória* (${vitoria.length})`);
+    vitoria.forEach((u) => linhas.push(`${u.posicao === "goleiro" ? "🧤 " : "• "}${u.nome}`));
+    await navigator.clipboard.writeText(linhas.join("\n"));
+    toast.success("Escalação copiada! Cole no grupo do WhatsApp.");
+  };
 
   const toggleFixo = useMutation({
     mutationFn: async ({ id, fixo }: { id: string; fixo: boolean }) => {
@@ -116,7 +261,8 @@ function SorteioPage() {
         id: p.id,
         nome: p.nome_convidado ?? p.perfis?.nome ?? "Jogador",
         posicao: (p.nome_convidado ? "linha" : (p.perfis?.posicao ?? "linha")) as
-          "goleiro" | "linha",
+          | "goleiro"
+          | "linha",
         isConvidado: !!p.nome_convidado,
         timeCoracao: p.perfis?.time_coracao ?? null,
         ordemChegada: p.ordem_chegada ?? null,
@@ -154,18 +300,6 @@ function SorteioPage() {
   }, [elegiveis.length, tamanho, modo]);
 
   const sortearSimples = () => {
-    if (modo === "baxvi") {
-      const associados = jogadores.filter((j) => !j.isConvidado);
-      const r = sortearBaxVi(associados);
-      if (r.semTime.length > 0) {
-        toast.warning("Alguns associados ficaram sem time", {
-          description: `${r.semTime.length} não escolheram Bahia ou Vitória no perfil.`,
-        });
-      }
-      setResultado({ times: r.times, sobras: r.semTime });
-      toast.success("BAxVI montado!");
-      return;
-    }
     if (elegiveis.length < 2) {
       toast.error("Poucos jogadores", {
         description: "Precisa de pelo menos 2 confirmados.",
@@ -269,7 +403,11 @@ function SorteioPage() {
                 t: "Ordem de chegada",
                 d: "Duas etapas na ordem do check-in por GPS, com goleiros fixos. Times A e B com os 12 primeiros da linha.",
               },
-              { v: "baxvi", t: "BAxVI", d: "Bahia x Vitória, exclusivo para associados." },
+              {
+                v: "baxvi",
+                t: "BAxVI (relacionados)",
+                d: "Escalação manual do clássico: escolha os associados de Bahia e Vitória.",
+              },
             ] as const
           ).map((m) => (
             <Button
@@ -375,6 +513,35 @@ function SorteioPage() {
         </div>
       )}
 
+      {modo === "baxvi" && (
+        <div className="space-y-4">
+          <div className="card-premium p-5">
+            <p className="text-xs uppercase tracking-widest text-gold">⚔️ Relacionados do BAxVI</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Nem todo mundo joga todo dia — monte a escalação do clássico escolhendo os associados
+              de cada time, como a lista de relacionados do Brasileirão. Depois de salvar, os times
+              ficam prontos para lançar resultados e estatísticas.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <TimeRelacionado
+              nome="Time Bahia"
+              time="bahia"
+              pool={poolBavi}
+              selecionados={relacionados}
+              onToggle={selecionarRelacionado}
+            />
+            <TimeRelacionado
+              nome="Time Vitória"
+              time="vitoria"
+              pool={poolBavi}
+              selecionados={relacionados}
+              onToggle={selecionarRelacionado}
+            />
+          </div>
+        </div>
+      )}
+
       {modo === "chegada" ? (
         <div className="space-y-2">
           <Button
@@ -397,6 +564,30 @@ function SorteioPage() {
               onClick={() => salvarTimes.mutate()}
             >
               <Save className="size-4" /> Salvar times
+            </Button>
+          </div>
+        </div>
+      ) : modo === "baxvi" ? (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="goldOutline" size="lg" onClick={autoPreencherPorCoracao}>
+              <Heart className="size-4" /> Coração
+            </Button>
+            <Button variant="outline" size="lg" onClick={() => setRelacionados({})}>
+              Limpar
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="goldOutline" size="lg" onClick={copiarRelacionados}>
+              <Copy className="size-4" /> WhatsApp
+            </Button>
+            <Button
+              variant="hero"
+              size="lg"
+              disabled={salvarRelacionados.isPending}
+              onClick={() => salvarRelacionados.mutate()}
+            >
+              <Save className="size-4" /> Salvar
             </Button>
           </div>
         </div>
@@ -592,5 +783,76 @@ function SubstituirBotao({
         </Button>
       )}
     </span>
+  );
+}
+
+/** Coluna de um time no modo "Relacionados do BAxVI". */
+function TimeRelacionado({
+  nome,
+  time,
+  pool,
+  selecionados,
+  onToggle,
+}: {
+  nome: string;
+  time: "bahia" | "vitoria";
+  pool: {
+    id: string;
+    nome: string;
+    posicao: "goleiro" | "linha";
+    time_coracao: "bahia" | "vitoria" | null;
+  }[];
+  selecionados: Record<string, "bahia" | "vitoria">;
+  onToggle: (usuarioId: string, time: "bahia" | "vitoria") => void;
+}) {
+  const jogadores = pool.filter((u) => selecionados[u.id] === time);
+  const goleiros = jogadores.filter((u) => u.posicao === "goleiro").length;
+  const corBorda = time === "bahia" ? "border-red-500/40" : "border-blue-500/40";
+  const corAtivo =
+    time === "bahia" ? "border-red-500/60 bg-red-500/10" : "border-blue-500/60 bg-blue-500/10";
+
+  return (
+    <div className={`card-premium p-4 ${corBorda}`}>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="font-display text-xl">
+          {time === "bahia" ? "🔴" : "🔵"} {nome}
+        </p>
+        <span className="flex items-center gap-1 text-xs uppercase tracking-widest text-muted-foreground">
+          <Users className="size-3.5" /> {jogadores.length} · {goleiros} 🧤
+        </span>
+      </div>
+      <ul className="space-y-1.5">
+        {pool.map((u) => {
+          const marcado = selecionados[u.id] === time;
+          const emOutro = selecionados[u.id] != null && selecionados[u.id] !== time;
+          return (
+            <li key={u.id}>
+              <button
+                type="button"
+                onClick={() => onToggle(u.id, time)}
+                className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                  marcado
+                    ? corAtivo
+                    : emOutro
+                      ? "border-border/40 bg-muted/30 opacity-40"
+                      : "border-border/60 bg-surface hover:border-gold/40"
+                }`}
+              >
+                <span className="font-medium">{u.nome}</span>
+                {u.posicao === "goleiro" && <span aria-hidden>🧤</span>}
+                <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {u.time_coracao === "bahia"
+                    ? "❤️ Bahia"
+                    : u.time_coracao === "vitoria"
+                      ? "💙 Vitória"
+                      : "sem time"}
+                </span>
+                {marcado && <Check className="size-4 shrink-0 text-success" />}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

@@ -24,7 +24,9 @@ export const perfilAtualQuery = () =>
         isAssociado: isAdmin || lista.includes("associado"),
         isConvidado,
         papelPrincipal: (isAdmin ? "administrador" : isConvidado ? "convidado" : "associado") as
-          "administrador" | "associado" | "convidado",
+          | "administrador"
+          | "associado"
+          | "convidado",
         rotuloPapel: isAdmin ? "Diretoria" : isConvidado ? "Convidado" : "Associado",
       };
     },
@@ -236,6 +238,23 @@ export const timesDoBabaQuery = (babaId: string | undefined) =>
         )
         .eq("baba_id", babaId)
         .order("nome", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/** Relacionados do BAxVI (escalação manual por time) de uma sessão. */
+export const baviRelacionadosQuery = (babaId: string | undefined) =>
+  queryOptions({
+    queryKey: ["bavi-relacionados", babaId],
+    enabled: !!babaId,
+    queryFn: async () => {
+      if (!babaId) return [];
+      const { data, error } = await supabase
+        .from("bavi_relacionados")
+        .select("id, baba_id, usuario_id, time_nome, posicao")
+        .eq("baba_id", babaId)
+        .order("time_nome", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },

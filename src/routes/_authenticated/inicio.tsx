@@ -10,6 +10,8 @@ import {
   fechamentoEfetivo,
   aberturaEfetivo,
   META_CONVIDADO,
+  baviRelacionadosQuery,
+  perfisPublicosQuery,
 } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +27,8 @@ import {
   CalendarClock,
   Trophy,
   Sparkles,
+  Swords,
+  Flame,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RankingMensal } from "@/components/RankingMensal";
@@ -185,52 +189,57 @@ function InicioPage() {
           </Link>
         )}
 
-        {/* Próximo Baba */}
+        {/* Próximo Baba — BAxVI vira evento especial */}
         {proxSessao ? (
-          <Link to="/baba">
-            <div className="card-premium p-5 hover:border-gold/40 transition-colors">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs uppercase tracking-widest text-gold">Próximo Baba</p>
-                {proxSessao.tipo === "baxvi" && <BadgeBaxvi />}
-              </div>
-              <h2 className="mt-1 font-display text-2xl text-foreground">
-                {format(new Date(proxSessao.data_horario), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-              </h2>
-              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Clock className="size-4 text-gold" />
-                  <span>
-                    {format(new Date(proxSessao.data_horario), "HH:mm", { locale: ptBR })}
-                  </span>
+          proxSessao.tipo === "baxvi" ? (
+            <CardBavi sessao={proxSessao} abertura={abertura} fechamento={fechamento} />
+          ) : (
+            <Link to="/baba">
+              <div className="card-premium p-5 hover:border-gold/40 transition-colors">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs uppercase tracking-widest text-gold">Próximo Baba</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="size-4 text-gold" />
-                  <span>{proxSessao.local}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="size-4 text-gold" />
-                  <span>{totalConfirmados} associados confirmados</span>
-                </div>
-                {abertura && fechamento && (
+                <h2 className="mt-1 font-display text-2xl text-foreground">
+                  {format(new Date(proxSessao.data_horario), "EEEE, dd 'de' MMMM", {
+                    locale: ptBR,
+                  })}
+                </h2>
+                <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <CalendarClock className="size-4 text-gold" />
+                    <Clock className="size-4 text-gold" />
                     <span>
-                      Abre {format(abertura, "dd/MM 'às' HH:mm", { locale: ptBR })} · Fecha{" "}
-                      {format(fechamento, "dd/MM 'às' HH:mm", { locale: ptBR })}
+                      {format(new Date(proxSessao.data_horario), "HH:mm", { locale: ptBR })}
                     </span>
                   </div>
-                )}
+                  <div className="flex items-center gap-2">
+                    <MapPin className="size-4 text-gold" />
+                    <span>{proxSessao.local}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="size-4 text-gold" />
+                    <span>{totalConfirmados} associados confirmados</span>
+                  </div>
+                  {abertura && fechamento && (
+                    <div className="flex items-center gap-2">
+                      <CalendarClock className="size-4 text-gold" />
+                      <span>
+                        Abre {format(abertura, "dd/MM 'às' HH:mm", { locale: ptBR })} · Fecha{" "}
+                        {format(fechamento, "dd/MM 'às' HH:mm", { locale: ptBR })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <ListaStatus
+                  abertura={abertura}
+                  fechamento={fechamento}
+                  fechadaPelaDiretoria={proxSessao.esta_fechado}
+                />
+                <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-gold">
+                  Ver detalhes <ArrowRight className="size-4" />
+                </div>
               </div>
-              <ListaStatus
-                abertura={abertura}
-                fechamento={fechamento}
-                fechadaPelaDiretoria={proxSessao.esta_fechado}
-              />
-              <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-gold">
-                Ver detalhes <ArrowRight className="size-4" />
-              </div>
-            </div>
-          </Link>
+            </Link>
+          )
         ) : (
           <div className="card-premium p-6 text-center">
             <Calendar className="mx-auto size-10 text-muted-foreground/50" />
@@ -376,6 +385,121 @@ function ListaStatus({
         <p className="text-sm font-bold uppercase tracking-wide">{conf.titulo}</p>
         <p className="text-xs font-semibold tabular-nums opacity-90">{conf.detalhe}</p>
       </div>
+    </div>
+  );
+}
+
+/** Card especial do BAxVI — destaca o clássico na home, bem diferente de um baba comum. */
+function CardBavi({
+  sessao,
+  abertura,
+  fechamento,
+}: {
+  sessao: { id: string; data_horario: string; local: string; tipo: string; esta_fechado: boolean };
+  abertura: Date | null;
+  fechamento: Date | null;
+}) {
+  const { data: relacionados } = useQuery(baviRelacionadosQuery(sessao.id));
+  const { data: perfis } = useQuery(perfisPublicosQuery());
+  const nomes = new Map((perfis ?? []).map((p) => [p.id as string, p.nome as string]));
+
+  const bahia = (relacionados ?? []).filter((r) => r.time_nome === "bahia");
+  const vitoria = (relacionados ?? []).filter((r) => r.time_nome === "vitoria");
+  const nomesBahia = bahia.map((r) => nomes.get(r.usuario_id) ?? "Jogador");
+  const nomesVitoria = vitoria.map((r) => nomes.get(r.usuario_id) ?? "Jogador");
+
+  return (
+    <Link to="/baba">
+      <div className="relative overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-br from-[#1c1233] via-[#0e0a1c] to-[#1c1233] p-5 shadow-[0_0_36px_rgba(201,162,39,0.18)] transition-colors hover:border-gold/70">
+        <div className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-gold/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-10 -left-8 size-32 rounded-full bg-red-600/10 blur-2xl" />
+        <div className="relative">
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/50 bg-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold">
+              <Swords className="size-3.5" /> Evento especial
+            </span>
+            <Flame className="size-5 text-gold" />
+          </div>
+
+          <h2 className="mt-3 font-display text-3xl leading-tight text-foreground">
+            ⚔️ Bahia <span className="text-muted-foreground">×</span> Vitória
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            O Clássico Cajazeiras. Vale mais que um baba comum — escalação fechada pela diretoria.
+          </p>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <TimeMini cor="bahia" nome="Bahia" jogadores={nomesBahia} />
+            <TimeMini cor="vitoria" nome="Vitória" jogadores={nomesVitoria} />
+          </div>
+
+          <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Calendar className="size-4 text-gold" />
+              <span>
+                {format(new Date(sessao.data_horario), "EEEE, dd 'de' MMMM 'às' HH:mm", {
+                  locale: ptBR,
+                })}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="size-4 text-gold" />
+              <span>{sessao.local}</span>
+            </div>
+            {abertura && fechamento && (
+              <div className="flex items-center gap-2">
+                <CalendarClock className="size-4 text-gold" />
+                <span>
+                  Abre {format(abertura, "dd/MM 'às' HH:mm", { locale: ptBR })} · Fecha{" "}
+                  {format(fechamento, "dd/MM 'às' HH:mm", { locale: ptBR })}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-gold">
+            Ver o clássico <ArrowRight className="size-4" />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/** Miniatura de um time dentro do card do BAxVI. */
+function TimeMini({
+  cor,
+  nome,
+  jogadores,
+}: {
+  cor: "bahia" | "vitoria";
+  nome: string;
+  jogadores: string[];
+}) {
+  const visiveis = jogadores.slice(0, 5);
+  const extras = Math.max(0, jogadores.length - visiveis.length);
+  return (
+    <div
+      className={`rounded-xl border p-3 ${
+        cor === "bahia" ? "border-red-500/30 bg-red-500/5" : "border-blue-500/30 bg-blue-500/5"
+      }`}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        {cor === "bahia" ? "🔴" : "🔵"} {nome}
+        <span className="ml-1 text-gold">{jogadores.length}</span>
+      </p>
+      {jogadores.length === 0 ? (
+        <p className="mt-1 text-[11px] text-muted-foreground/60">Escalação a definir</p>
+      ) : (
+        <ul className="mt-1 space-y-0.5">
+          {visiveis.map((n, i) => (
+            <li key={`${n}-${i}`} className="truncate text-xs text-foreground/90">
+              {n}
+            </li>
+          ))}
+          {extras > 0 && <li className="text-[11px] text-muted-foreground">+{extras} jogadores</li>}
+        </ul>
+      )}
     </div>
   );
 }
