@@ -19,7 +19,19 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Trophy, Minus, ShieldX, Goal, Plus, RotateCcw, Trash2, Handshake } from "lucide-react";
+import {
+  Trophy,
+  Minus,
+  ShieldX,
+  Goal,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Handshake,
+  UserPlus,
+  HandMetal,
+  X,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/resultados")({
   loader: ({ context }) => context.queryClient.ensureQueryData(todasSessoesQuery()),
@@ -38,6 +50,128 @@ function ResultadosPage() {
 
   const nomes = new Map((perfis ?? []).map((p) => [p.id as string, p.nome as string]));
   const statMap = new Map((stats ?? []).map((s) => [s.usuario_id, s]));
+
+  // ===== CRUD de integrantes (mesmo após o lançamento) =====
+  const [adicionarAbertoTimeId, setAdicionarAbertoTimeId] = useState<string | null>(null);
+  const [novoIntegranteId, setNovoIntegranteId] = useState("");
+  const [novaPosicao, setNovaPosicao] = useState<"goleiro" | "linha">("linha");
+
+  const sessaoAtual = sessoes.find((s) => s.id === babaId);
+  const ehBaxvi = sessaoAtual?.tipo === "baxvi";
+
+  /** Jogadores já escalados em qualquer time do baba (para não duplicar). */
+  const idsEscalados = new Set<string>(
+    (times ?? [])
+      .flatMap((t) => (t.times_jogadores ?? []).map((j) => j.usuario_id))
+      .filter((id): id is string => !!id),
+  );
+  const disponiveisParaAdicionar = (perfis ?? []).filter((p) => !idsEscalados.has(p.id as string));
+
+  /** Time do BAxVI correspondente ao nome do time salvo (ou null fora do clássico). */
+  const timeNomeRel = (nome: string): "bahia" | "vitoria" | null => {
+    if (nome.includes("Bahia")) return "bahia";
+    if (nome.includes("Vitória") || nome.includes("Vitoria")) return "vitoria";
+    return null;
+  };
+
+  /** Ao mexer nos integrantes de um BAxVI, mantém a lista de relacionados sincronizada. */
+  const invalidarTimes = () => {
+    qc.invalidateQueries({ queryKey: ["times-baba", babaId] });
+    qc.invalidateQueries({ queryKey: ["bavi-relacionados", babaId] });
+    qc.invalidateQueries({ queryKey: ["ranking-mes"] });
+  };
+
+  const adicionarIntegrante = useMutation({
+    mutationFn: async ({
+      timeId,
+      usuarioId,
+      posicao,
+    }: {
+      timeId: string;
+      usuarioId: string;
+      posicao: "goleiro" | "linha";
+    }) => {
+      const { error } = await supabase
+        .from("times_jogadores")
+        .insert({ time_id: timeId, usuario_id: usuarioId, posicao });
+      if (error) throw error;
+
+      // No BAxVI, quem entra no time passa a ser relacionado.
+      if (ehBaxvi && babaId) {
+        const time = times?.find((t) => t.id === timeId);
+        const rel = time ? timeNomeRel(time.nome) : null;
+        if (rel) {
+          const { error: e2 } = await supabase
+            .from("bavi_relacionados")
+            .upsert(
+              { baba_id: babaId, usuario_id: usuarioId, time_nome: rel, posicao },
+              { onConflict: "baba_id,usuario_id" },
+            );
+          if (e2) throw e2;
+        }
+      }
+    },
+    onSuccess: () => {
+      toast.success("Jogador adicionado ao time!");
+      setAdicionarAbertoTimeId(null);
+      setNovoIntegranteId("");
+      setNovaPosicao("linha");
+      invalidarTimes();
+    },
+    onError: (e: Error) => toast.error("Erro ao adicionar", { description: e.message }),
+  });
+
+  const removerIntegrante = useMutation({
+    mutationFn: async ({ tjId, usuarioId }: { tjId: string; usuarioId: string | null }) => {
+      const { error } = await supabase.from("times_jogadores").delete().eq("id", tjId);
+      if (error) throw error;
+      if (ehBaxvi && babaId && usuarioId) {
+        const { error: e2 } = await supabase
+          .from("bavi_relacionados")
+          .delete()
+          .eq("baba_id", babaId)
+          .eq("usuario_id", usuarioId);
+        if (e2) throw e2;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Jogador removido do time");
+      invalidarTimes();
+    },
+    onError: (e: Error) => toast.error("Erro ao remover", { description: e.message }),
+  });
+
+  const alternarPosicao = useMutation({
+    mutationFn: async ({
+      tjId,
+      usuarioId,
+      posicao,
+    }: {
+      tjId: string;
+      usuarioId: string | null;
+      posicao: "goleiro" | "linha";
+    }) => {
+      const nova = posicao === "goleiro" ? "linha" : "goleiro";
+      const { error } = await supabase
+        .from("times_jogadores")
+        .update({ posicao: nova })
+        .eq("id", tjId);
+      if (error) throw error;
+      if (ehBaxvi && babaId && usuarioId) {
+        const { error: e2 } = await supabase
+          .from("bavi_relacionados")
+          .update({ posicao: nova })
+          .eq("baba_id", babaId)
+          .eq("usuario_id", usuarioId);
+        if (e2) throw e2;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Posição atualizada");
+      invalidarTimes();
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
 
   const marcarResultado = useMutation({
     mutationFn: async ({ timeId, resultado }: { timeId: string; resultado: Resultado | null }) => {
@@ -270,6 +404,85 @@ function ResultadosPage() {
             </Button>
           </div>
 
+          {/* CRUD de integrantes — vale mesmo após o lançamento */}
+          <div className="mt-3">
+            {adicionarAbertoTimeId === t.id ? (
+              <div className="space-y-2 rounded-lg border border-border bg-surface p-3">
+                <p className="text-xs text-muted-foreground">
+                  Adicione um jogador ao time — vale mesmo após o lançamento (substituição, lesão,
+                  imprevisto). Não importa o motivo, você decide.
+                </p>
+                <div className="flex gap-2">
+                  <Select value={novoIntegranteId} onValueChange={setNovoIntegranteId}>
+                    <SelectTrigger className="h-10 flex-1">
+                      <SelectValue placeholder="Escolha o jogador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {disponiveisParaAdicionar.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={novaPosicao}
+                    onValueChange={(v) => setNovaPosicao(v as "goleiro" | "linha")}
+                  >
+                    <SelectTrigger className="h-10 w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="linha">Linha</SelectItem>
+                      <SelectItem value="goleiro">Goleiro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="gold"
+                    size="sm"
+                    className="flex-1"
+                    disabled={!novoIntegranteId || adicionarIntegrante.isPending}
+                    onClick={() =>
+                      adicionarIntegrante.mutate({
+                        timeId: t.id,
+                        usuarioId: novoIntegranteId,
+                        posicao: novaPosicao,
+                      })
+                    }
+                  >
+                    <UserPlus className="size-4" /> Adicionar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setAdicionarAbertoTimeId(null);
+                      setNovoIntegranteId("");
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+                {disponiveisParaAdicionar.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Todos os jogadores já estão escalados neste baba.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <Button
+                variant="goldOutline"
+                size="sm"
+                className="w-full"
+                onClick={() => setAdicionarAbertoTimeId(t.id)}
+              >
+                <UserPlus className="size-4" /> Adicionar / substituir jogador
+              </Button>
+            )}
+          </div>
+
           <ul className="mt-3 space-y-2">
             {(t.times_jogadores ?? []).map((j) => {
               const s = j.usuario_id ? statMap.get(j.usuario_id) : undefined;
@@ -285,12 +498,48 @@ function ResultadosPage() {
                         <span className="ml-1 text-[10px] text-muted-foreground">(convidado)</span>
                       )}
                     </span>
-                    {j.usuario_id && (
-                      <span className="flex items-center gap-1 text-xs text-gold">
-                        <Goal className="size-3" /> {s?.gols ?? 0}
-                        <Handshake className="ml-2 size-3" /> {s?.assistencias ?? 0}
-                      </span>
-                    )}
+                    <span className="flex shrink-0 items-center gap-1 text-xs">
+                      {j.usuario_id && (
+                        <>
+                          <Goal className="size-3 text-gold" /> {s?.gols ?? 0}
+                          <Handshake className="ml-1 size-3 text-gold" /> {s?.assistencias ?? 0}
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        aria-label={j.posicao === "goleiro" ? "Tornar linha" : "Tornar goleiro"}
+                        title={j.posicao === "goleiro" ? "Tornar linha" : "Tornar goleiro"}
+                        onClick={() =>
+                          alternarPosicao.mutate({
+                            tjId: j.id,
+                            usuarioId: j.usuario_id ?? null,
+                            posicao: j.posicao,
+                          })
+                        }
+                        className={`ml-2 rounded px-1.5 py-0.5 transition-colors ${
+                          j.posicao === "goleiro"
+                            ? "bg-primary/15 text-primary"
+                            : "text-muted-foreground hover:text-primary"
+                        }`}
+                      >
+                        <HandMetal className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Remover ${nome} do time`}
+                        title="Remover do time"
+                        className="ml-1 rounded p-0.5 text-muted-foreground hover:text-destructive"
+                        onClick={() => {
+                          if (confirm(`Remover ${nome} do time?`))
+                            removerIntegrante.mutate({
+                              tjId: j.id,
+                              usuarioId: j.usuario_id ?? null,
+                            });
+                        }}
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </span>
                   </div>
                   {j.usuario_id && (
                     <div className="mt-2 grid grid-cols-4 gap-1">

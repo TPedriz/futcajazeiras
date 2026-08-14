@@ -92,6 +92,30 @@ function SorteioPage() {
     [todos],
   );
 
+  /**
+   * Em cada coluna só aparecem os associados que torcem para o time (ou que
+   * ainda não escolheram time) — evita escalar gente errada. Quem já foi
+   * relacionado no time continua visível para poder ser desfeito.
+   */
+  const poolBahia = useMemo(
+    () =>
+      poolBavi.filter(
+        (u) =>
+          u.time_coracao === "bahia" || u.time_coracao == null || relacionados[u.id] === "bahia",
+      ),
+    [poolBavi, relacionados],
+  );
+  const poolVitoria = useMemo(
+    () =>
+      poolBavi.filter(
+        (u) =>
+          u.time_coracao === "vitoria" ||
+          u.time_coracao == null ||
+          relacionados[u.id] === "vitoria",
+      ),
+    [poolBavi, relacionados],
+  );
+
   const selecionarRelacionado = (usuarioId: string, time: "bahia" | "vitoria") => {
     setRelacionados((r) => {
       const atual = r[usuarioId];
@@ -190,10 +214,10 @@ function SorteioPage() {
       `📅 ${format(new Date(sessao.data_horario), "dd/MM 'às' HH:mm", { locale: ptBR })}`,
     );
     linhas.push("");
-    linhas.push(`🔴 *Time Bahia* (${bahia.length})`);
+    linhas.push(`� *Time Bahia* (${bahia.length})`);
     bahia.forEach((u) => linhas.push(`${u.posicao === "goleiro" ? "🧤 " : "• "}${u.nome}`));
     linhas.push("");
-    linhas.push(`🔵 *Time Vitória* (${vitoria.length})`);
+    linhas.push(`🔴 *Time Vitória* (${vitoria.length})`);
     vitoria.forEach((u) => linhas.push(`${u.posicao === "goleiro" ? "🧤 " : "• "}${u.nome}`));
     await navigator.clipboard.writeText(linhas.join("\n"));
     toast.success("Escalação copiada! Cole no grupo do WhatsApp.");
@@ -527,14 +551,14 @@ function SorteioPage() {
             <TimeRelacionado
               nome="Time Bahia"
               time="bahia"
-              pool={poolBavi}
+              pool={poolBahia}
               selecionados={relacionados}
               onToggle={selecionarRelacionado}
             />
             <TimeRelacionado
               nome="Time Vitória"
               time="vitoria"
-              pool={poolBavi}
+              pool={poolVitoria}
               selecionados={relacionados}
               onToggle={selecionarRelacionado}
             />
@@ -807,15 +831,15 @@ function TimeRelacionado({
 }) {
   const jogadores = pool.filter((u) => selecionados[u.id] === time);
   const goleiros = jogadores.filter((u) => u.posicao === "goleiro").length;
-  const corBorda = time === "bahia" ? "border-red-500/40" : "border-blue-500/40";
+  const corBorda = time === "bahia" ? "border-blue-500/40" : "border-red-500/40";
   const corAtivo =
-    time === "bahia" ? "border-red-500/60 bg-red-500/10" : "border-blue-500/60 bg-blue-500/10";
+    time === "bahia" ? "border-blue-500/60 bg-blue-500/10" : "border-red-500/60 bg-red-500/10";
 
   return (
     <div className={`card-premium p-4 ${corBorda}`}>
       <div className="mb-2 flex items-center justify-between">
         <p className="font-display text-xl">
-          {time === "bahia" ? "🔴" : "🔵"} {nome}
+          {time === "bahia" ? "🔵" : "🔴"} {nome}
         </p>
         <span className="flex items-center gap-1 text-xs uppercase tracking-widest text-muted-foreground">
           <Users className="size-3.5" /> {jogadores.length} · {goleiros} 🧤
@@ -842,9 +866,9 @@ function TimeRelacionado({
                 {u.posicao === "goleiro" && <span aria-hidden>🧤</span>}
                 <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground">
                   {u.time_coracao === "bahia"
-                    ? "❤️ Bahia"
+                    ? "🔵 Bahia"
                     : u.time_coracao === "vitoria"
-                      ? "💙 Vitória"
+                      ? "🔴 Vitória"
                       : "sem time"}
                 </span>
                 {marcado && <Check className="size-4 shrink-0 text-success" />}

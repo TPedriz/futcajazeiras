@@ -111,6 +111,10 @@ function BabaPage() {
   const nomesBavi = new Map((todos ?? []).map((u) => [u.id, u.nome]));
   const relacionadosBahia = (relacionadosBavi ?? []).filter((r) => r.time_nome === "bahia");
   const relacionadosVitoria = (relacionadosBavi ?? []).filter((r) => r.time_nome === "vitoria");
+  const ehBaxvi = sessao?.tipo === "baxvi";
+  const souRelacionadoBavi = ehBaxvi
+    ? !!userId && (relacionadosBavi ?? []).some((r) => r.usuario_id === userId)
+    : true;
   const queryClient = useQueryClient();
 
   const userId = perfilData?.user.id;
@@ -331,12 +335,12 @@ function BabaPage() {
                   key={nome}
                   className={`rounded-xl border p-3 ${
                     cor === "bahia"
-                      ? "border-red-500/30 bg-red-500/5"
-                      : "border-blue-500/30 bg-blue-500/5"
+                      ? "border-blue-500/30 bg-blue-500/5"
+                      : "border-red-500/30 bg-red-500/5"
                   }`}
                 >
                   <p className="font-display text-lg">
-                    {cor === "bahia" ? "🔴" : "🔵"} {nome}
+                    {cor === "bahia" ? "🔵" : "🔴"} {nome}
                     <span className="ml-2 text-xs font-normal text-muted-foreground">
                       {lista.length} jogadores
                     </span>
@@ -357,7 +361,15 @@ function BabaPage() {
       )}
 
       {/* Ações */}
-      {listaFechada ? (
+      {sessao.tipo === "baxvi" && !souRelacionadoBavi && !isAdmin ? (
+        <div className="rounded-lg border border-gold/30 bg-gold/5 p-4 text-center">
+          <p className="font-semibold text-gold">Você não está relacionado para este clássico</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            No BAxVI apenas os relacionados confirmam presença e fazem check-in. A diretoria monta a
+            escalação pela lista de relacionados.
+          </p>
+        </div>
+      ) : listaFechada ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center">
           <p className="font-semibold text-destructive">
             {antesDeAbrir ? "Lista ainda não abriu" : "Lista encerrada"}
@@ -419,12 +431,12 @@ function BabaPage() {
         </Button>
       )}
 
-      {!listaFechada && !isConvidado && userId && (
+      {!ehBaxvi && !listaFechada && !isConvidado && userId && (
         <SolicitacoesRecebidas babaId={sessao.id} userId={userId} />
       )}
 
       {/* Convidado */}
-      {!listaFechada && !isConvidado && userId && (
+      {!ehBaxvi && !listaFechada && !isConvidado && userId && (
         <LevarConvidado babaId={sessao.id} userId={userId} />
       )}
 
@@ -556,13 +568,15 @@ function BabaPage() {
         )}
       </div>
 
-      <ChegadaGps
-        sessao={sessao}
-        presencas={presencas ?? []}
-        minhaPresencaId={minhaPresenca?.id}
-        jaChegou={!!minhaPresenca?.ordem_chegada}
-        isAdmin={isAdmin}
-      />
+      {(!ehBaxvi || souRelacionadoBavi || isAdmin) && (
+        <ChegadaGps
+          sessao={sessao}
+          presencas={presencas ?? []}
+          minhaPresencaId={minhaPresenca?.id}
+          jaChegou={!!minhaPresenca?.ordem_chegada}
+          isAdmin={isAdmin}
+        />
+      )}
 
       <MuralPunicoes />
     </div>

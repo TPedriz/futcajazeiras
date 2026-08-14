@@ -253,7 +253,11 @@ function InicioPage() {
         <div className="grid grid-cols-1 gap-3">
           <Link to="/baba">
             <Button variant="hero" size="xl" className="w-full">
-              {listaAberta ? "Confirmar minha presença" : "Ver detalhes do baba"}
+              {proxSessao?.tipo === "baxvi"
+                ? "Ver escalação do clássico"
+                : listaAberta
+                  ? "Confirmar minha presença"
+                  : "Ver detalhes do baba"}
             </Button>
           </Link>
         </div>
@@ -412,7 +416,7 @@ function CardBavi({
     <Link to="/baba">
       <div className="relative overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-br from-[#1c1233] via-[#0e0a1c] to-[#1c1233] p-5 shadow-[0_0_36px_rgba(201,162,39,0.18)] transition-colors hover:border-gold/70">
         <div className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-gold/10 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-10 -left-8 size-32 rounded-full bg-red-600/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-10 -left-8 size-32 rounded-full bg-blue-600/10 blur-2xl" />
         <div className="relative">
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/50 bg-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold">
@@ -481,11 +485,11 @@ function TimeMini({
   return (
     <div
       className={`rounded-xl border p-3 ${
-        cor === "bahia" ? "border-red-500/30 bg-red-500/5" : "border-blue-500/30 bg-blue-500/5"
+        cor === "bahia" ? "border-blue-500/30 bg-blue-500/5" : "border-red-500/30 bg-red-500/5"
       }`}
     >
       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        {cor === "bahia" ? "🔴" : "🔵"} {nome}
+        {cor === "bahia" ? "🔵" : "🔴"} {nome}
         <span className="ml-1 text-gold">{jogadores.length}</span>
       </p>
       {jogadores.length === 0 ? (

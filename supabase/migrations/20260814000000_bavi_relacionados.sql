@@ -298,3 +298,142 @@ CREATE TRIGGER trg_conquistas_times_jogadores
 -- 7) Backfill: reavalia as conquistas de todos os jogadores
 -- ------------------------------------------------------------
 SELECT public.verifica_conquistas(id) FROM public.perfis;
+
+-- ------------------------------------------------------------
+-- 8) BAxVI: apenas os relacionados confirmam presença e check-in
+-- ------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.valida_checkin()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+DECLARE
+  ref date := date_trunc('month', now())::date;
+  venc date := (date_trunc('month', now()) + INTERVAL '9 days')::date;
+  esta_pago boolean;
+  eh_associado boolean;
+  esta_ativo boolean;
+  ses public.sessoes_baba%ROWTYPE;
+BEGIN
+  SELECT p.ativo INTO esta_ativo FROM public.perfis p WHERE p.id = NEW.usuario_id;
+  IF COALESCE(esta_ativo, true) = false THEN
+    RAISE EXCEPTION 'Conta desativada. Fale com a diretoria.';
+  END IF;
+
+  IF auth.uid() IS DISTINCT FROM NEW.usuario_id THEN RETURN NEW; END IF;
+
+  SELECT * INTO ses FROM public.sessoes_baba WHERE id = NEW.baba_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Baba não encontrado.'; END IF;
+
+  IF ses.esta_fechado THEN
+    RAISE EXCEPTION 'A lista foi fechada pela diretoria.';
+  END IF;
+  IF now() < COALESCE(ses.abertura_lista, '1970-01-01'::timestamptz) THEN
+    RAISE EXCEPTION 'A lista ainda não foi aberta para check-in.';
+  END IF;
+  IF now() >= COALESCE(ses.fechamento_lista, '9999-12-31'::timestamptz) THEN
+    RAISE EXCEPTION 'A lista já foi encerrada.';
+  END IF;
+
+  IF NEW.nome_convidado IS NOT NULL THEN RETURN NEW; END IF;
+
+  -- No BAxVI, apenas os relacionados do clássico entram na lista (a diretoria pode adicionar).
+  IF ses.tipo = 'baxvi' AND NOT public.tem_papel(auth.uid(), 'administrador') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM public.bavi_relacionados
+      WHERE baba_id = NEW.baba_id AND usuario_id = NEW.usuario_id
+    ) THEN
+      RAISE EXCEPTION 'Você não está relacionado para este BAxVI. Apenas os relacionados confirmam presença e fazem check-in.';
+    END IF;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.suspensoes s
+    WHERE s.usuario_id = NEW.usuario_id AND s.baba_bloqueado_id = NEW.baba_id
+  ) THEN
+    RAISE EXCEPTION 'Você está suspenso por cartão vermelho e não pode entrar na lista deste baba.';
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.papeis_usuario pu
+    WHERE pu.user_id = NEW.usuario_id AND pu.papel IN ('associado','administrador')
+  ) INTO eh_associado;
+
+  IF eh_associado AND now()::date > venc THEN
+    SELECT (m.status = 'pago') INTO esta_pago
+      FROM public.mensalidades m
+      WHERE m.usuario_id = NEW.usuario_id AND m.referencia = ref;
+    IF COALESCE(esta_pago, false) = false THEN
+      RAISE EXCEPTION 'Mensalidade em aberto desde o dia 10. Pague o PIX para liberar seu check-in.';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Check-in por GPS: no BAxVI, só relacionado (diretoria sempre pode).
+CREATE OR REPLACE FUNCTION public.marcar_chegada(_presenca_id uuid, _lat double precision, _lng double precision)
+RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  pres public.presencas%ROWTYPE;
+  ses public.sessoes_baba%ROWTYPE;
+  dist double precision;
+  abertura timestamptz;
+  limite timestamptz;
+  prox integer;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Não autenticado'; END IF;
+
+  SELECT * INTO pres FROM public.presencas WHERE id = _presenca_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Presença não encontrada'; END IF;
+
+  IF auth.uid() <> pres.usuario_id
+     AND auth.uid() IS DISTINCT FROM pres.convidado_user_id
+     AND NOT public.tem_papel(auth.uid(), 'administrador') THEN
+    RAISE EXCEPTION 'Você não pode marcar a chegada de outra pessoa';
+  END IF;
+
+  SELECT * INTO ses FROM public.sessoes_baba WHERE id = pres.baba_id;
+
+  -- No BAxVI, apenas os relacionados do clássico fazem check-in.
+  IF ses.tipo = 'baxvi' AND NOT public.tem_papel(auth.uid(), 'administrador') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM public.bavi_relacionados
+      WHERE baba_id = pres.baba_id AND usuario_id = pres.usuario_id
+    ) THEN
+      RAISE EXCEPTION 'Apenas os relacionados do BAxVI podem fazer check-in.';
+    END IF;
+  END IF;
+
+  abertura := ses.data_horario - INTERVAL '30 minutes';
+  limite := ses.data_horario + INTERVAL '1 hour';
+
+  IF NOT public.tem_papel(auth.uid(), 'administrador') THEN
+    IF now() < abertura THEN
+      RAISE EXCEPTION 'A marcação de chegada abre 30 minutos antes do baba.';
+    END IF;
+    IF now() > limite THEN
+      RAISE EXCEPTION 'A marcação de chegada encerrou 1 hora após o início do baba.';
+    END IF;
+
+    dist := 6371000 * acos(
+      least(1, greatest(-1,
+        cos(radians(ses.latitude)) * cos(radians(_lat)) * cos(radians(_lng) - radians(ses.longitude))
+        + sin(radians(ses.latitude)) * sin(radians(_lat))
+      ))
+    );
+    IF dist > ses.raio_metros THEN
+      RAISE EXCEPTION 'Você precisa estar na arena ou a menos de 1km de distância para marcar sua chegada.';
+    END IF;
+  END IF;
+
+  IF pres.ordem_chegada IS NOT NULL THEN RETURN pres.ordem_chegada; END IF;
+
+  SELECT COALESCE(MAX(ordem_chegada), 0) + 1 INTO prox
+    FROM public.presencas WHERE baba_id = pres.baba_id;
+
+  UPDATE public.presencas
+     SET chegou_em = now(), ordem_chegada = prox, compareceu = true
+   WHERE id = _presenca_id;
+
+  RETURN prox;
+END;
+$$;
