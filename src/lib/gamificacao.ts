@@ -193,12 +193,10 @@ export const ROTULOS_CATEGORIA_CONQUISTA: Record<string, string> = {
   penaltis: "Pênaltis defendidos",
   vitorias: "Vitórias",
   cartoes: "Cartões amarelos",
+  cartoes_vermelhos: "Cartões vermelhos",
   faltas: "Faltas",
   gols_contra: "Gols contra",
-  bavi_presenca: "BAxVI — Relacionados",
-  bavi_vitorias: "BAxVI — Vitórias",
-  bavi_gols: "BAxVI — Gols",
-  bavi_assistencias: "BAxVI — Assistências",
+  bavi: "BAxVI",
 };
 
 export function rotuloCategoriaConquista(categoria: string): string {

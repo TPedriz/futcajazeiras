@@ -437,3 +437,170 @@ BEGIN
   RETURN prox;
 END;
 $$;
+
+-- ------------------------------------------------------------
+-- 9) Conquistas do BAxVI em UMA sessão + mais conquistas do baba
+-- ------------------------------------------------------------
+-- (a) Junta todas as conquistas do BAxVI na categoria 'bavi' (o perfil
+--     exibe uma única sessão "BAxVI") e padroniza os códigos.
+UPDATE public.conquistas
+SET categoria = 'bavi',
+    codigo = CASE codigo
+      WHEN 'bavi_1' THEN 'bavi_presenca_1'
+      WHEN 'bavi_3' THEN 'bavi_presenca_3'
+      WHEN 'bavi_5' THEN 'bavi_presenca_5'
+      WHEN 'bavi_vitoria_1' THEN 'bavi_vitorias_1'
+      WHEN 'bavi_vitorias_3' THEN 'bavi_vitorias_3'
+      WHEN 'bavi_gol_1' THEN 'bavi_gols_1'
+      WHEN 'bavi_gols_3' THEN 'bavi_gols_3'
+      WHEN 'bavi_assistencia_1' THEN 'bavi_assistencias_1'
+    END
+WHERE codigo IN ('bavi_1','bavi_3','bavi_5','bavi_vitoria_1','bavi_vitorias_3','bavi_gol_1','bavi_gols_3','bavi_assistencia_1');
+
+-- (b) Novas conquistas: mais BAxVIs e mais situações dos babas comuns.
+INSERT INTO public.conquistas (codigo, nome, descricao, icone, cor, categoria, meta) VALUES
+  -- BAxVI (sessão única)
+  ('bavi_presenca_10', 'Craque do Clássico', 'Seja relacionado em 10 BAxVIs.', '🌟', 'gold', 'bavi', 10),
+  ('bavi_vitorias_5', 'Imperador do Clássico', 'Vença 5 BAxVIs.', '👑', 'amber', 'bavi', 5),
+  ('bavi_gols_5', 'Lenda do Clássico', 'Marque 5 gols em BAxVIs.', '⚽', 'sky', 'bavi', 5),
+  ('bavi_assistencias_3', 'Assistente do Clássico', 'Dê 3 assistências em BAxVIs.', '🅰️', 'violet', 'bavi', 3),
+  -- Presenças
+  ('presencas_15', 'Fiel de Ouro', 'Confirme presença em 15 babas.', '🥉', 'gold', 'presenca', 15),
+  ('presencas_100', 'Lenda Absoluta', 'Confirme presença em 100 babas.', '🏆', 'gold', 'presenca', 100),
+  -- Gols
+  ('gols_50', 'Canhão', 'Marque 50 gols no total.', '💣', 'amber', 'gols', 50),
+  ('gols_100', 'Centenário', 'Marque 100 gols no total.', '👑', 'amber', 'gols', 100),
+  -- Assistências
+  ('assistencias_25', 'Distribuidor', 'Dê 25 assistências no total.', '🎯', 'sky', 'assistencias', 25),
+  ('assistencias_50', 'Maestro Total', 'Dê 50 assistências no total.', '🎻', 'sky', 'assistencias', 50),
+  -- Vitórias
+  ('vitorias_5', 'Embalando', 'Vença 5 babas.', '📈', 'amber', 'vitorias', 5),
+  ('vitorias_50', 'Dinastia', 'Vença 50 babas.', '🏰', 'amber', 'vitorias', 50),
+  ('vitorias_100', 'Casa Real', 'Vença 100 babas.', '💎', 'amber', 'vitorias', 100),
+  -- Pênaltis defendidos
+  ('penaltis_10', 'Guardião', 'Defenda 10 pênaltis.', '🛡️', 'gold', 'penaltis', 10),
+  ('penaltis_20', 'Muralha de Aço', 'Defenda 20 pênaltis.', '🏯', 'gold', 'penaltis', 20),
+  -- Cartões (ruins)
+  ('amarelos_20', 'Colecionador', 'Receba 20 cartões amarelos no total.', '🚦', 'rose', 'cartoes', 20),
+  ('vermelho_1', 'Expulso', 'Receba um cartão vermelho.', '🟥', 'rose', 'cartoes_vermelhos', 1),
+  ('vermelhos_3', 'Recorrente', 'Receba 3 cartões vermelhos no total.', '🧯', 'rose', 'cartoes_vermelhos', 3),
+  -- Faltas
+  ('faltas_25', 'Carrinho Pesado', 'Cometa 25 faltas no total.', '🛞', 'rose', 'faltas', 25),
+  ('faltas_50', 'Devastador', 'Cometa 50 faltas no total.', '💥', 'rose', 'faltas', 50),
+  -- Gols contra
+  ('gols_contra_5', 'Gol Contra em Série', 'Marque 5 gols contra.', '🎭', 'rose', 'gols_contra', 5),
+  ('gols_contra_10', 'Saqueador Profissional', 'Marque 10 gols contra.', '🧨', 'rose', 'gols_contra', 10),
+  -- Nível
+  ('nivel_15', 'Lenda Viva', 'Alcance o nível 15.', '🌟', 'violet', 'nivel', 15),
+  ('nivel_20', 'Imortal', 'Alcance o nível 20.', '🐐', 'violet', 'nivel', 20),
+  -- XP total
+  ('xp_5000', 'Elite', 'Acumule 5000 XP.', '⚡', 'rose', 'xp', 5000),
+  ('xp_10000', 'Deus do Baba', 'Acumule 10000 XP.', '🌌', 'rose', 'xp', 10000)
+ON CONFLICT (codigo) DO NOTHING;
+
+-- (c) verifica_conquistas com as novas regras: BAxVI unificado (por prefixo
+--     do código) e cartões vermelhos.
+CREATE OR REPLACE FUNCTION public.verifica_conquistas(usuario uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_presencas integer;
+  v_gols integer;
+  v_assistencias integer;
+  v_penaltis integer;
+  v_amarelos integer;
+  v_vermelhos integer;
+  v_faltas integer;
+  v_gc integer;
+  v_vitorias integer;
+  v_xp integer;
+  v_nivel integer;
+  v_bavi_participacoes integer;
+  v_bavi_vitorias integer;
+  v_bavi_gols integer;
+  v_bavi_assistencias integer;
+  c record;
+BEGIN
+  IF usuario IS NULL THEN
+    RETURN;
+  END IF;
+
+  -- Presenças do próprio jogador + como convidado.
+  SELECT COUNT(*) INTO v_presencas
+    FROM public.presencas
+    WHERE compareceu IS TRUE
+      AND ((usuario_id = usuario AND nome_convidado IS NULL) OR convidado_user_id = usuario);
+
+  SELECT COALESCE(SUM(gols), 0), COALESCE(SUM(assistencias), 0),
+         COALESCE(SUM(penaltis_defendidos), 0),
+         COALESCE(SUM(cartoes_amarelos), 0),
+         COALESCE(SUM(cartoes_vermelhos), 0),
+         COALESCE(SUM(faltas), 0),
+         COALESCE(SUM(gols_contra), 0)
+    INTO v_gols, v_assistencias, v_penaltis, v_amarelos, v_vermelhos, v_faltas, v_gc
+    FROM public.estatisticas_baba WHERE usuario_id = usuario;
+
+  SELECT COUNT(*) INTO v_vitorias
+    FROM public.times_jogadores tj
+    JOIN public.times_baba t ON t.id = tj.time_id
+    WHERE tj.usuario_id = usuario AND t.resultado = 'vitoria';
+
+  -- BAxVI: participações, vitórias, gols e assistências só nos clássicos.
+  SELECT COUNT(*) INTO v_bavi_participacoes
+    FROM public.times_jogadores tj
+    JOIN public.times_baba t ON t.id = tj.time_id
+    JOIN public.sessoes_baba s ON s.id = t.baba_id
+    WHERE tj.usuario_id = usuario AND s.tipo = 'baxvi';
+
+  SELECT COUNT(*) INTO v_bavi_vitorias
+    FROM public.times_jogadores tj
+    JOIN public.times_baba t ON t.id = tj.time_id
+    JOIN public.sessoes_baba s ON s.id = t.baba_id
+    WHERE tj.usuario_id = usuario AND t.resultado = 'vitoria' AND s.tipo = 'baxvi';
+
+  SELECT COALESCE(SUM(e.gols), 0), COALESCE(SUM(e.assistencias), 0)
+    INTO v_bavi_gols, v_bavi_assistencias
+    FROM public.estatisticas_baba e
+    JOIN public.sessoes_baba s ON s.id = e.baba_id
+    WHERE e.usuario_id = usuario AND s.tipo = 'baxvi';
+
+  SELECT xp_atual, nivel_atual INTO v_xp, v_nivel
+    FROM public.perfis WHERE id = usuario;
+
+  FOR c IN SELECT * FROM public.conquistas LOOP
+    IF c.categoria = 'presenca' AND v_presencas >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'gols' AND v_gols >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'assistencias' AND v_assistencias >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'penaltis' AND v_penaltis >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'vitorias' AND v_vitorias >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'cartoes' AND v_amarelos >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'cartoes_vermelhos' AND v_vermelhos >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'faltas' AND v_faltas >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'gols_contra' AND v_gc >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'bavi' AND c.codigo LIKE 'bavi_presenca%' AND v_bavi_participacoes >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'bavi' AND c.codigo LIKE 'bavi_vitorias%' AND v_bavi_vitorias >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'bavi' AND c.codigo LIKE 'bavi_gols%' AND v_bavi_gols >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'bavi' AND c.codigo LIKE 'bavi_assistencias%' AND v_bavi_assistencias >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'nivel' AND v_nivel >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    ELSIF c.categoria = 'xp' AND v_xp >= c.meta THEN
+      PERFORM public.desbloqueia_conquista(usuario, c.id);
+    END IF;
+  END LOOP;
+END;
+$$;
+
+-- (d) Backfill: reavalia as conquistas de todos os jogadores com as novas regras.
+SELECT public.verifica_conquistas(id) FROM public.perfis;
