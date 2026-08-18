@@ -1190,6 +1190,14 @@ export type Database = {
       }
     }
     Functions: {
+      admin_concede_conquista: {
+        Args: { _conquista: string; _usuario: string }
+        Returns: string
+      }
+      admin_remove_conquista: {
+        Args: { _conquista: string; _usuario: string }
+        Returns: undefined
+      }
       aplica_suspensao: {
         Args: {
           _motivo: string
@@ -1219,6 +1227,13 @@ export type Database = {
         Returns: number
       }
       config_int: { Args: { _chave: string; _padrao: number }; Returns: number }
+      conquistas_do_usuario: {
+        Args: { _usuario: string }
+        Returns: {
+          conquista_id: string
+          desbloqueada_em: string
+        }[]
+      }
       cria_evento_feed: {
         Args: {
           p_chave?: string

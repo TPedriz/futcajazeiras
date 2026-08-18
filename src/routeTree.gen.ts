@@ -32,6 +32,7 @@ import { Route as AuthenticatedAdminSorteioRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminResultadosRouteImport } from './routes/_authenticated/admin/resultados'
 import { Route as AuthenticatedAdminFinanceiroRouteImport } from './routes/_authenticated/admin/financeiro'
 import { Route as AuthenticatedAdminEstatisticasRouteImport } from './routes/_authenticated/admin/estatisticas'
+import { Route as AuthenticatedAdminConquistasRouteImport } from './routes/_authenticated/admin/conquistas'
 import { Route as AuthenticatedAdminCargosRouteImport } from './routes/_authenticated/admin/cargos'
 import { Route as AuthenticatedAdminAjudaRouteImport } from './routes/_authenticated/admin/ajuda'
 
@@ -155,6 +156,12 @@ const AuthenticatedAdminEstatisticasRoute =
     path: '/estatisticas',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminConquistasRoute =
+  AuthenticatedAdminConquistasRouteImport.update({
+    id: '/conquistas',
+    path: '/conquistas',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCargosRoute =
   AuthenticatedAdminCargosRouteImport.update({
     id: '/cargos',
@@ -184,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/admin/ajuda': typeof AuthenticatedAdminAjudaRoute
   '/admin/cargos': typeof AuthenticatedAdminCargosRoute
+  '/admin/conquistas': typeof AuthenticatedAdminConquistasRoute
   '/admin/estatisticas': typeof AuthenticatedAdminEstatisticasRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/admin/resultados': typeof AuthenticatedAdminResultadosRoute
@@ -209,6 +217,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/admin/ajuda': typeof AuthenticatedAdminAjudaRoute
   '/admin/cargos': typeof AuthenticatedAdminCargosRoute
+  '/admin/conquistas': typeof AuthenticatedAdminConquistasRoute
   '/admin/estatisticas': typeof AuthenticatedAdminEstatisticasRoute
   '/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/admin/resultados': typeof AuthenticatedAdminResultadosRoute
@@ -237,6 +246,7 @@ export interface FileRoutesById {
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/admin/ajuda': typeof AuthenticatedAdminAjudaRoute
   '/_authenticated/admin/cargos': typeof AuthenticatedAdminCargosRoute
+  '/_authenticated/admin/conquistas': typeof AuthenticatedAdminConquistasRoute
   '/_authenticated/admin/estatisticas': typeof AuthenticatedAdminEstatisticasRoute
   '/_authenticated/admin/financeiro': typeof AuthenticatedAdminFinanceiroRoute
   '/_authenticated/admin/resultados': typeof AuthenticatedAdminResultadosRoute
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/admin/ajuda'
     | '/admin/cargos'
+    | '/admin/conquistas'
     | '/admin/estatisticas'
     | '/admin/financeiro'
     | '/admin/resultados'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/admin/ajuda'
     | '/admin/cargos'
+    | '/admin/conquistas'
     | '/admin/estatisticas'
     | '/admin/financeiro'
     | '/admin/resultados'
@@ -317,6 +329,7 @@ export interface FileRouteTypes {
     | '/_authenticated/perfil'
     | '/_authenticated/admin/ajuda'
     | '/_authenticated/admin/cargos'
+    | '/_authenticated/admin/conquistas'
     | '/_authenticated/admin/estatisticas'
     | '/_authenticated/admin/financeiro'
     | '/_authenticated/admin/resultados'
@@ -502,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEstatisticasRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/conquistas': {
+      id: '/_authenticated/admin/conquistas'
+      path: '/conquistas'
+      fullPath: '/admin/conquistas'
+      preLoaderRoute: typeof AuthenticatedAdminConquistasRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/cargos': {
       id: '/_authenticated/admin/cargos'
       path: '/cargos'
@@ -522,6 +542,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAjudaRoute: typeof AuthenticatedAdminAjudaRoute
   AuthenticatedAdminCargosRoute: typeof AuthenticatedAdminCargosRoute
+  AuthenticatedAdminConquistasRoute: typeof AuthenticatedAdminConquistasRoute
   AuthenticatedAdminEstatisticasRoute: typeof AuthenticatedAdminEstatisticasRoute
   AuthenticatedAdminFinanceiroRoute: typeof AuthenticatedAdminFinanceiroRoute
   AuthenticatedAdminResultadosRoute: typeof AuthenticatedAdminResultadosRoute
@@ -533,6 +554,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAjudaRoute: AuthenticatedAdminAjudaRoute,
   AuthenticatedAdminCargosRoute: AuthenticatedAdminCargosRoute,
+  AuthenticatedAdminConquistasRoute: AuthenticatedAdminConquistasRoute,
   AuthenticatedAdminEstatisticasRoute: AuthenticatedAdminEstatisticasRoute,
   AuthenticatedAdminFinanceiroRoute: AuthenticatedAdminFinanceiroRoute,
   AuthenticatedAdminResultadosRoute: AuthenticatedAdminResultadosRoute,

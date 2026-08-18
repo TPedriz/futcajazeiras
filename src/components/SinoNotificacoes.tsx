@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { useNotificacoes } from "@/components/NotificacoesProvider";
 import { ptBR } from "date-fns/locale";
@@ -57,7 +56,7 @@ export function SinoNotificacoes() {
             </Button>
           )}
         </div>
-        <ScrollArea type="always" className="max-h-[70vh] min-h-24">
+        <div className="max-h-[70vh] min-h-24 overflow-y-auto overscroll-contain">
           {(notificacoes ?? []).length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">
               Nenhum aviso por aqui ainda.
@@ -96,7 +95,7 @@ export function SinoNotificacoes() {
               })}
             </ul>
           )}
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );
