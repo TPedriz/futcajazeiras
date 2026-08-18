@@ -92,11 +92,19 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       const { data: presencas, error } = await supabase
         .from("presencas")
         .select(
-          "id, baba_id, usuario_id, nome_convidado, convidado_user_id, status_convidado, confirmado_em, mp_status, valor, chegou_em, ordem_chegada, compareceu, is_goleiro_fixo",
+          "id, baba_id, usuario_id, nome_convidado, convidado_user_id, status_convidado, confirmado_em, chegou_em, ordem_chegada, compareceu, is_goleiro_fixo",
         )
         .eq("baba_id", babaId)
         .order("confirmado_em", { ascending: true });
       if (error) throw error;
+
+      // Status de pagamento é restrito: só o próprio jogador, o anfitrião do
+      // convidado e a diretoria recebem esse dado (função no banco).
+      const statusPix = new Map<string, string | null>();
+      const { data: pagamentos } = await supabase.rpc("status_pagamento_presencas", {
+        _baba_id: babaId,
+      });
+      for (const s of pagamentos ?? []) statusPix.set(s.presenca_id, s.mp_status);
 
       const ids = Array.from(
         new Set((presencas ?? []).map((p) => p.usuario_id).filter(Boolean)),
@@ -121,9 +129,11 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
 
       return (presencas ?? []).map((p) => ({
         ...p,
+        mp_status: statusPix.get(p.id) ?? null,
         perfis: p.usuario_id ? (mapa.get(p.usuario_id) ?? null) : null,
       }));
     },
+
   });
 
 export const todasSessoesQuery = () =>
