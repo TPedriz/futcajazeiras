@@ -10,25 +10,16 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-<<<<<<< HEAD
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
-import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/baba'
-import { Route as AuthenticatedCartinhasRouteImport } from './routes/_authenticated/cartinhas'
-import { Route as AuthenticatedConquistasRouteImport } from './routes/_authenticated/conquistas'
-import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
-import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
-=======
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AtualizarCadastroRouteImport } from './routes/atualizar-cadastro'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
->>>>>>> 6d9582fdcebeaabad4b69e19a66ae2c04d92fa60
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
+import { Route as AuthenticatedConquistasRouteImport } from './routes/_authenticated/conquistas'
 import { Route as AuthenticatedCartinhasRouteImport } from './routes/_authenticated/cartinhas'
 import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/baba'
 import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
@@ -78,20 +69,9 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-<<<<<<< HEAD
-const AuthenticatedConquistasRoute = AuthenticatedConquistasRouteImport.update({
-  id: '/conquistas',
-  path: '/conquistas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
-  id: '/inicio',
-  path: '/inicio',
-=======
 const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
->>>>>>> 6d9582fdcebeaabad4b69e19a66ae2c04d92fa60
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
@@ -102,6 +82,11 @@ const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
 const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
   id: '/inicio',
   path: '/inicio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConquistasRoute = AuthenticatedConquistasRouteImport.update({
+  id: '/conquistas',
+  path: '/conquistas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCartinhasRoute = AuthenticatedCartinhasRouteImport.update({
@@ -405,26 +390,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-<<<<<<< HEAD
-    '/_authenticated/conquistas': {
-      id: '/_authenticated/conquistas'
-      path: '/conquistas'
-      fullPath: '/conquistas'
-      preLoaderRoute: typeof AuthenticatedConquistasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inicio': {
-      id: '/_authenticated/inicio'
-      path: '/inicio'
-      fullPath: '/inicio'
-      preLoaderRoute: typeof AuthenticatedInicioRouteImport
-=======
     '/_authenticated/perfil': {
       id: '/_authenticated/perfil'
       path: '/perfil'
       fullPath: '/perfil'
       preLoaderRoute: typeof AuthenticatedPerfilRouteImport
->>>>>>> 6d9582fdcebeaabad4b69e19a66ae2c04d92fa60
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/pagamentos': {
@@ -439,6 +409,13 @@ declare module '@tanstack/react-router' {
       path: '/inicio'
       fullPath: '/inicio'
       preLoaderRoute: typeof AuthenticatedInicioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/conquistas': {
+      id: '/_authenticated/conquistas'
+      path: '/conquistas'
+      fullPath: '/conquistas'
+      preLoaderRoute: typeof AuthenticatedConquistasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cartinhas': {
