@@ -198,12 +198,20 @@ export const consultarPixConvidado = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: presenca } = await supabase
       .from("presencas")
-      .select("id, usuario_id, convidado_user_id, status_convidado, valor")
+      .select("id, usuario_id, convidado_user_id, status_convidado")
       .eq("id", data.presencaId)
       .maybeSingle();
     if (!presenca || (presenca.usuario_id !== userId && presenca.convidado_user_id !== userId)) {
       throw new Error("Convidado não encontrado");
     }
+
+    // O valor é lido no servidor: a coluna não é exposta a usuários logados.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: valorPresenca } = await supabaseAdmin
+      .from("presencas")
+      .select("valor")
+      .eq("id", presenca.id)
+      .maybeSingle();
 
     const { data: cobranca } = await supabase
       .from("presencas_pagamento")
@@ -214,8 +222,9 @@ export const consultarPixConvidado = createServerFn({ method: "POST" })
     const pix = {
       qrCode: cobranca?.pix_qr_code ?? null,
       qrBase64: cobranca?.pix_qr_base64 ?? null,
-      valor: Number(presenca.valor) > 0 ? Number(presenca.valor) : VALOR_CONVIDADO,
+      valor: Number(valorPresenca?.valor) > 0 ? Number(valorPresenca?.valor) : VALOR_CONVIDADO,
     };
+
 
     if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...pix };
     if (!cobranca?.mp_payment_id) return { pago: false, status: "sem_cobranca", ...pix };
