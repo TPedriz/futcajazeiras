@@ -20,6 +20,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
 import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/baba'
 import { Route as AuthenticatedCartinhasRouteImport } from './routes/_authenticated/cartinhas'
+import { Route as AuthenticatedConquistasRouteImport } from './routes/_authenticated/conquistas'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
 import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
@@ -86,6 +87,11 @@ const AuthenticatedBabaRoute = AuthenticatedBabaRouteImport.update({
 const AuthenticatedCartinhasRoute = AuthenticatedCartinhasRouteImport.update({
   id: '/cartinhas',
   path: '/cartinhas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConquistasRoute = AuthenticatedConquistasRouteImport.update({
+  id: '/conquistas',
+  path: '/conquistas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
@@ -172,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/ajuda': typeof AuthenticatedAjudaRoute
   '/baba': typeof AuthenticatedBabaRoute
   '/cartinhas': typeof AuthenticatedCartinhasRoute
+  '/conquistas': typeof AuthenticatedConquistasRoute
   '/inicio': typeof AuthenticatedInicioRoute
   '/pagamentos': typeof AuthenticatedPagamentosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/ajuda': typeof AuthenticatedAjudaRoute
   '/baba': typeof AuthenticatedBabaRoute
   '/cartinhas': typeof AuthenticatedCartinhasRoute
+  '/conquistas': typeof AuthenticatedConquistasRoute
   '/inicio': typeof AuthenticatedInicioRoute
   '/pagamentos': typeof AuthenticatedPagamentosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/_authenticated/ajuda': typeof AuthenticatedAjudaRoute
   '/_authenticated/baba': typeof AuthenticatedBabaRoute
   '/_authenticated/cartinhas': typeof AuthenticatedCartinhasRoute
+  '/_authenticated/conquistas': typeof AuthenticatedConquistasRoute
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
   '/_authenticated/pagamentos': typeof AuthenticatedPagamentosRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/ajuda'
     | '/baba'
     | '/cartinhas'
+    | '/conquistas'
     | '/inicio'
     | '/pagamentos'
     | '/perfil'
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
     | '/ajuda'
     | '/baba'
     | '/cartinhas'
+    | '/conquistas'
     | '/inicio'
     | '/pagamentos'
     | '/perfil'
@@ -300,6 +311,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ajuda'
     | '/_authenticated/baba'
     | '/_authenticated/cartinhas'
+    | '/_authenticated/conquistas'
     | '/_authenticated/inicio'
     | '/_authenticated/pagamentos'
     | '/_authenticated/perfil'
@@ -404,6 +416,13 @@ declare module '@tanstack/react-router' {
       path: '/cartinhas'
       fullPath: '/cartinhas'
       preLoaderRoute: typeof AuthenticatedCartinhasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/conquistas': {
+      id: '/_authenticated/conquistas'
+      path: '/conquistas'
+      fullPath: '/conquistas'
+      preLoaderRoute: typeof AuthenticatedConquistasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inicio': {
@@ -530,6 +549,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAjudaRoute: typeof AuthenticatedAjudaRoute
   AuthenticatedBabaRoute: typeof AuthenticatedBabaRoute
   AuthenticatedCartinhasRoute: typeof AuthenticatedCartinhasRoute
+  AuthenticatedConquistasRoute: typeof AuthenticatedConquistasRoute
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
   AuthenticatedPagamentosRoute: typeof AuthenticatedPagamentosRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
@@ -540,6 +560,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAjudaRoute: AuthenticatedAjudaRoute,
   AuthenticatedBabaRoute: AuthenticatedBabaRoute,
   AuthenticatedCartinhasRoute: AuthenticatedCartinhasRoute,
+  AuthenticatedConquistasRoute: AuthenticatedConquistasRoute,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
   AuthenticatedPagamentosRoute: AuthenticatedPagamentosRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,

@@ -56,9 +56,7 @@ import {
 export const Route = createFileRoute("/_authenticated/baba")({
   head: ({ loaderData }) => {
     const sessao = loaderData as
-      | { id: string; data_horario: string; local: string }
-      | null
-      | undefined;
+      { id: string; data_horario: string; local: string } | null | undefined;
     const scripts = sessao
       ? [
           {
@@ -112,12 +110,12 @@ function BabaPage() {
   const relacionadosBahia = (relacionadosBavi ?? []).filter((r) => r.time_nome === "bahia");
   const relacionadosVitoria = (relacionadosBavi ?? []).filter((r) => r.time_nome === "vitoria");
   const ehBaxvi = sessao?.tipo === "baxvi";
+  const userId = perfilData?.user.id;
   const souRelacionadoBavi = ehBaxvi
     ? !!userId && (relacionadosBavi ?? []).some((r) => r.usuario_id === userId)
     : true;
   const queryClient = useQueryClient();
 
-  const userId = perfilData?.user.id;
   const isAdmin = perfilData?.isAdmin ?? false;
   const isConvidado = perfilData?.isConvidado ?? false;
 

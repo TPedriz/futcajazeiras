@@ -117,10 +117,12 @@ export type Database = {
           cor: string;
           criado_em: string;
           descricao: string;
+          historica: boolean;
           icone: string;
           id: string;
           meta: number;
           nome: string;
+          raridade: string;
         };
         Insert: {
           categoria: string;
@@ -128,10 +130,12 @@ export type Database = {
           cor?: string;
           criado_em?: string;
           descricao: string;
+          historica?: boolean;
           icone?: string;
           id?: string;
           meta: number;
           nome: string;
+          raridade?: string;
         };
         Update: {
           categoria?: string;
@@ -139,10 +143,12 @@ export type Database = {
           cor?: string;
           criado_em?: string;
           descricao?: string;
+          historica?: boolean;
           icone?: string;
           id?: string;
           meta?: number;
           nome?: string;
+          raridade?: string;
         };
         Relationships: [];
       };
@@ -238,6 +244,60 @@ export type Database = {
           },
           {
             foreignKeyName: "estatisticas_baba_usuario_id_fkey";
+            columns: ["usuario_id"];
+            isOneToOne: false;
+            referencedRelation: "perfis";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      feed_eventos: {
+        Row: {
+          chave_unica: string;
+          conquista_id: string | null;
+          criado_em: string;
+          descricao: string;
+          id: string;
+          metadata: Json;
+          titulo: string;
+          tipo: string;
+          usuario_id: string;
+          visibilidade: string;
+        };
+        Insert: {
+          chave_unica: string;
+          conquista_id?: string | null;
+          criado_em?: string;
+          descricao?: string;
+          id?: string;
+          metadata?: Json;
+          titulo: string;
+          tipo: string;
+          usuario_id: string;
+          visibilidade?: string;
+        };
+        Update: {
+          chave_unica?: string;
+          conquista_id?: string | null;
+          criado_em?: string;
+          descricao?: string;
+          id?: string;
+          metadata?: Json;
+          titulo?: string;
+          tipo?: string;
+          usuario_id?: string;
+          visibilidade?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "feed_eventos_conquista_id_fkey";
+            columns: ["conquista_id"];
+            isOneToOne: false;
+            referencedRelation: "conquistas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "feed_eventos_usuario_id_fkey";
             columns: ["usuario_id"];
             isOneToOne: false;
             referencedRelation: "perfis";
@@ -1070,11 +1130,35 @@ export type Database = {
       };
       babas_pagos_convidado: { Args: { _user_id: string }; Returns: number };
       calcula_cartinha: { Args: { usuario: string }; Returns: undefined };
+      concede_conquista_historica: {
+        Args: {
+          p_codigo: string;
+          p_cor?: string;
+          p_descricao: string;
+          p_icone?: string;
+          p_metadata?: Json;
+          p_titulo: string;
+          p_usuario: string;
+        };
+        Returns: string;
+      };
       concede_xp: {
         Args: { quantidade: number; usuario: string };
         Returns: number;
       };
       config_int: { Args: { _chave: string; _padrao: number }; Returns: number };
+      cria_evento_feed: {
+        Args: {
+          p_chave?: string;
+          p_conquista?: string;
+          p_descricao?: string;
+          p_metadata?: Json;
+          p_titulo: string;
+          p_tipo: string;
+          p_usuario: string;
+        };
+        Returns: string;
+      };
       criar_pedido_convidado: {
         Args: {
           _baba_id: string;
@@ -1104,6 +1188,10 @@ export type Database = {
       marcar_chegada: {
         Args: { _lat: number; _lng: number; _presenca_id: string };
         Returns: number;
+      };
+      modera_evento_feed: {
+        Args: { p_evento_id: string; p_visibilidade: string };
+        Returns: undefined;
       };
       nivel_para_xp: { Args: { xp: number }; Returns: number };
       notifica: {
@@ -1141,6 +1229,7 @@ export type Database = {
       total_associados_ativos: { Args: never; Returns: number };
       valor_mensalidade: { Args: never; Returns: number };
       verifica_conquistas: { Args: { usuario: string }; Returns: undefined };
+      verifica_evento_ranking: { Args: { p_usuario: string }; Returns: undefined };
       xp_necessaria_para_nivel: { Args: { nivel: number }; Returns: number };
     };
     Enums: {
@@ -1166,12 +1255,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1191,13 +1280,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1216,13 +1304,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1241,13 +1328,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1258,13 +1344,12 @@ export type Enums<
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }

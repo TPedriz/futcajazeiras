@@ -520,9 +520,14 @@ function PerfilPage() {
 
       {/* Minhas Conquistas (gamificação) */}
       <div className="card-premium space-y-3 p-4">
-        <Label className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-          <Trophy className="size-4 text-gold" /> Minhas Conquistas
-        </Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+            <Trophy className="size-4 text-gold" /> Conquistas
+          </Label>
+          <Link to="/conquistas" className="text-[11px] font-semibold text-gold hover:underline">
+            Ver tudo →
+          </Link>
+        </div>
         <GerenciadorConquistas usuarioId={perfil?.id} />
       </div>
 

@@ -35,6 +35,7 @@ import { RankingMensal } from "@/components/RankingMensal";
 import { RankingCartinhas } from "@/components/RankingCartinhas";
 import { TodasCartinhas } from "@/components/TodasCartinhas";
 import { BadgeBaxvi } from "@/components/BadgeBaxvi";
+import { FeedPreview } from "@/components/FeedPreview";
 import { tempoDeAssociado } from "@/lib/associado";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -262,6 +263,12 @@ function InicioPage() {
           </Link>
         </div>
 
+        {/* Acontecimentos da comunidade (prévia do feed social) */}
+        <FeedPreview />
+
+        {/* Ranking mensal do mês (compacto) */}
+        <RankingMensal compacto />
+
         {proximas.length > 0 && (
           <div className="card-premium p-5">
             <p className="text-xs uppercase tracking-widest text-gold">Próximos babas</p>
@@ -308,18 +315,12 @@ function InicioPage() {
             </ul>
           </div>
         )}
-      </div>
-
-      {/* Mobile: acesso à tela dedicada de todas as cartinhas */}
-      <Link to="/cartinhas" className="md:hidden">
-        <Button variant="goldOutline" size="lg" className="w-full">
-          <Sparkles className="size-4" /> Ver todas as cartinhas
-        </Button>
-      </Link>
-
-      {/* Ranking mensal (coluna central, abaixo do conteúdo) */}
-      <div className="md:col-start-2">
-        <RankingMensal />
+        {/* Mobile: acesso à tela dedicada de todas as cartinhas */}
+        <Link to="/cartinhas" className="md:hidden">
+          <Button variant="goldOutline" size="lg" className="w-full">
+            <Sparkles className="size-4" /> Ver todas as cartinhas
+          </Button>
+        </Link>
       </div>
 
       {/* Lateral direita (desktop): ranking por categoria fixo */}

@@ -170,6 +170,8 @@ export interface Conquista {
   cor: string;
   categoria: string;
   meta: number;
+  raridade?: string;
+  historica?: boolean;
 }
 
 /** Conquista desbloqueada por um usuário (tabela `usuario_conquistas`). */

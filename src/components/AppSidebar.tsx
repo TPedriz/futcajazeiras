@@ -8,6 +8,7 @@ import {
   Users,
   LifeBuoy,
   LogOut,
+  Trophy,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AvatarJogador } from "@/components/AvatarJogador";
@@ -28,6 +29,7 @@ export function AppSidebar({ isAdmin, nome, rotulo, avatar }: AppSidebarProps) {
     { to: "/inicio", label: "Início", Icon: Home },
     { to: "/baba", label: "Baba", Icon: Calendar },
     { to: "/pagamentos", label: "Financeiro", Icon: Wallet },
+    { to: "/conquistas", label: "Conquistas", Icon: Trophy },
     ...(isAdmin
       ? [
           { to: "/admin/sorteio", label: "Sorteio", Icon: Shuffle },

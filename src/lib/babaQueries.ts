@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { SocialEvento } from "@/lib/feed";
 
 export const perfilAtualQuery = () =>
   queryOptions({
@@ -24,9 +25,7 @@ export const perfilAtualQuery = () =>
         isAssociado: isAdmin || lista.includes("associado"),
         isConvidado,
         papelPrincipal: (isAdmin ? "administrador" : isConvidado ? "convidado" : "associado") as
-          | "administrador"
-          | "associado"
-          | "convidado",
+          "administrador" | "associado" | "convidado",
         rotuloPapel: isAdmin ? "Diretoria" : isConvidado ? "Convidado" : "Associado",
       };
     },
@@ -872,6 +871,161 @@ export const conquistasEmDestaqueQuery = () =>
         mapa.set(uc.usuario_id, lista);
       }
       return mapa;
+    },
+  });
+
+// ==================== FEED SOCIAL DE GAMIFICAÇÃO ====================
+
+/** Campos de um evento do feed + conquista (dados públicos). */
+export const CAMPOS_FEED =
+  "id, tipo, usuario_id, conquista_id, titulo, descricao, metadata, visibilidade, criado_em, " +
+  "conquistas(id, codigo, nome, icone, cor, raridade)";
+
+/** Quantidade de eventos por página (keyset pagination). */
+export const FEED_PAGE_SIZE = 20;
+
+/**
+ * Busca eventos do feed e enriquece com o perfil público do jogador.
+ * Usa DUAS consultas (eventos + perfis via view `perfis_publicos`), porque o
+ * PostgREST não consegue embutir a view `perfis_publicos` a partir de
+ * `feed_eventos` (sem FK detectável). Sem N+1.
+ */
+export async function buscaEventosFeed(opcoes: {
+  limite: number;
+  antesDe?: string;
+}): Promise<SocialEvento[]> {
+  let q = supabase
+    .from("feed_eventos")
+    .select(CAMPOS_FEED)
+    .eq("visibilidade", "VISIVEL")
+    .order("criado_em", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(opcoes.limite);
+  if (opcoes.antesDe) {
+    q = q.lt("criado_em", opcoes.antesDe);
+  }
+  const { data, error } = await q;
+  if (error) throw error;
+
+  const linhas = (data ?? []) as unknown as Array<Omit<SocialEvento, "perfis_publicos">>;
+  const ids = Array.from(new Set(linhas.map((l) => l.usuario_id)));
+
+  const perfis = new Map<string, SocialEvento["perfis_publicos"]>();
+  if (ids.length > 0) {
+    const { data: lista } = await supabase
+      .from("perfis_publicos")
+      .select("id, nome, avatar_url, time_coracao")
+      .in("id", ids);
+    for (const p of lista ?? []) {
+      perfis.set(p.id, {
+        id: p.id,
+        nome: p.nome,
+        avatar_url: p.avatar_url,
+        time_coracao: p.time_coracao,
+      });
+    }
+  }
+
+  return linhas.map((l) => ({
+    ...l,
+    perfis_publicos: perfis.get(l.usuario_id) ?? null,
+  }));
+}
+
+/**
+ * Feed global (keyset pagination por `criado_em`).
+ * Passar `cursor` (último criado_em carregado) para buscar a página seguinte.
+ */
+export const feedGlobalQuery = (cursor?: { criado_em: string } | null) =>
+  queryOptions({
+    queryKey: ["feed-global", cursor?.criado_em ?? "primeira-pagina"],
+    queryFn: () => buscaEventosFeed({ limite: FEED_PAGE_SIZE, antesDe: cursor?.criado_em }),
+  });
+
+/** Prévia do feed para a Home (3 últimos acontecimentos). */
+export const feedGlobalPreviewQuery = () =>
+  queryOptions({
+    queryKey: ["feed-global-preview"],
+    queryFn: () => buscaEventosFeed({ limite: 3 }),
+  });
+
+/** Totais por categoria usados no progresso das conquistas (espelha o banco). */
+export interface TotaisConquistas {
+  presencas: number;
+  gols: number;
+  assistencias: number;
+  penaltisDefendidos: number;
+  cartoesAmarelos: number;
+  cartoesVermelhos: number;
+  faltas: number;
+  golsContra: number;
+  vitorias: number;
+  xp: number;
+  nivel: number;
+}
+
+export const totaisConquistasQuery = (usuarioId: string | undefined) =>
+  queryOptions({
+    queryKey: ["totais-conquistas", usuarioId],
+    enabled: !!usuarioId,
+    queryFn: async () => {
+      if (!usuarioId) return null;
+
+      const [{ data: stats }, { data: presencas }, { data: vitorias }, { data: perfil }] =
+        await Promise.all([
+          supabase
+            .from("estatisticas_baba")
+            .select(
+              "gols, assistencias, penaltis_defendidos, cartoes_amarelos, cartoes_azuis, cartoes_vermelhos, faltas, gols_contra",
+            )
+            .eq("usuario_id", usuarioId),
+          supabase
+            .from("presencas")
+            .select("usuario_id, nome_convidado, convidado_user_id, compareceu")
+            .eq("compareceu", true)
+            .or(`usuario_id.eq.${usuarioId},convidado_user_id.eq.${usuarioId}`),
+          supabase
+            .from("times_jogadores")
+            .select("usuario_id, times_baba(resultado)")
+            .eq("usuario_id", usuarioId),
+          supabase.from("perfis").select("xp_atual, nivel_atual").eq("id", usuarioId).maybeSingle(),
+        ]);
+
+      const somar = (
+        campo:
+          | "gols"
+          | "assistencias"
+          | "penaltis_defendidos"
+          | "cartoes_amarelos"
+          | "cartoes_azuis"
+          | "cartoes_vermelhos"
+          | "faltas"
+          | "gols_contra",
+      ) => (stats ?? []).reduce((s, l) => s + (l[campo] ?? 0), 0);
+
+      const presencasValidas = (presencas ?? []).filter(
+        (p) =>
+          (p.usuario_id === usuarioId && p.nome_convidado === null) ||
+          p.convidado_user_id === usuarioId,
+      ).length;
+
+      const vitoriasValidas = (vitorias ?? []).filter(
+        (tj) => tj.times_baba && tj.times_baba.resultado === "vitoria",
+      ).length;
+
+      return {
+        presencas: presencasValidas,
+        gols: somar("gols"),
+        assistencias: somar("assistencias"),
+        penaltisDefendidos: somar("penaltis_defendidos"),
+        cartoesAmarelos: somar("cartoes_amarelos"),
+        cartoesVermelhos: somar("cartoes_vermelhos"),
+        faltas: somar("faltas"),
+        golsContra: somar("gols_contra"),
+        vitorias: vitoriasValidas,
+        xp: perfil?.xp_atual ?? 0,
+        nivel: perfil?.nivel_atual ?? 1,
+      };
     },
   });
 

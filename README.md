@@ -30,15 +30,17 @@ baba em uma experiência organizada **e divertida**:
 
 O diferencial que torna o baba viciante:
 
-| Recurso                       | Descrição                                                                                                      |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| ⚡ **XP e níveis**            | +15 XP por presença, +8 por gol, +5 por assistência. Suba de nível acompanhando a barra de progresso.          |
-| 🏅 **Conquistas**             | Medalhas automáticas (Primeira Presença, Artilheiro, Nível 3, Veterano…) com notificação no sino.              |
-| ⭐ **Conquistas em destaque** | Escolha até 3 medalhas para exibir ao lado do seu nome em todo o app.                                          |
-| 🃏 **Cartinhas de jogador**   | OVR e atributos (RIT, FIN, PAS, DRI, DEF, FÍS) calculados do desempenho real, com visual de Ultimate Team.     |
-| 🥇 **Temas da cartinha**      | Bronze → Prata → Ouro, e especiais **TOTW** (top 1 do mês), **Lenda do Baba** (Icon) e **Paredão** (goleiros). |
-| 📤 **Compartilhar**           | Baixe sua cartinha em PNG ou compartilhe direto no WhatsApp/Instagram.                                         |
-| 📊 **Ranking mensal**         | Top do mês em Gols, Assistências, Pênaltis defendidos e Cartões, com destaque 🥇🥈🥉.                          |
+| Recurso                       | Descrição                                                                                                                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ⚡ **XP e níveis**            | +15 XP por presença, +8 por gol, +5 por assistência. Suba de nível acompanhando a barra de progresso.                                                                          |
+| 🏅 **Conquistas**             | Medalhas automáticas (Primeira Presença, Artilheiro, Nível 3, Veterano…) com notificação no sino.                                                                              |
+| ⭐ **Conquistas em destaque** | Escolha até 3 medalhas para exibir ao lado do seu nome em todo o app.                                                                                                          |
+| � **Feed social**             | Feed global de acontecimentos: conquistas desbloqueadas (com raridade), níveis, marcas históricas e ranking do mês — gerado com segurança no banco e atualizado em tempo real. |
+| 💎 **Raridade**               | Conquistas Comuns, Incomuns, Raras, Épicas, Lendárias e Míticas com visual próprio.                                                                                            |
+| �🃏 **Cartinhas de jogador**  | OVR e atributos (RIT, FIN, PAS, DRI, DEF, FÍS) calculados do desempenho real, com visual de Ultimate Team.                                                                     |
+| 🥇 **Temas da cartinha**      | Bronze → Prata → Ouro, e especiais **TOTW** (top 1 do mês), **Lenda do Baba** (Icon) e **Paredão** (goleiros).                                                                 |
+| 📤 **Compartilhar**           | Baixe sua cartinha em PNG ou compartilhe direto no WhatsApp/Instagram.                                                                                                         |
+| 📊 **Ranking mensal**         | Top do mês em Gols, Assistências, Pênaltis defendidos e Cartões, com destaque 🥇🥈🥉.                                                                                          |
 
 ---
 
@@ -120,6 +122,13 @@ node _test_checkin.ts        # janela e regras de check-in
 node _test_sorteio.ts        # sorteio (aleatório, chegada, BAxVI, substituição)
 node _test_gamificacao.ts    # XP, níveis e conquistas
 node _test_cartinha.ts       # atributos, OVR e temas das cartinhas
+node _test_feed.ts           # feed social: raridade, eventos e idempotência
+```
+
+Após aplicar uma migration, valide a segurança no banco real:
+
+```sh
+node _valida_feed.mjs        # anon não deve ler feed_eventos nem executar RPCs admin
 ```
 
 ---

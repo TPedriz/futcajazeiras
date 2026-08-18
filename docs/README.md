@@ -18,6 +18,10 @@
 | 5   | **[05-seguranca.md](05-seguranca.md)**                             | Modelo RLS, SECURITY DEFINER, grants, CSRF, modelo de confiança do webhook                                                           |
 | 6   | **[06-configuracao-e-deploy.md](06-configuracao-e-deploy.md)**     | Variáveis de ambiente, build, Supabase config, testes, versionamento                                                                 |
 | 7   | **[07-recriacao-passo-a-passo.md](07-recriacao-passo-a-passo.md)** | Receita passo a passo para recriar o sistema com outra LLM                                                                           |
+| 8   | **[08-gamificacao-social.md](08-gamificacao-social.md)**           | Gamificação social: visão de produto, arquitetura, eventos e segurança                                                               |
+| 9   | **[09-feed-social.md](09-feed-social.md)**                         | Feed global: tabela `feed_eventos`, RLS, índices, paginação, queries e componentes                                                   |
+| 10  | **[10-conquistas.md](10-conquistas.md)**                           | Catálogo de conquistas, raridades, categorias, metas e conquistas históricas                                                         |
+| 11  | **[11-roadmap-social.md](11-roadmap-social.md)**                   | Checklist de implementação do feed social (fases, pendências)                                                                        |
 
 ---
 
@@ -29,6 +33,7 @@ O **Fut Cajazeiras** é um app **mobile-first, dark-only** para gerenciar um bab
 - **Convidados** entram via um associado (anfitrião), com aprovação da diretoria para novos, e pagam uma diária por PIX.
 - **Diretoria (admin)** agenda babas, controla financeiro, faz o sorteio (Aleatório / Ordem de chegada / BAxVI), lança resultados e estatísticas, gerencia cargos, aplica/remove punições, ajusta valores e a política de suspensões.
 - **Gamificação completa:** XP automático (+10 presença, +5 gol, +3 assistência), níveis com bônus no OVR, conquistas com destaque (até 3), badges de destaque mensal (top 3 em gols/assistências/pênaltis/cartões) e **cartinhas de jogador estilo EA FC** (OVR + RIT/FIN/PAS/DRI/DEF/FÍS) com temas Bronze/Prata/Ouro e especiais (TOTW, Lenda do Baba, Paredão), exportáveis como PNG.
+- **Feed social de gamificação:** um feed global de acontecimentos (conquistas desbloqueadas, raridade, níveis alcançados, marcas históricas e ranking do mês) gerado por funções/triggers seguras no banco — o jogador vê a carreira da galera virar conteúdo social em tempo real (`feed_eventos` + Realtime).
 - **Punições automáticas:** cartão vermelho e faltas (3 em 5 babas, tudo configurável) geram suspensão automática do próximo baba + notificação.
 
 **Público:** associados e convidados usam a mesma UI; a diretoria tem um painel admin adicional.
@@ -200,6 +205,7 @@ futcajazeiras/
 4. **[04-frontend.md](04-frontend.md)** documenta rotas e componentes.
 5. **[05-seguranca.md](05-seguranca.md)** e **[06-configuracao-e-deploy.md](06-configuracao-e-deploy.md)** cobrem segurança e ambiente.
 6. Para recriar do zero com outra LLM, siga **[07-recriacao-passo-a-passo.md](07-recriacao-passo-a-passo.md)**.
+7. Para a camada social, veja **[08-gamificacao-social.md](08-gamificacao-social.md)**, **[09-feed-social.md](09-feed-social.md)**, **[10-conquistas.md](10-conquistas.md)** e o checklist em **[11-roadmap-social.md](11-roadmap-social.md)**.
 
 ---
 

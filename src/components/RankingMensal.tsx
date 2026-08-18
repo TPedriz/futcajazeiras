@@ -214,7 +214,7 @@ interface LinhaRanking {
   cartoes_vermelhos: number | null;
 }
 
-export function RankingMensal() {
+export function RankingMensal({ compacto = false }: { compacto?: boolean }) {
   const referencia = mesReferencia();
   const { data, isLoading } = useQuery(rankingDoMesQuery(referencia));
   const { data: perfis } = useQuery(perfisPublicosQuery());
@@ -281,7 +281,7 @@ export function RankingMensal() {
   };
 
   return (
-    <section className="card-premium p-5">
+    <section className={compacto ? "card-premium p-4" : "card-premium p-5"}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-widest text-gold">Ranking do mês</p>
@@ -292,12 +292,19 @@ export function RankingMensal() {
         <Trophy className="size-6 text-gold" />
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div
+        className={
+          compacto
+            ? "mt-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
+            : "mt-3 grid grid-cols-2 gap-2"
+        }
+      >
         {CATEGORIAS.map(({ id, rotulo, Icone, cor }) => (
           <Button
             key={id}
             variant={categoria === id ? "gold" : "outline"}
             size="sm"
+            className={compacto ? "shrink-0" : undefined}
             onClick={() => setCategoria(id)}
           >
             <Icone className={`size-4 ${categoria === id ? "" : cor}`} /> {rotulo}
@@ -319,7 +326,9 @@ export function RankingMensal() {
           return (
             <li
               key={r.usuario_id}
-              className="flex items-center gap-3 rounded-lg border border-border/60 p-2.5"
+              className={`flex items-center gap-3 rounded-lg border border-border/60 ${
+                compacto ? "p-2" : "p-2.5"
+              }`}
             >
               <span
                 className={`flex size-7 shrink-0 items-center justify-center rounded-full font-display text-sm ${
