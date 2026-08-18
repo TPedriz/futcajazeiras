@@ -48,24 +48,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "ajustes_babas_convidado_atualizado_por_fkey"
-            columns: ["atualizado_por"]
-            isOneToOne: false
-            referencedRelation: "ranking_cartinhas"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "ajustes_babas_convidado_usuario_id_fkey"
             columns: ["usuario_id"]
             isOneToOne: true
             referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ajustes_babas_convidado_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: true
-            referencedRelation: "ranking_cartinhas"
             referencedColumns: ["id"]
           },
         ]
@@ -108,13 +94,6 @@ export type Database = {
             columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bavi_relacionados_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "ranking_cartinhas"
             referencedColumns: ["id"]
           },
         ]
@@ -276,13 +255,6 @@ export type Database = {
             referencedRelation: "perfis"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "estatisticas_baba_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "ranking_cartinhas"
-            referencedColumns: ["id"]
-          },
         ]
       }
       feed_eventos: {
@@ -335,13 +307,6 @@ export type Database = {
             columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "feed_eventos_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "ranking_cartinhas"
             referencedColumns: ["id"]
           },
         ]
@@ -431,13 +396,6 @@ export type Database = {
             columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mensalidades_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "ranking_cartinhas"
             referencedColumns: ["id"]
           },
         ]
@@ -645,7 +603,15 @@ export type Database = {
           avatar_url: string | null
           id: string
           nome: string
+          ovr: number
           posicao: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa: number
+          stat_drible: number
+          stat_finalizacao: number
+          stat_fisico: number
+          stat_passe: number
+          stat_ritmo: number
+          tema_carta: string
           time_coracao: Database["public"]["Enums"]["time_coracao"] | null
         }
         Insert: {
@@ -653,7 +619,15 @@ export type Database = {
           avatar_url?: string | null
           id: string
           nome: string
+          ovr?: number
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa?: number
+          stat_drible?: number
+          stat_finalizacao?: number
+          stat_fisico?: number
+          stat_passe?: number
+          stat_ritmo?: number
+          tema_carta?: string
           time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
         }
         Update: {
@@ -661,7 +635,15 @@ export type Database = {
           avatar_url?: string | null
           id?: string
           nome?: string
+          ovr?: number
           posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa?: number
+          stat_drible?: number
+          stat_finalizacao?: number
+          stat_fisico?: number
+          stat_passe?: number
+          stat_ritmo?: number
+          tema_carta?: string
           time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
         }
         Relationships: [
@@ -670,13 +652,6 @@ export type Database = {
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "perfis_publicos_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "ranking_cartinhas"
             referencedColumns: ["id"]
           },
         ]
@@ -1063,13 +1038,6 @@ export type Database = {
             referencedRelation: "perfis"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "times_jogadores_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "ranking_cartinhas"
-            referencedColumns: ["id"]
-          },
         ]
       }
       usuario_conquistas: {
@@ -1110,13 +1078,6 @@ export type Database = {
             columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "usuario_conquistas_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "ranking_cartinhas"
             referencedColumns: ["id"]
           },
         ]
@@ -1199,7 +1160,15 @@ export type Database = {
           stat_ritmo?: number | null
           tema_carta?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "perfis_publicos_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "perfis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ranking_mensal: {
         Row: {
@@ -1320,6 +1289,13 @@ export type Database = {
       solicita_convite: {
         Args: { _anfitriao_id: string; _baba_id: string }
         Returns: string
+      }
+      status_pagamento_presencas: {
+        Args: { _baba_id: string }
+        Returns: {
+          mp_status: string
+          presenca_id: string
+        }[]
       }
       telefone_convidado: { Args: { _convidado_id: string }; Returns: string }
       tem_papel: {
