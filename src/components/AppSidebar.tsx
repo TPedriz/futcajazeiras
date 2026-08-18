@@ -9,6 +9,7 @@ import {
   LifeBuoy,
   LogOut,
   Trophy,
+  Shield,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AvatarJogador } from "@/components/AvatarJogador";

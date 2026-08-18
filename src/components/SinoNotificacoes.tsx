@@ -57,7 +57,7 @@ export function SinoNotificacoes() {
             </Button>
           )}
         </div>
-        <ScrollArea type="always" className="max-h-[70vh] min-h-24">
+        <div className="max-h-[70vh] min-h-24 overflow-y-auto overscroll-contain">
           {(notificacoes ?? []).length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">
               Nenhum aviso por aqui ainda.
