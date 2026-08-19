@@ -17,32 +17,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-<<<<<<< HEAD
-import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
-import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AtualizarCadastroRouteImport } from './routes/atualizar-cadastro'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
-import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
-import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
-import { Route as AuthenticatedConquistasRouteImport } from './routes/_authenticated/conquistas'
-import { Route as AuthenticatedCartinhasRouteImport } from './routes/_authenticated/cartinhas'
-import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/baba'
-import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
-import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago-webhook'
-import { Route as ApiAuthConfirmarEmailRouteImport } from './routes/api/auth/confirmar-email'
-import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin/usuarios'
-import { Route as AuthenticatedAdminSorteioRouteImport } from './routes/_authenticated/admin/sorteio'
-import { Route as AuthenticatedAdminResultadosRouteImport } from './routes/_authenticated/admin/resultados'
-import { Route as AuthenticatedAdminFinanceiroRouteImport } from './routes/_authenticated/admin/financeiro'
-import { Route as AuthenticatedAdminEstatisticasRouteImport } from './routes/_authenticated/admin/estatisticas'
-import { Route as AuthenticatedAdminConquistasRouteImport } from './routes/_authenticated/admin/conquistas'
-import { Route as AuthenticatedAdminCargosRouteImport } from './routes/_authenticated/admin/cargos'
-=======
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
 import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/baba'
@@ -54,9 +28,9 @@ import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminAgendaRouteImport } from './routes/_authenticated/admin/agenda'
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
 import { Route as AuthenticatedAdminAjudaRouteImport } from './routes/_authenticated/admin/ajuda'
 import { Route as AuthenticatedAdminCargosRouteImport } from './routes/_authenticated/admin/cargos'
+import { Route as AuthenticatedAdminConquistasRouteImport } from './routes/_authenticated/admin/conquistas'
 import { Route as AuthenticatedAdminEstatisticasRouteImport } from './routes/_authenticated/admin/estatisticas'
 import { Route as AuthenticatedAdminFinanceiroRouteImport } from './routes/_authenticated/admin/financeiro'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin/metas'
@@ -96,11 +70,6 @@ const EsqueciSenhaRoute = EsqueciSenhaRouteImport.update({
   path: '/esqueci-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
-<<<<<<< HEAD
-const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
-=======
 const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
   id: '/recuperar-senha',
   path: '/recuperar-senha',
@@ -144,7 +113,6 @@ const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
 const AuthenticatedMetasRoute = AuthenticatedMetasRouteImport.update({
   id: '/metas',
   path: '/metas',
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
@@ -152,40 +120,9 @@ const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
   path: '/pagamentos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-<<<<<<< HEAD
-const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
-  id: '/inicio',
-  path: '/inicio',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedConquistasRoute = AuthenticatedConquistasRouteImport.update({
-  id: '/conquistas',
-  path: '/conquistas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCartinhasRoute = AuthenticatedCartinhasRouteImport.update({
-  id: '/cartinhas',
-  path: '/cartinhas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBabaRoute = AuthenticatedBabaRouteImport.update({
-  id: '/baba',
-  path: '/baba',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAjudaRoute = AuthenticatedAjudaRouteImport.update({
-  id: '/ajuda',
-  path: '/ajuda',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-=======
 const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -210,29 +147,22 @@ const AuthenticatedAdminCargosRoute =
     path: '/cargos',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminEstatisticasRoute =
-  AuthenticatedAdminEstatisticasRouteImport.update({
-    id: '/estatisticas',
-    path: '/estatisticas',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-<<<<<<< HEAD
 const AuthenticatedAdminConquistasRoute =
   AuthenticatedAdminConquistasRouteImport.update({
     id: '/conquistas',
     path: '/conquistas',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminCargosRoute =
-  AuthenticatedAdminCargosRouteImport.update({
-    id: '/cargos',
-    path: '/cargos',
-=======
+const AuthenticatedAdminEstatisticasRoute =
+  AuthenticatedAdminEstatisticasRouteImport.update({
+    id: '/estatisticas',
+    path: '/estatisticas',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminFinanceiroRoute =
   AuthenticatedAdminFinanceiroRouteImport.update({
     id: '/financeiro',
     path: '/financeiro',
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminMetasRoute = AuthenticatedAdminMetasRouteImport.update({
@@ -507,13 +437,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgendaRouteImport
       parentRoute: typeof rootRouteImport
     }
-<<<<<<< HEAD
-    '/_authenticated/perfil': {
-      id: '/_authenticated/perfil'
-      path: '/perfil'
-      fullPath: '/perfil'
-      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
-=======
     '/atualizar-cadastro': {
       id: '/atualizar-cadastro'
       path: '/atualizar-cadastro'
@@ -596,7 +519,6 @@ declare module '@tanstack/react-router' {
       path: '/metas'
       fullPath: '/metas'
       preLoaderRoute: typeof AuthenticatedMetasRouteImport
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/pagamentos': {
@@ -606,54 +528,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPagamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-<<<<<<< HEAD
-    '/_authenticated/inicio': {
-      id: '/_authenticated/inicio'
-      path: '/inicio'
-      fullPath: '/inicio'
-      preLoaderRoute: typeof AuthenticatedInicioRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/conquistas': {
-      id: '/_authenticated/conquistas'
-      path: '/conquistas'
-      fullPath: '/conquistas'
-      preLoaderRoute: typeof AuthenticatedConquistasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cartinhas': {
-      id: '/_authenticated/cartinhas'
-      path: '/cartinhas'
-      fullPath: '/cartinhas'
-      preLoaderRoute: typeof AuthenticatedCartinhasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/baba': {
-      id: '/_authenticated/baba'
-      path: '/baba'
-      fullPath: '/baba'
-      preLoaderRoute: typeof AuthenticatedBabaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/ajuda': {
-      id: '/_authenticated/ajuda'
-      path: '/ajuda'
-      fullPath: '/ajuda'
-      preLoaderRoute: typeof AuthenticatedAjudaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-=======
     '/_authenticated/perfil': {
       id: '/_authenticated/perfil'
       path: '/perfil'
       fullPath: '/perfil'
       preLoaderRoute: typeof AuthenticatedPerfilRouteImport
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/': {
@@ -663,75 +542,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-<<<<<<< HEAD
-    '/api/public/mercadopago-webhook': {
-      id: '/api/public/mercadopago-webhook'
-      path: '/api/public/mercadopago-webhook'
-      fullPath: '/api/public/mercadopago-webhook'
-      preLoaderRoute: typeof ApiPublicMercadopagoWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/confirmar-email': {
-      id: '/api/auth/confirmar-email'
-      path: '/api/auth/confirmar-email'
-      fullPath: '/api/auth/confirmar-email'
-      preLoaderRoute: typeof ApiAuthConfirmarEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/admin/usuarios': {
-      id: '/_authenticated/admin/usuarios'
-      path: '/usuarios'
-      fullPath: '/admin/usuarios'
-      preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/sorteio': {
-      id: '/_authenticated/admin/sorteio'
-      path: '/sorteio'
-      fullPath: '/admin/sorteio'
-      preLoaderRoute: typeof AuthenticatedAdminSorteioRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/resultados': {
-      id: '/_authenticated/admin/resultados'
-      path: '/resultados'
-      fullPath: '/admin/resultados'
-      preLoaderRoute: typeof AuthenticatedAdminResultadosRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/financeiro': {
-      id: '/_authenticated/admin/financeiro'
-      path: '/financeiro'
-      fullPath: '/admin/financeiro'
-      preLoaderRoute: typeof AuthenticatedAdminFinanceiroRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/estatisticas': {
-      id: '/_authenticated/admin/estatisticas'
-      path: '/estatisticas'
-      fullPath: '/admin/estatisticas'
-      preLoaderRoute: typeof AuthenticatedAdminEstatisticasRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/conquistas': {
-      id: '/_authenticated/admin/conquistas'
-      path: '/conquistas'
-      fullPath: '/admin/conquistas'
-      preLoaderRoute: typeof AuthenticatedAdminConquistasRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/cargos': {
-      id: '/_authenticated/admin/cargos'
-      path: '/cargos'
-      fullPath: '/admin/cargos'
-      preLoaderRoute: typeof AuthenticatedAdminCargosRouteImport
-=======
     '/_authenticated/admin/agenda': {
       id: '/_authenticated/admin/agenda'
       path: '/agenda'
       fullPath: '/admin/agenda'
       preLoaderRoute: typeof AuthenticatedAdminAgendaRouteImport
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/ajuda': {
@@ -746,6 +561,13 @@ declare module '@tanstack/react-router' {
       path: '/cargos'
       fullPath: '/admin/cargos'
       preLoaderRoute: typeof AuthenticatedAdminCargosRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/conquistas': {
+      id: '/_authenticated/admin/conquistas'
+      path: '/conquistas'
+      fullPath: '/admin/conquistas'
+      preLoaderRoute: typeof AuthenticatedAdminConquistasRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/estatisticas': {

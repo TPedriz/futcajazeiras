@@ -42,16 +42,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-<<<<<<< HEAD
-            foreignKeyName: "ajustes_babas_convidado_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: true
-            referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-=======
             foreignKeyName: "ajustes_babas_convidado_atualizado_por_fkey";
             columns: ["atualizado_por"];
             isOneToOne: false;
@@ -74,7 +64,6 @@ export type Database = {
           },
         ];
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       bavi_relacionados: {
         Row: {
           baba_id: string;
@@ -115,10 +104,6 @@ export type Database = {
             referencedRelation: "perfis";
             referencedColumns: ["id"];
           },
-<<<<<<< HEAD
-        ]
-      }
-=======
           {
             foreignKeyName: "bavi_relacionados_usuario_id_fkey";
             columns: ["usuario_id"];
@@ -128,7 +113,6 @@ export type Database = {
           },
         ];
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       configuracoes: {
         Row: {
           atualizado_em: string;
@@ -149,48 +133,6 @@ export type Database = {
       };
       conquistas: {
         Row: {
-<<<<<<< HEAD
-          categoria: string
-          codigo: string
-          cor: string
-          criado_em: string
-          descricao: string
-          historica: boolean
-          icone: string
-          id: string
-          meta: number
-          nome: string
-          raridade: string
-        }
-        Insert: {
-          categoria: string
-          codigo: string
-          cor?: string
-          criado_em?: string
-          descricao: string
-          historica?: boolean
-          icone?: string
-          id?: string
-          meta: number
-          nome: string
-          raridade?: string
-        }
-        Update: {
-          categoria?: string
-          codigo?: string
-          cor?: string
-          criado_em?: string
-          descricao?: string
-          historica?: boolean
-          icone?: string
-          id?: string
-          meta?: number
-          nome?: string
-          raridade?: string
-        }
-        Relationships: []
-      }
-=======
           categoria: string;
           codigo: string;
           cor: string;
@@ -231,7 +173,6 @@ export type Database = {
         };
         Relationships: [];
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       convidados_cadastro: {
         Row: {
           aprovado: boolean;
@@ -336,69 +277,54 @@ export type Database = {
             referencedRelation: "ranking_cartinhas";
             referencedColumns: ["id"];
           },
-<<<<<<< HEAD
-        ]
-      }
-=======
         ];
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       feed_eventos: {
         Row: {
-          chave_unica: string
-          conquista_id: string | null
-          criado_em: string
-          descricao: string
-          id: string
-          metadata: Json
-          tipo: string
-          titulo: string
-          usuario_id: string
-          visibilidade: string
-        }
+          chave_unica: string;
+          conquista_id: string | null;
+          criado_em: string;
+          descricao: string;
+          id: string;
+          metadata: Json;
+          titulo: string;
+          tipo: string;
+          usuario_id: string;
+          visibilidade: string;
+        };
         Insert: {
-          chave_unica: string
-          conquista_id?: string | null
-          criado_em?: string
-          descricao?: string
-          id?: string
-          metadata?: Json
-          tipo: string
-          titulo: string
-          usuario_id: string
-          visibilidade?: string
-        }
+          chave_unica: string;
+          conquista_id?: string | null;
+          criado_em?: string;
+          descricao?: string;
+          id?: string;
+          metadata?: Json;
+          titulo: string;
+          tipo: string;
+          usuario_id: string;
+          visibilidade?: string;
+        };
         Update: {
-          chave_unica?: string
-          conquista_id?: string | null
-          criado_em?: string
-          descricao?: string
-          id?: string
-          metadata?: Json
-          tipo?: string
-          titulo?: string
-          usuario_id?: string
-          visibilidade?: string
-        }
+          chave_unica?: string;
+          conquista_id?: string | null;
+          criado_em?: string;
+          descricao?: string;
+          id?: string;
+          metadata?: Json;
+          titulo?: string;
+          tipo?: string;
+          usuario_id?: string;
+          visibilidade?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "feed_eventos_conquista_id_fkey"
-            columns: ["conquista_id"]
-            isOneToOne: false
-            referencedRelation: "conquistas"
-            referencedColumns: ["id"]
+            foreignKeyName: "feed_eventos_conquista_id_fkey";
+            columns: ["conquista_id"];
+            isOneToOne: false;
+            referencedRelation: "conquistas";
+            referencedColumns: ["id"];
           },
           {
-<<<<<<< HEAD
-            foreignKeyName: "feed_eventos_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-=======
             foreignKeyName: "feed_eventos_usuario_id_fkey";
             columns: ["usuario_id"];
             isOneToOne: false;
@@ -638,7 +564,6 @@ export type Database = {
           },
         ];
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       locais_baba: {
         Row: {
           atualizado_em: string;
@@ -726,10 +651,6 @@ export type Database = {
             referencedRelation: "perfis";
             referencedColumns: ["id"];
           },
-<<<<<<< HEAD
-        ]
-      }
-=======
           {
             foreignKeyName: "mensalidades_usuario_id_fkey";
             columns: ["usuario_id"];
@@ -739,7 +660,6 @@ export type Database = {
           },
         ];
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       notificacoes: {
         Row: {
           criado_em: string;
@@ -942,55 +862,6 @@ export type Database = {
       };
       perfis_publicos: {
         Row: {
-<<<<<<< HEAD
-          ativo: boolean
-          avatar_url: string | null
-          id: string
-          nome: string
-          ovr: number
-          posicao: Database["public"]["Enums"]["posicao_jogador"]
-          stat_defesa: number
-          stat_drible: number
-          stat_finalizacao: number
-          stat_fisico: number
-          stat_passe: number
-          stat_ritmo: number
-          tema_carta: string
-          time_coracao: Database["public"]["Enums"]["time_coracao"] | null
-        }
-        Insert: {
-          ativo?: boolean
-          avatar_url?: string | null
-          id: string
-          nome: string
-          ovr?: number
-          posicao?: Database["public"]["Enums"]["posicao_jogador"]
-          stat_defesa?: number
-          stat_drible?: number
-          stat_finalizacao?: number
-          stat_fisico?: number
-          stat_passe?: number
-          stat_ritmo?: number
-          tema_carta?: string
-          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
-        }
-        Update: {
-          ativo?: boolean
-          avatar_url?: string | null
-          id?: string
-          nome?: string
-          ovr?: number
-          posicao?: Database["public"]["Enums"]["posicao_jogador"]
-          stat_defesa?: number
-          stat_drible?: number
-          stat_finalizacao?: number
-          stat_fisico?: number
-          stat_passe?: number
-          stat_ritmo?: number
-          tema_carta?: string
-          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
-        }
-=======
           ativo: boolean;
           avatar_url: string | null;
           id: string;
@@ -1023,7 +894,6 @@ export type Database = {
           time_coracao?: Database["public"]["Enums"]["time_coracao"] | null;
           xp_atual?: number;
         };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
         Relationships: [
           {
             foreignKeyName: "perfis_publicos_id_fkey";
@@ -1032,10 +902,6 @@ export type Database = {
             referencedRelation: "perfis";
             referencedColumns: ["id"];
           },
-<<<<<<< HEAD
-        ]
-      }
-=======
           {
             foreignKeyName: "perfis_publicos_id_fkey";
             columns: ["id"];
@@ -1045,7 +911,6 @@ export type Database = {
           },
         ];
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       presencas: {
         Row: {
           baba_id: string;
@@ -1422,10 +1287,6 @@ export type Database = {
             referencedRelation: "perfis";
             referencedColumns: ["id"];
           },
-<<<<<<< HEAD
-        ]
-      }
-=======
           {
             foreignKeyName: "times_jogadores_usuario_id_fkey";
             columns: ["usuario_id"];
@@ -1435,7 +1296,6 @@ export type Database = {
           },
         ];
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       usuario_conquistas: {
         Row: {
           conquista_id: string;
@@ -1476,10 +1336,6 @@ export type Database = {
             referencedRelation: "perfis";
             referencedColumns: ["id"];
           },
-<<<<<<< HEAD
-        ]
-      }
-=======
           {
             foreignKeyName: "usuario_conquistas_usuario_id_fkey";
             columns: ["usuario_id"];
@@ -1489,7 +1345,6 @@ export type Database = {
           },
         ];
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       verificacoes_email: {
         Row: {
           criado_em: string;
@@ -1559,31 +1414,6 @@ export type Database = {
           tema_carta?: string | null;
         };
         Update: {
-<<<<<<< HEAD
-          avatar_url?: string | null
-          id?: string | null
-          nome?: string | null
-          ovr?: number | null
-          posicao?: Database["public"]["Enums"]["posicao_jogador"] | null
-          stat_defesa?: number | null
-          stat_drible?: number | null
-          stat_finalizacao?: number | null
-          stat_fisico?: number | null
-          stat_passe?: number | null
-          stat_ritmo?: number | null
-          tema_carta?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "perfis_publicos_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "perfis"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-=======
           avatar_url?: string | null;
           id?: string | null;
           instagram?: string | null;
@@ -1615,7 +1445,6 @@ export type Database = {
         };
         Relationships: [];
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       ranking_mensal: {
         Row: {
           assistencias: number | null;
@@ -1636,64 +1465,14 @@ export type Database = {
       };
     };
     Functions: {
-<<<<<<< HEAD
       admin_concede_conquista: {
-        Args: { _conquista: string; _usuario: string }
-        Returns: string
-      }
+        Args: { _conquista: string; _usuario: string };
+        Returns: string;
+      };
       admin_remove_conquista: {
-        Args: { _conquista: string; _usuario: string }
-        Returns: undefined
-      }
-      aplica_suspensao: {
-        Args: {
-          _motivo: string
-          _origem: string
-          _origem_baba: string
-          _quantidade: number
-          _usuario_id: string
-        }
-        Returns: number
-      }
-      babas_pagos_convidado: { Args: { _user_id: string }; Returns: number }
-      calcula_cartinha: { Args: { usuario: string }; Returns: undefined }
-      concede_conquista_historica: {
-        Args: {
-          p_codigo: string
-          p_cor?: string
-          p_descricao: string
-          p_icone?: string
-          p_metadata?: Json
-          p_titulo: string
-          p_usuario: string
-        }
-        Returns: string
-      }
-      concede_xp: {
-        Args: { quantidade: number; usuario: string }
-        Returns: number
-      }
-      config_int: { Args: { _chave: string; _padrao: number }; Returns: number }
-      conquistas_do_usuario: {
-        Args: { _usuario: string }
-        Returns: {
-          conquista_id: string
-          desbloqueada_em: string
-        }[]
-      }
-      cria_evento_feed: {
-        Args: {
-          p_chave?: string
-          p_conquista: string
-          p_descricao?: string
-          p_metadata?: Json
-          p_tipo: string
-          p_titulo: string
-          p_usuario: string
-        }
-        Returns: string
-      }
-=======
+        Args: { _conquista: string; _usuario: string };
+        Returns: undefined;
+      };
       alternar_like_feed: {
         Args: { p_feed_evento_id: string };
         Returns: boolean;
@@ -1744,6 +1523,13 @@ export type Database = {
         Args: { p_contribuicao_id: string };
         Returns: undefined;
       };
+      conquistas_do_usuario: {
+        Args: { _usuario: string };
+        Returns: {
+          conquista_id: string;
+          desbloqueada_em: string;
+        }[];
+      };
       cria_evento_feed: {
         Args: {
           p_chave?: string;
@@ -1767,7 +1553,6 @@ export type Database = {
         };
         Returns: string;
       };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       criar_pedido_convidado: {
         Args: {
           _baba_id: string;
@@ -1795,16 +1580,6 @@ export type Database = {
       };
       garante_mensalidades_mes: { Args: never; Returns: undefined };
       marcar_chegada: {
-<<<<<<< HEAD
-        Args: { _lat: number; _lng: number; _presenca_id: string }
-        Returns: number
-      }
-      modera_evento_feed: {
-        Args: { p_evento_id: string; p_visibilidade: string }
-        Returns: undefined
-      }
-      nivel_para_xp: { Args: { xp: number }; Returns: number }
-=======
         Args: { _lat: number; _lng: number; _presenca_id: string };
         Returns: number;
       };
@@ -1813,7 +1588,6 @@ export type Database = {
         Returns: undefined;
       };
       nivel_para_xp: { Args: { xp: number }; Returns: number };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
       notifica: {
         Args: {
           _link?: string;
@@ -1835,37 +1609,15 @@ export type Database = {
       };
       reajusta_mensalidades_pendentes: { Args: never; Returns: undefined };
       solicita_convite: {
-<<<<<<< HEAD
-        Args: { _anfitriao_id: string; _baba_id: string }
-        Returns: string
-      }
-      status_pagamento_presencas: {
-        Args: { _baba_id: string }
-        Returns: {
-          mp_status: string
-          presenca_id: string
-        }[]
-      }
-      telefone_convidado: { Args: { _convidado_id: string }; Returns: string }
-      tem_papel: {
-        Args: {
-          _papel: Database["public"]["Enums"]["papel_usuario"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      total_associados_ativos: { Args: never; Returns: number }
-      valor_mensalidade: { Args: never; Returns: number }
-      verifica_conquistas: { Args: { usuario: string }; Returns: undefined }
-      verifica_evento_ranking: {
-        Args: { p_usuario: string }
-        Returns: undefined
-      }
-      xp_necessaria_para_nivel: { Args: { nivel: number }; Returns: number }
-    }
-=======
         Args: { _anfitriao_id: string; _baba_id: string };
         Returns: string;
+      };
+      status_pagamento_presencas: {
+        Args: { _baba_id: string };
+        Returns: {
+          mp_status: string;
+          presenca_id: string;
+        }[];
       };
       telefone_convidado: { Args: { _convidado_id: string }; Returns: string };
       tem_papel: {
@@ -1881,7 +1633,6 @@ export type Database = {
       verifica_evento_ranking: { Args: { p_usuario: string }; Returns: undefined };
       xp_necessaria_para_nivel: { Args: { nivel: number }; Returns: number };
     };
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
     Enums: {
       papel_usuario: "administrador" | "associado" | "convidado";
       posicao_jogador: "goleiro" | "linha";
@@ -1905,17 +1656,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-<<<<<<< HEAD
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-=======
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1935,19 +1681,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-<<<<<<< HEAD
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-=======
     keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1966,19 +1705,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-<<<<<<< HEAD
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-=======
     keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1997,19 +1729,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-<<<<<<< HEAD
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-=======
     keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -2020,19 +1745,12 @@ export type Enums<
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-<<<<<<< HEAD
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-=======
     keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
->>>>>>> d688dda (Rede social, agenda e metas: perfil publico, Instagram, likes, agenda da Arena e metas coletivas)
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
