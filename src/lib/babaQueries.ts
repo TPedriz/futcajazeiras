@@ -133,7 +133,6 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
         perfis: p.usuario_id ? (mapa.get(p.usuario_id) ?? null) : null,
       }));
     },
-
   });
 
 export const todasSessoesQuery = () =>
@@ -1443,6 +1442,9 @@ export interface ContribuicaoMeta {
   status: string;
   criado_em: string;
   confirmada_em: string | null;
+  nome_camisa: string | null;
+  tamanho: string | null;
+  numero_camisa: string | null;
   perfis_publicos: { id: string; nome: string; avatar_url: string | null } | null;
 }
 
@@ -1454,7 +1456,9 @@ export const contribuicoesMetaQuery = (metaId: string | undefined) =>
       if (!metaId) return [];
       const { data, error } = await supabase
         .from("contribuicoes_meta")
-        .select("id, meta_id, user_id, valor, anonima, status, criado_em, confirmada_em")
+        .select(
+          "id, meta_id, user_id, valor, anonima, status, criado_em, confirmada_em, nome_camisa, tamanho, numero_camisa",
+        )
         .eq("meta_id", metaId)
         .order("criado_em", { ascending: false })
         .limit(100);
@@ -1486,7 +1490,9 @@ export const minhasContribuicoesQuery = (userId: string | undefined) =>
       if (!userId) return [];
       const { data, error } = await supabase
         .from("contribuicoes_meta")
-        .select("id, meta_id, valor, anonima, status, criado_em, confirmada_em")
+        .select(
+          "id, meta_id, valor, anonima, status, criado_em, confirmada_em, nome_camisa, tamanho, numero_camisa",
+        )
         .eq("user_id", userId)
         .order("criado_em", { ascending: false })
         .limit(50);

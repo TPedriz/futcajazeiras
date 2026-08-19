@@ -86,9 +86,26 @@ export function ContribuicaoDialog({
     }
     setGerando(true);
     try {
-      const r = await criarPixMeta({
-        data: { metaId: meta.id, valor: valorNumero, anonima },
-      });
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Sessão expirada.");
+
+      // 1. Registra a contribuição pendente (valor livre — arrecadação aberta).
+      const { data: contribuicao, error } = await supabase
+        .from("contribuicoes_meta")
+        .insert({
+          meta_id: meta.id,
+          user_id: userData.user.id,
+          valor: valorNumero,
+          anonima,
+          status: "pendente",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      // 2. Gera o PIX para essa contribuição.
+      const r = await criarPixMeta({ data: { contribuicaoId: contribuicao.id } });
       setPixTitulo(`Contribuição — ${meta.titulo}`);
       setPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
       setContribuicaoId(r.contribuicaoId);

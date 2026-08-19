@@ -10,6 +10,7 @@ import {
 } from "@/lib/babaQueries";
 import { MetaCard } from "@/components/MetaCard";
 import { ContribuicaoDialog } from "@/components/ContribuicaoDialog";
+import { CadastroItemMetaDialog } from "@/components/CadastroItemMetaDialog";
 import { AvatarJogador } from "@/components/AvatarJogador";
 import { LinkPerfilJogador } from "@/components/LinkPerfilJogador";
 import { formatarReais } from "@/lib/redeSocial";
@@ -39,6 +40,7 @@ function MetasPage() {
   const { data: minhas } = useQuery(minhasContribuicoesQuery(perfilData?.user.id));
 
   const [metaEmContribuicao, setMetaEmContribuicao] = useState<Meta | null>(null);
+  const [metaEmCadastroItem, setMetaEmCadastroItem] = useState<Meta | null>(null);
   const [historicoAberto, setHistoricoAberto] = useState<string | null>(null);
 
   const ativas = (metas ?? []).filter((m) => m.status === "ativa");
@@ -114,7 +116,11 @@ function MetasPage() {
         <div className="space-y-3">
           {ativas.map((meta) => (
             <div key={meta.id} className="space-y-2">
-              <MetaCard meta={meta} onContribuir={(m) => setMetaEmContribuicao(m)} />
+              <MetaCard
+                meta={meta}
+                onContribuir={(m) => setMetaEmContribuicao(m)}
+                onCadastrarItem={(m) => setMetaEmCadastroItem(m)}
+              />
               <HistoricoMeta
                 metaId={meta.id}
                 aberto={historicoAberto === meta.id}
@@ -155,6 +161,14 @@ function MetasPage() {
         aberto={!!metaEmContribuicao}
         onAbertoChange={(aberto) => {
           if (!aberto) setMetaEmContribuicao(null);
+        }}
+      />
+
+      <CadastroItemMetaDialog
+        meta={metaEmCadastroItem}
+        aberto={!!metaEmCadastroItem}
+        onAbertoChange={(aberto) => {
+          if (!aberto) setMetaEmCadastroItem(null);
         }}
       />
     </div>

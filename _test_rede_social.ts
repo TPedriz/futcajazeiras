@@ -11,6 +11,8 @@ import {
   rotuloCategoriaEvento,
   rotuloStatusEvento,
   formatarHora,
+  rotuloTipoArrecadacao,
+  formatarArrecadacaoItemParaWhatsApp,
 } from "./src/lib/redeSocial.ts";
 import {
   rotuloTipoEvento,
@@ -32,6 +34,62 @@ function ok(nome: string, cond: boolean) {
     console.log(`[OK] ${nome}`);
   }
 }
+
+// ---------- Arrecadação por item ----------
+ok("rotuloTipoArrecadacao item", rotuloTipoArrecadacao("item") === "Arrecadação por item");
+ok("rotuloTipoArrecadacao aberta", rotuloTipoArrecadacao("aberta") === "Arrecadação aberta");
+ok("rotuloTipoArrecadacao fallback", rotuloTipoArrecadacao(null) === "Arrecadação aberta");
+
+const textoWhats = formatarArrecadacaoItemParaWhatsApp(
+  {
+    titulo: "Coletes personalizados",
+    categoria: "material_esportivo",
+    valor_item: 71,
+    valor_alvo: 1500,
+    valor_arrecadado: 355,
+    prazo_cadastro: "2026-08-25",
+    prazo_pagamento: "2026-08-30",
+  },
+  [
+    {
+      id: "1",
+      nome: "Thiago Pedriz",
+      nome_camisa: "THIAGO",
+      tamanho: "M",
+      numero_camisa: "10",
+      status: "confirmada",
+    },
+    {
+      id: "2",
+      nome: "João Silva",
+      nome_camisa: "JOÃO",
+      tamanho: "G",
+      numero_camisa: "7",
+      status: "pendente",
+    },
+  ],
+);
+ok("whatsapp inclui valor por item", textoWhats.includes("Valor por item: R$"));
+ok("whatsapp inclui prazo de pagamento", textoWhats.includes("Prazo de pagamento: 30/08/2026"));
+ok("whatsapp lista pagos", textoWhats.includes("✅ PAGOS (1)"));
+ok("whatsapp lista pendentes", textoWhats.includes("⏳ PENDENTES DE PAGAMENTO (1)"));
+ok("whatsapp inclui nome na camisa", textoWhats.includes('"THIAGO"'));
+ok("whatsapp inclui número", textoWhats.includes("#10"));
+ok("whatsapp inclui tamanho", textoWhats.includes("(M)"));
+
+const textoVazio = formatarArrecadacaoItemParaWhatsApp(
+  {
+    titulo: "X",
+    categoria: "outros",
+    valor_item: 10,
+    valor_alvo: null,
+    valor_arrecadado: 0,
+    prazo_cadastro: null,
+    prazo_pagamento: null,
+  },
+  [],
+);
+ok("whatsapp sem cadastros", textoVazio.includes("Nenhum cadastro ainda"));
 
 // ---------- Instagram ----------
 ok("normaliza remove @", normalizaInstagram("@Thiago_Pedriz") === "thiago_pedriz");

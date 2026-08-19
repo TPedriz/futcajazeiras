@@ -6,6 +6,105 @@
  */
 
 // ============================================================================
+// Arrecadação por item (coletes personalizados etc.)
+// ============================================================================
+
+export type TipoArrecadacao = "aberta" | "item";
+
+export const ROTULOS_TIPO_ARRECADACAO: Record<TipoArrecadacao, string> = {
+  aberta: "Arrecadação aberta",
+  item: "Arrecadação por item",
+};
+
+export function rotuloTipoArrecadacao(tipo: string | null | undefined): string {
+  return ROTULOS_TIPO_ARRECADACAO[(tipo ?? "aberta") as TipoArrecadacao] ?? "Arrecadação aberta";
+}
+
+/** Tamanhos de camisa disponíveis (padrão brasileiro de uniformes). */
+export const TAMANHOS_CAMISA = ["P", "M", "G", "GG", "XG", "XXG"] as const;
+
+export interface ItemArrecadacaoWhatsApp {
+  id: string;
+  nome: string;
+  nome_camisa: string | null;
+  tamanho: string | null;
+  numero_camisa: string | null;
+  status: string;
+}
+
+export interface MetaItemWhatsApp {
+  titulo: string;
+  categoria: string;
+  valor_item: number | null;
+  valor_alvo: number | null;
+  valor_arrecadado: number;
+  prazo_cadastro: string | null;
+  prazo_pagamento: string | null;
+}
+
+/** Data dd/MM/yyyy ou "" se ausente. */
+function dataCurta(iso: string | null | undefined): string {
+  if (!iso) return "";
+  try {
+    const d = new Date(`${iso}T12:00:00`);
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Monta o texto da arrecadação por item para colar no WhatsApp da diretoria
+ * (mesmo mecanismo do sorteio: clipboard + "Cole no grupo").
+ */
+export function formatarArrecadacaoItemParaWhatsApp(
+  meta: MetaItemWhatsApp,
+  contribuicoes: ItemArrecadacaoWhatsApp[],
+): string {
+  const linhas: string[] = [];
+  linhas.push(`🦺 ${meta.titulo.toUpperCase()}`);
+  linhas.push("");
+
+  linhas.push(`Valor por item: ${formatarReais(meta.valor_item)}`);
+  if (meta.valor_alvo != null && meta.valor_alvo > 0) {
+    linhas.push(`Meta total: ${formatarReais(meta.valor_alvo)}`);
+  }
+  linhas.push(`Arrecadado: ${formatarReais(meta.valor_arrecadado)}`);
+  if (meta.prazo_cadastro) linhas.push(`Prazo de cadastro: ${dataCurta(meta.prazo_cadastro)}`);
+  if (meta.prazo_pagamento) linhas.push(`Prazo de pagamento: ${dataCurta(meta.prazo_pagamento)}`);
+
+  const pagos = contribuicoes.filter((c) => c.status === "confirmada");
+  const pendentes = contribuicoes.filter((c) => c.status === "pendente");
+
+  linhas.push("");
+  linhas.push(`✅ PAGOS (${pagos.length})`);
+  pagos.forEach((c, i) => {
+    const nomeCamisa = c.nome_camisa ? `"${c.nome_camisa}"` : "—";
+    const numero = c.numero_camisa ? `#${c.numero_camisa}` : "";
+    const tamanho = c.tamanho ? `(${c.tamanho})` : "";
+    linhas.push(`${i + 1}. ${c.nome} — ${nomeCamisa} ${numero} ${tamanho}`);
+  });
+
+  linhas.push("");
+  linhas.push(`⏳ PENDENTES DE PAGAMENTO (${pendentes.length})`);
+  pendentes.forEach((c, i) => {
+    const nomeCamisa = c.nome_camisa ? `"${c.nome_camisa}"` : "—";
+    const numero = c.numero_camisa ? `#${c.numero_camisa}` : "";
+    const tamanho = c.tamanho ? `(${c.tamanho})` : "";
+    linhas.push(`${i + 1}. ${c.nome} — ${nomeCamisa} ${numero} ${tamanho}`);
+  });
+
+  if (pagos.length === 0 && pendentes.length === 0) {
+    linhas.push("");
+    linhas.push("Nenhum cadastro ainda.");
+  }
+
+  linhas.push("");
+  linhas.push("www.futcajazeiras.com.br");
+  return linhas.join("\n");
+}
+
+// ============================================================================
 // Instagram
 // ============================================================================
 

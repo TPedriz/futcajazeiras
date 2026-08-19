@@ -12,31 +12,45 @@ export interface PixMetaResposta {
   contribuicaoId: string;
 }
 
-const VALOR_MIN = 1;
-const VALOR_MAX = 5000;
-
-/** Cria um PIX para contribuir com uma meta coletiva. */
+/**
+ * Cria um PIX para uma contribuição já cadastrada (pendente).
+ *
+ * Fluxo:
+ *  - Arrecadação aberta: o cliente insere a contribuição (valor livre) e chama este.
+ *  - Arrecadação por item: o cliente usa `cadastrar_interesse_item` (valor fixo) e chama este.
+ * O valor cobrado é sempre o da contribuição (fixo no item, escolhido na aberta).
+ */
 export const criarPixMeta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        metaId: z.string().uuid(),
-        valor: z.number().min(VALOR_MIN).max(VALOR_MAX),
-        anonima: z.boolean().default(false),
-      })
-      .parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ contribuicaoId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<PixMetaResposta> => {
     const { supabase, userId } = context;
 
+    const { data: contribuicao } = await supabase
+      .from("contribuicoes_meta")
+      .select("id, meta_id, user_id, valor, status, nome_camisa, tamanho, numero_camisa")
+      .eq("id", data.contribuicaoId)
+      .maybeSingle();
+    if (!contribuicao || contribuicao.user_id !== userId)
+      throw new Error("Contribuição não encontrada");
+    if (contribuicao.status !== "pendente") throw new Error("Esta contribuição não está pendente");
+
     const { data: meta } = await supabase
       .from("metas")
-      .select("id, titulo, status, valor_alvo, valor_arrecadado")
-      .eq("id", data.metaId)
+      .select("id, titulo, status, tipo_arrecadacao, valor_item")
+      .eq("id", contribuicao.meta_id)
       .maybeSingle();
     if (!meta) throw new Error("Meta não encontrada");
     if (meta.status !== "ativa") throw new Error("Esta meta não está mais ativa");
+
+    // Arrecadação por item: valor deve ser o fixo e personalização preenchida
+    // (garante que o cadastro passou pelo RPC cadastrar_interesse_item).
+    if (meta.tipo_arrecadacao === "item") {
+      if (Number(contribuicao.valor) !== Number(meta.valor_item))
+        throw new Error("Valor da contribuição não confere com o item");
+      if (!contribuicao.nome_camisa || !contribuicao.tamanho || !contribuicao.numero_camisa)
+        throw new Error("Complete os dados de personalização do item");
+    }
 
     const { data: perfil } = await supabase
       .from("perfis")
@@ -44,23 +58,9 @@ export const criarPixMeta = createServerFn({ method: "POST" })
       .eq("id", userId)
       .maybeSingle();
 
-    // Registra a contribuição pendente (confirmação só após pagamento).
-    const { data: contribuicao, error } = await supabase
-      .from("contribuicoes_meta")
-      .insert({
-        meta_id: data.metaId,
-        user_id: userId,
-        valor: data.valor,
-        anonima: data.anonima,
-        status: "pendente",
-      })
-      .select("id")
-      .single();
-    if (error) throw error;
-
     const { criarPagamentoPix, emailPagador } = await import("@/lib/mercadopago.server");
     const pix = await criarPagamentoPix({
-      valor: data.valor,
+      valor: Number(contribuicao.valor),
       descricao: `Contribuição: ${meta.titulo}`,
       email: emailPagador(perfil?.telefone, userId),
       nome: perfil?.nome ?? "Associado",
@@ -87,7 +87,7 @@ export const criarPixMeta = createServerFn({ method: "POST" })
       qrCode: pix.qrCode,
       qrBase64: pix.qrBase64,
       expiraEm: pix.expiraEm,
-      valor: data.valor,
+      valor: Number(contribuicao.valor),
     };
   });
 

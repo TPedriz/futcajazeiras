@@ -26,12 +26,18 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  Copy,
+  Shirt,
+  UserRound,
+  CreditCard,
 } from "lucide-react";
 import {
+  formatarArrecadacaoItemParaWhatsApp,
   formatarReais,
   progressoMeta,
   rotuloCategoriaMeta,
   rotuloStatusMeta,
+  rotuloTipoArrecadacao,
 } from "@/lib/redeSocial";
 import { AvatarJogador } from "@/components/AvatarJogador";
 import { format } from "date-fns";
@@ -61,6 +67,10 @@ const FORM_VAZIO = {
   prazo: "",
   categoria: "outros",
   status: "ativa",
+  tipo_arrecadacao: "aberta",
+  valor_item: "",
+  prazo_cadastro: "",
+  prazo_pagamento: "",
 };
 
 function AdminMetas() {
@@ -80,15 +90,22 @@ function AdminMetas() {
 
   const criar = useMutation({
     mutationFn: async () => {
-      if (!form.titulo.trim() || !form.valor_alvo) {
-        throw new Error("Preencha título e valor alvo.");
+      if (!form.titulo.trim()) {
+        throw new Error("Preencha o título da meta.");
+      }
+      if (form.tipo_arrecadacao === "item" && !form.valor_item) {
+        throw new Error("Informe o valor por item.");
       }
       const { data, error } = await supabase.rpc("criar_meta_admin", {
         p_titulo: form.titulo.trim(),
         p_descricao: form.descricao.trim(),
-        p_valor_alvo: Number(form.valor_alvo),
+        p_valor_alvo: form.valor_alvo ? Number(form.valor_alvo) : undefined,
         p_prazo: form.prazo || undefined,
         p_categoria: form.categoria,
+        p_tipo_arrecadacao: form.tipo_arrecadacao,
+        p_valor_item: form.valor_item ? Number(form.valor_item) : undefined,
+        p_prazo_cadastro: form.prazo_cadastro || undefined,
+        p_prazo_pagamento: form.prazo_pagamento || undefined,
       });
       if (error) throw error;
       return data;
@@ -109,10 +126,14 @@ function AdminMetas() {
         p_meta_id: editandoId,
         p_titulo: editForm.titulo.trim(),
         p_descricao: editForm.descricao.trim(),
-        p_valor_alvo: Number(editForm.valor_alvo) || undefined,
+        p_valor_alvo: editForm.valor_alvo ? Number(editForm.valor_alvo) : undefined,
         p_prazo: editForm.prazo || undefined,
         p_categoria: editForm.categoria,
         p_status: editForm.status,
+        p_tipo_arrecadacao: editForm.tipo_arrecadacao,
+        p_valor_item: editForm.valor_item ? Number(editForm.valor_item) : undefined,
+        p_prazo_cadastro: editForm.prazo_cadastro || undefined,
+        p_prazo_pagamento: editForm.prazo_pagamento || undefined,
       });
       if (error) throw error;
     },
@@ -157,10 +178,14 @@ function AdminMetas() {
     setEditForm({
       titulo: m.titulo,
       descricao: m.descricao,
-      valor_alvo: String(m.valor_alvo),
+      valor_alvo: String(m.valor_alvo ?? ""),
       prazo: m.prazo ?? "",
       categoria: m.categoria,
       status: m.status,
+      tipo_arrecadacao: m.tipo_arrecadacao ?? "aberta",
+      valor_item: m.valor_item != null ? String(m.valor_item) : "",
+      prazo_cadastro: m.prazo_cadastro ?? "",
+      prazo_pagamento: m.prazo_pagamento ?? "",
     });
   };
 
@@ -244,24 +269,44 @@ function AdminMetas() {
                         {rotuloCategoriaMeta(m.categoria)}
                       </span>
                       <span className="rounded-full border border-border/50 bg-muted/40 px-2 py-0.5 uppercase tracking-widest text-muted-foreground">
+                        {rotuloTipoArrecadacao(m.tipo_arrecadacao)}
+                      </span>
+                      <span className="rounded-full border border-border/50 bg-muted/40 px-2 py-0.5 uppercase tracking-widest text-muted-foreground">
                         {rotuloStatusMeta(m.status)}
                       </span>
                     </div>
-                    <div className="mt-1.5 flex items-center gap-2 text-xs">
-                      <span className="font-semibold text-gold">
-                        {formatarReais(prog.arrecadado)}
-                      </span>
-                      <span className="text-muted-foreground">/ {formatarReais(prog.alvo)}</span>
-                      <span className="text-muted-foreground">({prog.percentual}%)</span>
-                    </div>
-                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted/50">
-                      <div
-                        className="h-full rounded-full bg-gold"
-                        style={{ width: `${prog.percentual}%` }}
-                      />
-                    </div>
+
+                    {m.tipo_arrecadacao === "item" ? (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                        <span className="font-semibold text-gold">
+                          {formatarReais(m.valor_item)} / item
+                        </span>
+                        <ResumoItemMeta metaId={m.id} />
+                        <span className="text-muted-foreground">
+                          Arrecadado {formatarReais(prog.arrecadado)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="mt-1.5 flex items-center gap-2 text-xs">
+                        <span className="font-semibold text-gold">
+                          {formatarReais(prog.arrecadado)}
+                        </span>
+                        <span className="text-muted-foreground">/ {formatarReais(prog.alvo)}</span>
+                        <span className="text-muted-foreground">({prog.percentual}%)</span>
+                      </div>
+                    )}
+
+                    {(m.valor_alvo ?? 0) > 0 && (
+                      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted/50">
+                        <div
+                          className="h-full rounded-full bg-gold"
+                          style={{ width: `${prog.percentual}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
+                    {m.tipo_arrecadacao === "item" && <BotaoExportarWhatsApp meta={m} />}
                     <Button
                       variant="outline"
                       size="icon"
@@ -319,7 +364,9 @@ function AdminMetas() {
                     <ChevronDown className="size-3.5" />
                   )}
                 </button>
-                {historico === m.id && <ContribuicoesAdmin metaId={m.id} />}
+                {historico === m.id && (
+                  <ContribuicoesAdmin metaId={m.id} tipoArrecadacao={m.tipo_arrecadacao} />
+                )}
               </div>
             );
           })}
@@ -329,41 +376,142 @@ function AdminMetas() {
   );
 }
 
-/** Histórico de contribuições de uma meta (painel admin). */
-function ContribuicoesAdmin({ metaId }: { metaId: string }) {
+/** Contadores de cadastrados/pagos de uma meta por item (painel admin). */
+function ResumoItemMeta({ metaId }: { metaId: string }) {
   const { data: contribuicoes } = useQuery(contribuicoesMetaQuery(metaId));
-  const confirmadas = (contribuicoes ?? []).filter((c) => c.status === "confirmada");
+  const lista = contribuicoes ?? [];
+  const pagos = lista.filter((c) => c.status === "confirmada").length;
+  const cadastrados = lista.filter(
+    (c) => c.status === "pendente" || c.status === "confirmada",
+  ).length;
+  return (
+    <>
+      <span className="inline-flex items-center gap-1 text-muted-foreground">
+        <UserRound className="size-3.5" /> {cadastrados} cadastrados
+      </span>
+      <span className="inline-flex items-center gap-1 text-success">
+        <CreditCard className="size-3.5" /> {pagos} pagos
+      </span>
+    </>
+  );
+}
 
-  if (confirmadas.length === 0) {
-    return <p className="mt-2 text-xs text-muted-foreground">Nenhuma contribuição confirmada.</p>;
+/** Histórico de contribuições de uma meta (painel admin). */
+function ContribuicoesAdmin({
+  metaId,
+  tipoArrecadacao,
+}: {
+  metaId: string;
+  tipoArrecadacao: string;
+}) {
+  const { data: contribuicoes } = useQuery(contribuicoesMetaQuery(metaId));
+  const ehItem = tipoArrecadacao === "item";
+
+  // Para item, mostra todos os cadastros (pendentes e pagos) com a personalização.
+  const visiveis = ehItem
+    ? (contribuicoes ?? []).filter((c) => c.status === "pendente" || c.status === "confirmada")
+    : (contribuicoes ?? []).filter((c) => c.status === "confirmada");
+
+  if (visiveis.length === 0) {
+    return (
+      <p className="mt-2 text-xs text-muted-foreground">
+        {ehItem ? "Nenhum cadastro ainda." : "Nenhuma contribuição confirmada."}
+      </p>
+    );
   }
 
   return (
     <div className="mt-2 space-y-1.5">
-      {confirmadas.map((c) => (
-        <div
-          key={c.id}
-          className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 p-2"
-        >
-          <AvatarJogador
-            caminho={c.perfis_publicos?.avatar_url}
-            nome={c.perfis_publicos?.nome}
-            size="sm"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-foreground">
-              {c.anonima ? "Anônima" : (c.perfis_publicos?.nome ?? "Jogador")}
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              {format(new Date(c.confirmada_em ?? c.criado_em), "dd/MM/yyyy HH:mm", {
-                locale: ptBR,
-              })}
-            </p>
+      {visiveis.map((c) => {
+        const pago = c.status === "confirmada";
+        return (
+          <div
+            key={c.id}
+            className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 p-2"
+          >
+            <AvatarJogador
+              caminho={c.perfis_publicos?.avatar_url}
+              nome={c.perfis_publicos?.nome}
+              size="sm"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-foreground">
+                {c.anonima ? "Anônima" : (c.perfis_publicos?.nome ?? "Jogador")}
+              </p>
+              {ehItem && c.nome_camisa && (
+                <p className="truncate text-[10px] text-muted-foreground">
+                  Camisa "{c.nome_camisa}" · {c.tamanho} · #{c.numero_camisa}
+                </p>
+              )}
+              <p className="text-[10px] text-muted-foreground">
+                {format(new Date(c.confirmada_em ?? c.criado_em), "dd/MM/yyyy HH:mm", {
+                  locale: ptBR,
+                })}{" "}
+                · {pago ? "PAGO" : "PENDENTE"}
+              </p>
+            </div>
+            <span className="text-sm font-semibold text-gold">{formatarReais(c.valor)}</span>
           </div>
-          <span className="text-sm font-semibold text-gold">{formatarReais(c.valor)}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
+  );
+}
+
+/** Botão que copia a lista de cadastrados/pagos para o WhatsApp (igual ao sorteio). */
+function BotaoExportarWhatsApp({ meta }: { meta: Meta }) {
+  const { data: contribuicoes } = useQuery(contribuicoesMetaQuery(meta.id));
+  const [copiando, setCopiando] = useState(false);
+
+  const exportar = async () => {
+    const lista = (contribuicoes ?? []).filter(
+      (c) => c.status === "pendente" || c.status === "confirmada",
+    );
+    const texto = formatarArrecadacaoItemParaWhatsApp(
+      {
+        titulo: meta.titulo,
+        categoria: meta.categoria,
+        valor_item: meta.valor_item,
+        valor_alvo: meta.valor_alvo,
+        valor_arrecadado: meta.valor_arrecadado,
+        prazo_cadastro: meta.prazo_cadastro,
+        prazo_pagamento: meta.prazo_pagamento,
+      },
+      lista.map((c) => ({
+        id: c.id,
+        nome: c.anonima ? "Anônima" : (c.perfis_publicos?.nome ?? "Jogador"),
+        nome_camisa: c.nome_camisa,
+        tamanho: c.tamanho,
+        numero_camisa: c.numero_camisa,
+        status: c.status,
+      })),
+    );
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast.success("Copiado! Cole no grupo do WhatsApp.", {
+        description: `${lista.filter((c) => c.status === "confirmada").length} pagos · ${
+          lista.filter((c) => c.status === "pendente").length
+        } pendentes`,
+      });
+    } catch {
+      setCopiando(true);
+      toast.error("Não foi possível copiar", { description: "Selecione o texto manualmente." });
+      setCopiando(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      className="size-9"
+      aria-label="Exportar para WhatsApp"
+      title="Exportar para WhatsApp"
+      disabled={copiando}
+      onClick={() => void exportar()}
+    >
+      <Copy className="size-3.5 text-gold" />
+    </Button>
   );
 }
 
@@ -374,6 +522,8 @@ function FormCampos({
   form: typeof FORM_VAZIO;
   setForm: (u: Partial<typeof FORM_VAZIO>) => void;
 }) {
+  const ehItem = form.tipo_arrecadacao === "item";
+
   return (
     <>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -386,7 +536,36 @@ function FormCampos({
             placeholder="Coletes individuais"
           />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label htmlFor="meta-tipo">Tipo de arrecadação</Label>
+          <Select
+            value={form.tipo_arrecadacao}
+            onValueChange={(v) => setForm({ tipo_arrecadacao: v })}
+          >
+            <SelectTrigger id="meta-tipo">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="aberta">Aberta (valor livre)</SelectItem>
+              <SelectItem value="item">Por item (custo fixo)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {ehItem ? (
+          <div className="space-y-1">
+            <Label htmlFor="meta-valor-item">Valor por item (R$) *</Label>
+            <Input
+              id="meta-valor-item"
+              type="number"
+              min={1}
+              step="0.01"
+              value={form.valor_item}
+              onChange={(e) => setForm({ valor_item: e.target.value })}
+              placeholder="71"
+            />
+          </div>
+        ) : (
           <div className="space-y-1">
             <Label htmlFor="meta-alvo">Valor alvo (R$) *</Label>
             <Input
@@ -399,6 +578,30 @@ function FormCampos({
               placeholder="1500"
             />
           </div>
+        )}
+
+        {ehItem ? (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="meta-prazo-cadastro">Prazo de cadastro</Label>
+              <Input
+                id="meta-prazo-cadastro"
+                type="date"
+                value={form.prazo_cadastro}
+                onChange={(e) => setForm({ prazo_cadastro: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="meta-prazo-pagamento">Prazo de pagamento</Label>
+              <Input
+                id="meta-prazo-pagamento"
+                type="date"
+                value={form.prazo_pagamento}
+                onChange={(e) => setForm({ prazo_pagamento: e.target.value })}
+              />
+            </div>
+          </div>
+        ) : (
           <div className="space-y-1">
             <Label htmlFor="meta-prazo">Prazo</Label>
             <Input
@@ -408,7 +611,8 @@ function FormCampos({
               onChange={(e) => setForm({ prazo: e.target.value })}
             />
           </div>
-        </div>
+        )}
+
         <div className="space-y-1">
           <Label htmlFor="meta-categoria">Categoria</Label>
           <Select value={form.categoria} onValueChange={(v) => setForm({ categoria: v })}>
