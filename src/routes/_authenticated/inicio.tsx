@@ -536,8 +536,8 @@ function MetasWidget() {
         ) : (
           <div className="space-y-2">
             {ativas.slice(0, 2).map((m) => {
-              const pct =
-                m.valor_alvo > 0 ? Math.round((m.valor_arrecadado / m.valor_alvo) * 100) : 0;
+              const alvo = m.valor_alvo ?? 0;
+              const pct = alvo > 0 ? Math.round((m.valor_arrecadado / alvo) * 100) : 0;
               return (
                 <div key={m.id}>
                   <div className="flex items-baseline justify-between text-xs">
