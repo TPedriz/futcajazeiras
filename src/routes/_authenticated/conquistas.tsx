@@ -6,6 +6,7 @@ import { perfilAtualQuery } from "@/lib/babaQueries";
 import { AchievementFeed } from "@/components/AchievementFeed";
 import { AchievementCatalog } from "@/components/AchievementCatalog";
 import { GerenciadorConquistas } from "@/components/GerenciadorConquistas";
+import { BuscaJogador } from "@/components/BuscaJogador";
 
 export const Route = createFileRoute("/_authenticated/conquistas")({
   head: () => ({
@@ -43,10 +44,11 @@ function ConquistasPage() {
       </div>
 
       <Tabs defaultValue="feed">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="feed">Feed</TabsTrigger>
           <TabsTrigger value="catalogo">Catálogo</TabsTrigger>
-          <TabsTrigger value="minhas">Minhas conquistas</TabsTrigger>
+          <TabsTrigger value="minhas">Minhas</TabsTrigger>
+          <TabsTrigger value="jogadores">Jogadores</TabsTrigger>
         </TabsList>
 
         <TabsContent value="feed" className="mt-4">
@@ -59,6 +61,10 @@ function ConquistasPage() {
 
         <TabsContent value="minhas" className="mt-4">
           <GerenciadorConquistas usuarioId={usuarioId} />
+        </TabsContent>
+
+        <TabsContent value="jogadores" className="mt-4">
+          <BuscaJogador />
         </TabsContent>
       </Tabs>
     </div>

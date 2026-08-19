@@ -22,7 +22,10 @@ export type TipoEventoFeed =
   | "MARCA_ATINGIDA"
   | "RECORDE_PESSOAL"
   | "RANKING_ALCANCADO"
-  | "EVENTO_HISTORICO";
+  | "EVENTO_HISTORICO"
+  | "META_CRIADA"
+  | "CONTRIBUICAO_CONFIRMADA"
+  | "META_ATINGIDA";
 
 /** Eventos considerados "importantes" — merecem toast de celebração próprio. */
 export const EVENTOS_IMPORTANTES: ReadonlySet<TipoEventoFeed> = new Set([
@@ -30,6 +33,7 @@ export const EVENTOS_IMPORTANTES: ReadonlySet<TipoEventoFeed> = new Set([
   "MARCA_ATINGIDA",
   "RANKING_ALCANCADO",
   "EVENTO_HISTORICO",
+  "META_ATINGIDA",
 ]);
 
 // ============================================================================
@@ -71,6 +75,9 @@ export const ROTULOS_TIPO_EVENTO: Record<TipoEventoFeed, string> = {
   RECORDE_PESSOAL: "Recorde pessoal",
   RANKING_ALCANCADO: "Ranking",
   EVENTO_HISTORICO: "Evento histórico",
+  META_CRIADA: "Nova meta",
+  CONTRIBUICAO_CONFIRMADA: "Contribuição",
+  META_ATINGIDA: "Meta atingida!",
 };
 
 export function rotuloTipoEvento(tipo: string): string {
@@ -162,6 +169,8 @@ export interface MetadataEvento {
   posicao_nova?: number;
   valor?: number;
   mes?: string;
+  meta_id?: string;
+  valor_alvo?: number;
   [key: string]: unknown;
 }
 
@@ -213,6 +222,16 @@ export function textoApoioEvento(evento: {
     const prefixo = pos === 1 ? "1º lugar" : `${pos}º lugar`;
     return `${prefixo} do mês em ${rotuloCategoria(meta.categoria)}${meta.valor != null ? ` (${meta.valor})` : ""}`;
   }
+  if (evento.tipo === "META_CRIADA" && meta.valor_alvo != null) {
+    return `Meta coletiva de R$ ${Number(meta.valor_alvo).toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+    })}`;
+  }
+  if (evento.tipo === "CONTRIBUICAO_CONFIRMADA" && meta.valor != null) {
+    return `Contribuiu com R$ ${Number(meta.valor).toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+    })}`;
+  }
   return evento.descricao;
 }
 
@@ -247,6 +266,21 @@ export function chaveRanking(
 /** Chave de um evento histórico (usuário + conquista = evento único). */
 export function chaveHistorico(usuario: string, conquista: string): string {
   return `historico:${usuario}:${conquista}`;
+}
+
+/** Chave de um evento de meta criada (meta = evento único). */
+export function chaveMetaCriada(meta: string): string {
+  return `meta_criada:${meta}`;
+}
+
+/** Chave de um evento de contribuição confirmada (contribuição = evento único). */
+export function chaveContribuicao(contribuicao: string): string {
+  return `contribuicao:${contribuicao}`;
+}
+
+/** Chave de um evento de meta atingida (meta = evento único). */
+export function chaveMetaAtingida(meta: string): string {
+  return `meta_atingida:${meta}`;
 }
 
 // ============================================================================

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Download, Share2, Loader2 } from "lucide-react";
 import {
-  cartinhaPerfilQuery,
+  cartinhaPublicaQuery,
   conquistasEmDestaqueQuery,
   rankingDoMesQuery,
   mesReferencia,
@@ -30,7 +30,7 @@ export function useCartinha() {
 
 function CartinhaDoModal({ usuarioId }: { usuarioId: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  const { data: perfil } = useQuery(cartinhaPerfilQuery(usuarioId));
+  const { data: perfil } = useQuery(cartinhaPublicaQuery(usuarioId));
   const { data: destaquesMap } = useQuery(conquistasEmDestaqueQuery());
   const referencia = mesReferencia();
   const { data: ranking } = useQuery(rankingDoMesQuery(referencia));
@@ -52,7 +52,7 @@ function CartinhaDoModal({ usuarioId }: { usuarioId: string }) {
     });
   })();
 
-  const base = temaBasePorOvr(perfil.ovr) as TemaCarta;
+  const base = temaBasePorOvr(perfil.ovr ?? 40) as TemaCarta;
   const tema = temaEfetivo(base, {
     top1Mes,
     nivel,
@@ -69,12 +69,10 @@ function CartinhaDoModal({ usuarioId }: { usuarioId: string }) {
     if (!ref.current) return;
     setExportando(true);
     try {
+      const nomeArquivo = (perfil.nome ?? "jogador").toLowerCase().replace(/\s+/g, "-");
       const ok =
         tipo === "baixar"
-          ? await baixarCartinha(
-              ref.current,
-              `cartinha-${perfil.nome.toLowerCase().replace(/\s+/g, "-")}.png`,
-            )
+          ? await baixarCartinha(ref.current, `cartinha-${nomeArquivo}.png`)
           : await compartilharCartinha(ref.current);
       if (!ok) toast.error("Não foi possível exportar a cartinha");
     } catch {
@@ -88,19 +86,20 @@ function CartinhaDoModal({ usuarioId }: { usuarioId: string }) {
     <div className="flex flex-col items-center gap-4 p-2">
       <PlayerCard
         ref={ref}
-        nome={perfil.nome}
+        nome={perfil.nome ?? "Jogador"}
         fotoUrl={perfil.avatar_url}
-        posicao={perfil.posicao}
-        ovr={perfil.ovr}
-        pac={perfil.stat_ritmo}
-        sho={perfil.stat_finalizacao}
-        pas={perfil.stat_passe}
-        dri={perfil.stat_drible}
-        def={perfil.stat_defesa}
-        phy={perfil.stat_fisico}
+        posicao={(perfil.posicao as "goleiro" | "linha") ?? "linha"}
+        ovr={perfil.ovr ?? 40}
+        pac={perfil.stat_ritmo ?? 40}
+        sho={perfil.stat_finalizacao ?? 40}
+        pas={perfil.stat_passe ?? 40}
+        dri={perfil.stat_drible ?? 40}
+        def={perfil.stat_defesa ?? 40}
+        phy={perfil.stat_fisico ?? 40}
         nivel={nivel}
         tema={tema}
         conquistas={conquistas}
+        instagram={perfil.instagram}
       />
       <div className="grid w-full grid-cols-2 gap-2">
         <Button variant="gold" disabled={exportando} onClick={() => aoExportar("baixar")}>

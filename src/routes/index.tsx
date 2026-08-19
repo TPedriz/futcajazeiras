@@ -1,8 +1,26 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { BrandLogo } from "@/components/BrandLogo";
 import { RodapeApp } from "@/components/RodapeApp";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Trophy, ChevronRight, Zap, Sparkles, Layers, Star } from "lucide-react";
+import { proximosEventosAgendaQuery } from "@/lib/babaQueries";
+import {
+  Calendar,
+  Users,
+  Trophy,
+  ChevronRight,
+  Zap,
+  Sparkles,
+  Layers,
+  Star,
+  CalendarDays,
+  Clock,
+  MapPin,
+  ArrowRight,
+} from "lucide-react";
+import { formatarHora, diaDaSemanaCurto, rotuloCategoriaEvento } from "@/lib/redeSocial";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
@@ -103,6 +121,9 @@ function LandingPage() {
           </Link>
         </div>
       </section>
+
+      {/* Próximos Babas — agenda pública da Arena Cajazeiras */}
+      <ProximosBabas />
 
       {/* Gamificação: XP, conquistas e cartinhas */}
       <section className="mx-auto max-w-md px-4 pb-8">
@@ -205,5 +226,71 @@ function FeatureCard({
       </div>
       <ChevronRight className="size-5 text-muted-foreground/40" />
     </div>
+  );
+}
+
+/** Seção "Próximos Babas" da landing — agenda pública da Arena Cajazeiras. */
+function ProximosBabas() {
+  const { data: eventos } = useQuery(proximosEventosAgendaQuery(5));
+
+  return (
+    <section className="mx-auto max-w-md px-4 pb-10">
+      <div className="rounded-2xl border border-gold/40 bg-gradient-to-b from-gold/15 to-transparent p-5">
+        <div className="flex items-center justify-between">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gold">
+            <CalendarDays className="size-4" /> Próximos babas
+          </p>
+          <Link
+            to="/agenda"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-gold hover:underline"
+          >
+            Ver agenda completa <ArrowRight className="size-3.5" />
+          </Link>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Eventos que acontecem na Arena Cajazeiras
+        </p>
+
+        <div className="mt-4 space-y-2">
+          {eventos && eventos.length === 0 && (
+            <p className="rounded-xl border border-border/50 bg-surface/60 p-4 text-center text-sm text-muted-foreground">
+              Nenhum evento agendado por enquanto. Volte em breve!
+            </p>
+          )}
+          {eventos?.map((e) => (
+            <div
+              key={e.id}
+              className="flex items-center gap-3 rounded-xl border border-border/50 bg-surface/70 p-3"
+            >
+              <div className="flex w-12 shrink-0 flex-col items-center rounded-lg border border-gold/30 bg-gold/5 py-1 text-center">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {diaDaSemanaCurto(`${e.data_evento}T12:00:00`)}
+                </span>
+                <span className="font-display text-lg leading-none text-gold">
+                  {format(new Date(`${e.data_evento}T12:00:00`), "dd", { locale: ptBR })}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-foreground">{e.titulo}</p>
+                <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Clock className="size-3" /> {formatarHora(e.hora_inicio)}
+                  <span aria-hidden>•</span>
+                  <MapPin className="size-3" /> {e.local}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-gold">
+                {rotuloCategoriaEvento(e.categoria)}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <Link to="/agenda" className="mt-4 block">
+          <Button variant="goldOutline" size="lg" className="w-full">
+            Ver agenda completa <ArrowRight className="size-4" />
+          </Button>
+        </Link>
+      </div>
+    </section>
   );
 }

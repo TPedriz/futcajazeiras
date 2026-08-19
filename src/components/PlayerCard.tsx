@@ -77,6 +77,8 @@ export interface PlayerCardProps {
   nivel: number;
   tema: TemaCarta;
   conquistas?: ConquistaMini[];
+  /** @Instagram do jogador (discreto, abaixo do nome) — opcional. */
+  instagram?: string | null;
   /** Classes extras aplicadas ao invólucro (largura, etc). */
   className?: string;
 }
@@ -97,6 +99,7 @@ export const PlayerCard = forwardRef<HTMLDivElement, PlayerCardProps>(function P
     nivel,
     tema,
     conquistas = [],
+    instagram,
     className = "",
   },
   ref,
@@ -118,10 +121,15 @@ export const PlayerCard = forwardRef<HTMLDivElement, PlayerCardProps>(function P
   // Tema "icon" tem fundo claro → a logo usa mistura "multiply"; demais usam "screen".
   const mesclaEscudo = tema === "icon" ? "multiply" : "screen";
 
+  const instagramLimpo = (instagram ?? "").replace(/^@+/, "").trim();
+
+  // Temas especiais (TOTW / Lenda / Paredão) ganham efeito de energia.
+  const especial = tema === "totw" || tema === "icon" || tema === "paredao";
+
   return (
     <div
       ref={ref}
-      className={`relative w-64 overflow-hidden rounded-2xl p-4 text-center ${className}`}
+      className={`relative w-64 overflow-hidden rounded-2xl p-4 text-center ${especial ? "destaque-borda" : ""} ${className}`}
       style={{ background: estilo.fundo, border: `2px solid ${estilo.borda}` }}
     >
       {/* Brilho de fundo */}
@@ -131,6 +139,12 @@ export const PlayerCard = forwardRef<HTMLDivElement, PlayerCardProps>(function P
           background: `radial-gradient(circle at 50% 18%, ${estilo.brilho} 0%, transparent 55%)`,
         }}
       />
+      {/* Faixa de luz (sweep) nos temas especiais */}
+      {especial && (
+        <div className="destaque-shine pointer-events-none absolute inset-0">
+          <div className="destaque-shine-faixa absolute top-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        </div>
+      )}
       {/* Logo do Fut Cajazeiras ao fundo (atrás do avatar e do nome) */}
       <img
         src={escudoUrl}
@@ -195,6 +209,16 @@ export const PlayerCard = forwardRef<HTMLDivElement, PlayerCardProps>(function P
         >
           {nome}
         </p>
+
+        {/* Instagram discreto (não compromete a estética da carta) */}
+        {instagramLimpo && (
+          <p
+            className="mt-1 truncate px-2 text-[11px] font-medium"
+            style={{ color: estilo.texto, opacity: 0.85 }}
+          >
+            @{instagramLimpo}
+          </p>
+        )}
 
         {/* Grid de atributos */}
         <div className="mt-3 grid grid-cols-3 gap-1.5">

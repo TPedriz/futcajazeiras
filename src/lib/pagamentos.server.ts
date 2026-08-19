@@ -31,5 +31,16 @@ export async function aplicarPagamento(externalReference: string, status: string
     return { aplicado: aprovado };
   }
 
+  if (tipo === "meta") {
+    // Confirma a contribuição e atualiza a arrecadação (função SECURITY DEFINER no banco).
+    if (aprovado) {
+      const { error } = await supabaseAdmin.rpc("confirmar_contribuicao_meta", {
+        p_contribuicao_id: id,
+      });
+      if (error) throw error;
+    }
+    return { aplicado: aprovado };
+  }
+
   return { aplicado: false };
 }

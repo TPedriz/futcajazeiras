@@ -115,7 +115,6 @@ function BabaPage() {
     ? !!userId && (relacionadosBavi ?? []).some((r) => r.usuario_id === userId)
     : true;
   const queryClient = useQueryClient();
-
   const isAdmin = perfilData?.isAdmin ?? false;
   const isConvidado = perfilData?.isConvidado ?? false;
 

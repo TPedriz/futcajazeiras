@@ -3,6 +3,7 @@ import { Trophy } from "lucide-react";
 import { todasCartinhasQuery } from "@/lib/babaQueries";
 import { AvatarJogador } from "@/components/AvatarJogador";
 import { useCartinha } from "@/components/CartinhaModal";
+import { InstagramLink } from "@/components/InstagramLink";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -20,6 +21,7 @@ const BORDAS_DESTAQUE = [
 /**
  * Browser de cartinhas: top 3 por Overall em destaque (com borda gradual pela
  * posição) e o restante em ordem alfabética. Toque/click abre a cartinha.
+ * O @Instagram aparece de forma compacta quando cadastrado.
  */
 export function TodasCartinhas({ compact = false }: { compact?: boolean }) {
   const { data: cartinhas = [] } = useQuery(todasCartinhasQuery());
@@ -61,6 +63,7 @@ export function TodasCartinhas({ compact = false }: { compact?: boolean }) {
                 {c.posicao === "goleiro" ? "Goleiro" : "Linha"} · Overall
               </p>
             </div>
+            <InstagramLink valor={c.instagram} compacto className="shrink-0" />
             <span className="font-display text-2xl text-gold">{c.ovr ?? 0}</span>
           </button>
         ))}
@@ -83,6 +86,7 @@ export function TodasCartinhas({ compact = false }: { compact?: boolean }) {
                     {c.posicao === "goleiro" ? "Goleiro" : "Linha"}
                   </p>
                 </div>
+                <InstagramLink valor={c.instagram} compacto className="shrink-0" />
                 <span className="font-display text-lg text-gold">{c.ovr ?? 0}</span>
               </button>
             </li>

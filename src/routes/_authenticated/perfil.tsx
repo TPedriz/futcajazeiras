@@ -38,8 +38,10 @@ import {
   Camera,
   Check,
   Calendar,
+  Instagram,
 } from "lucide-react";
 import { tempoDeAssociado } from "@/lib/associado";
+import { normalizaInstagram, instagramFormatado, instagramUrl } from "@/lib/redeSocial";
 import { AvatarJogador, avatarUrlQuery } from "@/components/AvatarJogador";
 import { EditorFotoPerfil } from "@/components/EditorFotoPerfil";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
@@ -98,6 +100,8 @@ function PerfilPage() {
   const [salvando, setSalvando] = useState(false);
   const [editandoNome, setEditandoNome] = useState(false);
   const [nome, setNome] = useState("");
+  const [editandoInstagram, setEditandoInstagram] = useState(false);
+  const [instagram, setInstagram] = useState("");
   const [enviandoFoto, setEnviandoFoto] = useState(false);
   const [origemFoto, setOrigemFoto] = useState<File | string | null>(null);
   const [editorAberto, setEditorAberto] = useState(false);
@@ -156,6 +160,26 @@ function PerfilPage() {
     setEditandoNome(false);
     qc.invalidateQueries({ queryKey: ["perfil-atual"] });
     qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+  };
+
+  const salvarInstagram = async () => {
+    if (!perfil) return;
+    const valor = normalizaInstagram(instagram);
+    setSalvando(true);
+    const { error } = await supabase
+      .from("perfis")
+      .update({ instagram: valor || null })
+      .eq("id", perfil.id);
+    setSalvando(false);
+    if (error) {
+      toast.error("Não foi possível salvar o Instagram.");
+      return;
+    }
+    toast.success(valor ? "Instagram atualizado!" : "Instagram removido.");
+    setEditandoInstagram(false);
+    qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+    qc.invalidateQueries({ queryKey: ["perfis-publicos"] });
+    qc.invalidateQueries({ queryKey: ["buscar-jogadores"] });
   };
 
   const alterarPosicao = async (nova: "linha" | "goleiro") => {
@@ -478,11 +502,80 @@ function PerfilPage() {
         />
       </div>
 
+      {/* Instagram (rede social) */}
+      <div className="card-premium space-y-3 p-4">
+        <Label className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+          <Instagram className="size-4" /> Instagram
+        </Label>
+
+        {editandoInstagram ? (
+          <div className="space-y-2">
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                @
+              </span>
+              <Input
+                id="instagram-perfil"
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                placeholder="seu.usuario"
+                className="h-12 pl-7"
+                maxLength={40}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="gold"
+                size="sm"
+                className="flex-1"
+                disabled={salvando}
+                onClick={salvarInstagram}
+              >
+                <Save className="size-4" /> Salvar
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEditandoInstagram(false)}>
+                Cancelar
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Pode deixar em branco para remover. O @ aparece no seu perfil público, cartinha e
+              rankings.
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            {instagramFormatado(perfil?.instagram) ? (
+              <a
+                href={instagramUrl(perfil?.instagram) ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sky-400 hover:underline"
+              >
+                <Instagram className="size-4" />
+                {instagramFormatado(perfil?.instagram)}
+              </a>
+            ) : (
+              <p className="text-sm text-muted-foreground">Não informado.</p>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setInstagram(perfil?.instagram ?? "");
+                setEditandoInstagram(true);
+              }}
+            >
+              <Pencil className="size-3.5" /> Editar
+            </Button>
+          </div>
+        )}
+      </div>
+
       {/* Time do coração — BAxVI */}
       <div className="card-premium space-y-3 p-4">
         <Label className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
           <Heart className="size-4" /> Time do coração (BAxVI)
-        </Label>
+        </Label>{" "}
         {perfil?.time_coracao ? (
           <p className="font-display text-2xl text-gold">
             {perfil.time_coracao === "bahia" ? "Bahia" : "Vitória"}

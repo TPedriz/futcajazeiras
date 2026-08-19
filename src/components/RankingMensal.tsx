@@ -7,6 +7,8 @@ import { AvatarJogador } from "@/components/AvatarJogador";
 import { BadgeDestaque } from "@/components/BadgeDestaque";
 import { MicroConquistas } from "@/components/MicroConquistas";
 import { NomeJogadorCartinha } from "@/components/NomeJogadorCartinha";
+import { LinkPerfilJogador } from "@/components/LinkPerfilJogador";
+import { InstagramLink } from "@/components/InstagramLink";
 import { destaquesDoUsuario, iconeDestaque, type Destaque } from "@/lib/gamificacao";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -337,12 +339,20 @@ export function RankingMensal({ compacto = false }: { compacto?: boolean }) {
               >
                 {i === 0 ? <Medal className="size-4" /> : i + 1}
               </span>
-              <AvatarJogador caminho={avatarDe(r.usuario_id)} nome={r.nome} size="sm" />
+              <LinkPerfilJogador id={r.usuario_id}>
+                <AvatarJogador caminho={avatarDe(r.usuario_id)} nome={r.nome} size="sm" />
+              </LinkPerfilJogador>
               <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1">
-                <NomeJogadorCartinha
-                  nome={r.nome ?? "Jogador"}
-                  usuarioId={r.usuario_id}
-                  className="truncate text-sm font-semibold"
+                <LinkPerfilJogador id={r.usuario_id}>
+                  <NomeJogadorCartinha
+                    nome={r.nome ?? "Jogador"}
+                    usuarioId={r.usuario_id}
+                    className="truncate text-sm font-semibold"
+                  />
+                </LinkPerfilJogador>
+                <InstagramLink
+                  valor={(perfis ?? []).find((p) => p.id === r.usuario_id)?.instagram ?? null}
+                  compacto
                 />
                 <MicroConquistas usuarioId={r.usuario_id} />
                 <BadgeDestaque usuarioId={r.usuario_id ?? undefined} />

@@ -12,6 +12,7 @@ import {
   META_CONVIDADO,
   baviRelacionadosQuery,
   perfisPublicosQuery,
+  metasQuery,
 } from "@/lib/babaQueries";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ import {
   Sparkles,
   Swords,
   Flame,
+  Target,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RankingMensal } from "@/components/RankingMensal";
@@ -265,6 +267,9 @@ function InicioPage() {
 
         {/* Acontecimentos da comunidade (prévia do feed social) */}
         <FeedPreview />
+
+        {/* Metas da comunidade */}
+        <MetasWidget />
 
         {/* Ranking mensal do mês (compacto) */}
         <RankingMensal compacto />
@@ -506,5 +511,51 @@ function TimeMini({
         </ul>
       )}
     </div>
+  );
+}
+
+/** Widget da Home: metas coletivas ativas + atalho para a página de metas. */
+function MetasWidget() {
+  const { data: metas } = useQuery(metasQuery());
+  const ativas = (metas ?? []).filter((m) => m.status === "ativa");
+
+  return (
+    <Link to="/metas">
+      <div className="card-premium space-y-3 p-4 transition-colors hover:border-gold/40">
+        <div className="flex items-center justify-between">
+          <p className="flex items-center gap-2 text-xs uppercase tracking-widest text-gold">
+            <Target className="size-4" /> Metas da comunidade
+          </p>
+          <ArrowRight className="size-4 text-muted-foreground" />
+        </div>
+
+        {ativas.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Nenhuma meta ativa no momento. Continue jogando!
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {ativas.slice(0, 2).map((m) => {
+              const pct =
+                m.valor_alvo > 0 ? Math.round((m.valor_arrecadado / m.valor_alvo) * 100) : 0;
+              return (
+                <div key={m.id}>
+                  <div className="flex items-baseline justify-between text-xs">
+                    <span className="truncate font-semibold text-foreground">{m.titulo}</span>
+                    <span className="shrink-0 text-muted-foreground">{pct}%</span>
+                  </div>
+                  <Progress value={Math.min(100, pct)} className="mt-1 h-2" />
+                </div>
+              );
+            })}
+            {ativas.length > 2 && (
+              <p className="text-[11px] text-muted-foreground">
+                +{ativas.length - 2} {ativas.length - 2 === 1 ? "outra meta" : "outras metas"}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </Link>
   );
 }

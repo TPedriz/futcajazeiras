@@ -10,6 +10,8 @@ import {
   LogOut,
   Trophy,
   Shield,
+  Target,
+  CalendarDays,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AvatarJogador } from "@/components/AvatarJogador";
@@ -31,6 +33,8 @@ export function AppSidebar({ isAdmin, nome, rotulo, avatar }: AppSidebarProps) {
     { to: "/baba", label: "Baba", Icon: Calendar },
     { to: "/pagamentos", label: "Financeiro", Icon: Wallet },
     { to: "/conquistas", label: "Conquistas", Icon: Trophy },
+    { to: "/metas", label: "Metas", Icon: Target },
+    { to: "/agenda", label: "Agenda", Icon: CalendarDays },
     ...(isAdmin
       ? [
           { to: "/admin", label: "Painel Admin", Icon: Shield },

@@ -55,11 +55,11 @@
   --radius: 0.75rem;
 
   /* Base — Modo Escuro Sempre (identidade premium noturna) */
-  --background: oklch(0.14 0.005 0);              /* preto profundo */
-  --foreground: oklch(0.98 0.005 90);             /* branco levemente quente */
+  --background: oklch(0.14 0.005 0); /* preto profundo */
+  --foreground: oklch(0.98 0.005 90); /* branco levemente quente */
 
-  --surface: oklch(0.18 0.008 20);                /* preto elevado */
-  --surface-elevated: oklch(0.22 0.01 20);        /* cards */
+  --surface: oklch(0.18 0.008 20); /* preto elevado */
+  --surface-elevated: oklch(0.22 0.01 20); /* cards */
 
   --card: oklch(0.19 0.008 20);
   --card-foreground: oklch(0.98 0.005 90);
@@ -100,9 +100,10 @@
   --gradient-primary: linear-gradient(135deg, oklch(0.52 0.19 27) 0%, oklch(0.38 0.16 25) 100%);
   --gradient-gold: linear-gradient(135deg, oklch(0.82 0.14 85) 0%, oklch(0.6 0.11 78) 100%);
   --gradient-dark: linear-gradient(180deg, oklch(0.18 0.008 20) 0%, oklch(0.12 0.005 0) 100%);
-  --gradient-hero: radial-gradient(circle at 30% 20%, oklch(0.52 0.19 27 / 0.35) 0%, transparent 55%),
-                   radial-gradient(circle at 80% 90%, oklch(0.78 0.13 85 / 0.18) 0%, transparent 50%),
-                   linear-gradient(180deg, oklch(0.14 0.005 0) 0%, oklch(0.1 0.005 0) 100%);
+  --gradient-hero:
+    radial-gradient(circle at 30% 20%, oklch(0.52 0.19 27 / 0.35) 0%, transparent 55%),
+    radial-gradient(circle at 80% 90%, oklch(0.78 0.13 85 / 0.18) 0%, transparent 50%),
+    linear-gradient(180deg, oklch(0.14 0.005 0) 0%, oklch(0.1 0.005 0) 100%);
 
   --shadow-elegant: 0 20px 60px -20px oklch(0 0 0 / 0.6);
   --shadow-gold: 0 10px 40px -10px oklch(0.78 0.13 85 / 0.35);
@@ -120,7 +121,8 @@
     border-color: var(--color-border);
   }
 
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
@@ -137,7 +139,11 @@
     min-height: 100vh;
   }
 
-  h1, h2, h3, h4, .font-display {
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
     font-family: var(--font-display);
     letter-spacing: 0.01em;
   }
@@ -148,20 +154,38 @@
   }
 }
 
-@utility bg-gradient-primary { background: var(--gradient-primary); }
-@utility bg-gradient-gold { background: var(--gradient-gold); }
-@utility bg-gradient-dark { background: var(--gradient-dark); }
-@utility bg-gradient-hero { background: var(--gradient-hero); }
-@utility shadow-elegant { box-shadow: var(--shadow-elegant); }
-@utility shadow-gold { box-shadow: var(--shadow-gold); }
-@utility shadow-primary { box-shadow: var(--shadow-primary); }
+@utility bg-gradient-primary {
+  background: var(--gradient-primary);
+}
+@utility bg-gradient-gold {
+  background: var(--gradient-gold);
+}
+@utility bg-gradient-dark {
+  background: var(--gradient-dark);
+}
+@utility bg-gradient-hero {
+  background: var(--gradient-hero);
+}
+@utility shadow-elegant {
+  box-shadow: var(--shadow-elegant);
+}
+@utility shadow-gold {
+  box-shadow: var(--shadow-gold);
+}
+@utility shadow-primary {
+  box-shadow: var(--shadow-primary);
+}
 
 @utility border-gold {
   border-color: var(--color-gold);
 }
 
-@utility text-gold { color: var(--color-gold); }
-@utility bg-gold { background-color: var(--color-gold); }
+@utility text-gold {
+  color: var(--color-gold);
+}
+@utility bg-gold {
+  background-color: var(--color-gold);
+}
 
 /* Card premium com borda dourada sutil */
 @utility card-premium {
@@ -176,4 +200,73 @@
   border: 1px solid var(--color-gold);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-gold);
+}
+
+/* ============================================================================
+ * Destaques / TOTW — efeitos visuais premium
+ * Brilho pulsante, "sweep" de luz e borda energizada para conquistas e cartas
+ * especiais. Tudo respeita prefers-reduced-motion.
+ * ============================================================================ */
+
+@keyframes totw-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes totw-shine {
+  0% {
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  55%,
+  100% {
+    transform: translateX(230%) skewX(-18deg);
+  }
+}
+
+@keyframes totw-glow-border {
+  0%,
+  100% {
+    box-shadow:
+      0 0 14px rgba(247, 211, 84, 0.28),
+      inset 0 0 10px rgba(247, 211, 84, 0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 28px rgba(247, 211, 84, 0.55),
+      inset 0 0 18px rgba(247, 211, 84, 0.16);
+  }
+}
+
+/* Brilho radial pulsante atrás do card */
+@utility destaque-glow {
+  animation: totw-pulse 3.2s ease-in-out infinite;
+}
+
+/* Borda dourada energizada (TOTW / meta atingida / lendária) */
+@utility destaque-borda {
+  animation: totw-glow-border 3s ease-in-out infinite;
+}
+
+/* Faixa de luz que atravessa o card de tempos em tempos */
+@utility destaque-shine {
+  overflow: hidden;
+}
+
+@utility destaque-shine-faixa {
+  animation: totw-shine 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .destaque-glow,
+  .destaque-borda,
+  .destaque-shine-faixa {
+    animation: none !important;
+  }
 }

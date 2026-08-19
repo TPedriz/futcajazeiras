@@ -1,7 +1,20 @@
-import { Sparkles, Zap, Trophy, Crown, TrendingUp, Flame, Medal, UserRound } from "lucide-react";
+import {
+  Sparkles,
+  Zap,
+  Trophy,
+  Crown,
+  TrendingUp,
+  Flame,
+  Medal,
+  UserRound,
+  Target,
+  HandCoins,
+} from "lucide-react";
 import { AvatarJogador } from "@/components/AvatarJogador";
 import { AchievementBadge } from "@/components/AchievementBadge";
 import { AchievementRarity } from "@/components/AchievementRarity";
+import { LinkPerfilJogador } from "@/components/LinkPerfilJogador";
+import { LikeBotao } from "@/components/LikeBotao";
 import {
   dataRelativa,
   metadataEvento,
@@ -19,6 +32,9 @@ const ICONES_TIPO: Record<string, typeof Trophy> = {
   RECORDE_PESSOAL: TrendingUp,
   RANKING_ALCANCADO: Crown,
   EVENTO_HISTORICO: Medal,
+  META_CRIADA: Target,
+  CONTRIBUICAO_CONFIRMADA: HandCoins,
+  META_ATINGIDA: Medal,
 };
 
 function IconeTipo({ tipo }: { tipo: string }) {
@@ -29,14 +45,18 @@ function IconeTipo({ tipo }: { tipo: string }) {
 /**
  * Card de um acontecimento do feed global.
  * Mostra SOMENTE dados públicos: nome, avatar, conquista, estatística e data.
+ * Avatar/nome são clicáveis (abrem o perfil público) e cada card tem curtidas.
  */
 export function SocialEventCard({
   evento,
   destaque = false,
+  userId,
 }: {
   evento: SocialEvento;
   /** Primeiro card da lista (recebe destaque visual). */
   destaque?: boolean;
+  /** Id do usuário logado (para curtir). */
+  userId?: string | undefined;
 }) {
   const meta = metadataEvento(evento.metadata);
   const nome = evento.perfis_publicos?.nome ?? "Jogador";
@@ -44,15 +64,39 @@ export function SocialEventCard({
   const apoia = textoApoioEvento(evento);
   const tipo = evento.tipo as TipoEventoFeed;
 
+  // Eventos especiais ganham energia visual (TOTW/ranking, raras, meta atingida).
+  const ehEspecial =
+    evento.tipo === "CONQUISTA_RARA" ||
+    evento.tipo === "RANKING_ALCANCADO" ||
+    evento.tipo === "META_ATINGIDA";
+
   return (
-    <article className={`card-premium p-4 transition-colors ${destaque ? "border-gold/40" : ""}`}>
-      <div className="flex items-start gap-3">
-        <AvatarJogador caminho={avatar} nome={nome} size="sm" />
+    <article
+      className={`card-premium relative overflow-hidden p-4 transition-colors ${
+        ehEspecial ? "destaque-borda border-gold/60" : destaque ? "border-gold/40" : ""
+      }`}
+    >
+      {ehEspecial && (
+        <div className="destaque-glow pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-gold/15 blur-2xl" />
+      )}
+      {ehEspecial && (
+        <div className="destaque-shine pointer-events-none absolute inset-0">
+          <div className="destaque-shine-faixa absolute top-0 h-full w-1/3 bg-gradient-to-r from-transparent via-gold/10 to-transparent" />
+        </div>
+      )}
+      <div className="relative flex items-start gap-3">
+        <LinkPerfilJogador id={evento.usuario_id}>
+          <AvatarJogador caminho={avatar} nome={nome} size="sm" />
+        </LinkPerfilJogador>
 
         <div className="min-w-0 flex-1">
-          {/* Cabeçalho: nome + tipo */}
+          {/* Cabeçalho: nome (clicável) + tipo */}
           <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-semibold text-foreground">{nome}</p>
+            <LinkPerfilJogador id={evento.usuario_id} className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground hover:text-gold">
+                {nome}
+              </p>
+            </LinkPerfilJogador>
             <span className="hidden items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground sm:inline-flex">
               <IconeTipo tipo={evento.tipo} />
               {rotuloTipoEvento(evento.tipo)}
@@ -89,13 +133,16 @@ export function SocialEventCard({
             </p>
           )}
 
-          {/* Rodapé: raridade + data relativa */}
+          {/* Rodapé: raridade + curtidas + data relativa */}
           <div className="mt-3 flex items-center justify-between gap-2">
-            {evento.conquistas ? (
-              <AchievementRarity raridade={evento.conquistas.raridade} />
-            ) : (
-              <span />
-            )}
+            <div className="flex items-center gap-2">
+              {evento.conquistas ? (
+                <AchievementRarity raridade={evento.conquistas.raridade} />
+              ) : (
+                <span />
+              )}
+              <LikeBotao eventoId={evento.id} userId={userId} compacto />
+            </div>
             <time className="shrink-0 text-[11px] text-muted-foreground">
               {dataRelativa(evento.criado_em)}
             </time>

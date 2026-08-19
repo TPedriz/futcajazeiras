@@ -346,7 +346,7 @@ export const todasCartinhasQuery = () =>
       const { data, error } = await supabase
         .from("ranking_cartinhas")
         .select(
-          "id, nome, avatar_url, posicao, ovr, stat_ritmo, stat_finalizacao, stat_passe, stat_drible, stat_defesa, stat_fisico, tema_carta",
+          "id, nome, avatar_url, posicao, ovr, stat_ritmo, stat_finalizacao, stat_passe, stat_drible, stat_defesa, stat_fisico, tema_carta, instagram, nivel_atual",
         );
       if (error) return [];
       return data ?? [];
@@ -359,7 +359,7 @@ export const perfisPublicosQuery = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("perfis_publicos")
-        .select("id, nome, posicao, avatar_url")
+        .select("id, nome, posicao, avatar_url, instagram")
         .order("nome", { ascending: true });
       if (error) throw error;
       return data ?? [];
@@ -842,7 +842,7 @@ export const minhasConquistasQuery = (usuarioId: string | undefined) =>
       const { data, error } = await supabase
         .from("usuario_conquistas")
         .select(
-          "id, usuario_id, conquista_id, desbloqueada_em, em_destaque, ordem_destaque, conquistas(id, codigo, nome, descricao, icone, cor, categoria, meta)",
+          "id, usuario_id, conquista_id, desbloqueada_em, em_destaque, ordem_destaque, conquistas(id, codigo, nome, descricao, icone, cor, categoria, meta, raridade)",
         )
         .eq("usuario_id", usuarioId);
       if (error) throw error;
@@ -1061,5 +1061,436 @@ export const cartinhaPerfilQuery = (usuarioId: string | undefined) =>
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+  });
+
+/**
+ * Cartinha pública de um jogador via view `ranking_cartinhas`
+ * (funciona para QUALQUER jogador, diferente de `cartinhaPerfilQuery`
+ * que depende da RLS do `perfis`).
+ */
+export const cartinhaPublicaQuery = (usuarioId: string | undefined) =>
+  queryOptions({
+    queryKey: ["cartinha-publica", usuarioId],
+    enabled: !!usuarioId,
+    queryFn: async () => {
+      if (!usuarioId) return null;
+      const { data, error } = await supabase
+        .from("ranking_cartinhas")
+        .select(
+          "id, nome, avatar_url, posicao, ovr, stat_ritmo, stat_finalizacao, stat_passe, stat_drible, stat_defesa, stat_fisico, tema_carta, instagram, nivel_atual",
+        )
+        .eq("id", usuarioId)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+  });
+
+/** Últimos acontecimentos públicos de um jogador no feed. */
+export const buscaEventosDoUsuario = async (usuarioId: string, limite = 10) => {
+  const { data, error } = await supabase
+    .from("feed_eventos")
+    .select(CAMPOS_FEED)
+    .eq("usuario_id", usuarioId)
+    .eq("visibilidade", "VISIVEL")
+    .order("criado_em", { ascending: false })
+    .limit(limite);
+  if (error) throw error;
+
+  const linhas = (data ?? []) as unknown as Array<Omit<SocialEvento, "perfis_publicos">>;
+  const ids = Array.from(new Set(linhas.map((l) => l.usuario_id)));
+  const perfis = new Map<string, SocialEvento["perfis_publicos"]>();
+  if (ids.length > 0) {
+    const { data: lista } = await supabase
+      .from("perfis_publicos")
+      .select("id, nome, avatar_url, time_coracao")
+      .in("id", ids);
+    for (const p of lista ?? []) {
+      perfis.set(p.id, {
+        id: p.id,
+        nome: p.nome,
+        avatar_url: p.avatar_url,
+        time_coracao: p.time_coracao,
+      });
+    }
+  }
+  return linhas.map((l) => ({
+    ...l,
+    perfis_publicos: perfis.get(l.usuario_id) ?? null,
+  }));
+};
+
+/** Feed de um usuário específico (query do TanStack Query). */
+export const eventosDoUsuarioQuery = (usuarioId: string | undefined, limite = 10) =>
+  queryOptions({
+    queryKey: ["feed-usuario", usuarioId],
+    enabled: !!usuarioId,
+    queryFn: async () => {
+      if (!usuarioId) return [];
+      return buscaEventosDoUsuario(usuarioId, limite);
+    },
+  });
+
+// ==================== REDE SOCIAL: busca, perfil público, conquistadores ====================
+
+/** Resultado da busca de jogadores (dados públicos). */
+export interface ResultadoBuscaJogador {
+  id: string;
+  nome: string;
+  avatar_url: string | null;
+  posicao: "goleiro" | "linha";
+  instagram: string | null;
+  nivel_atual: number;
+  time_coracao: "bahia" | "vitoria" | null;
+}
+
+/** Busca jogadores por nome ou @Instagram. Mínimo de 2 caracteres. */
+export const buscarJogadoresQuery = (termo: string) =>
+  queryOptions({
+    queryKey: ["buscar-jogadores", termo.trim().toLowerCase()],
+    enabled: termo.trim().length >= 2,
+    queryFn: async () => {
+      const t = termo.trim();
+      if (t.length < 2) return [];
+      const semArroba = t.replace(/^@+/, "").toLowerCase();
+      const { data, error } = await supabase
+        .from("perfis_publicos")
+        .select("id, nome, avatar_url, posicao, instagram, nivel_atual, time_coracao")
+        .or(`nome.ilike.%${t}%,instagram.ilike.%${semArroba}%`)
+        .eq("ativo", true)
+        .order("nome", { ascending: true })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as ResultadoBuscaJogador[];
+    },
+  });
+
+/** Dados públicos de um perfil de jogador (perfis_publicos). */
+export interface PerfilPublico {
+  id: string;
+  nome: string;
+  avatar_url: string | null;
+  posicao: "goleiro" | "linha";
+  instagram: string | null;
+  nivel_atual: number;
+  xp_atual: number;
+  time_coracao: "bahia" | "vitoria" | null;
+  ativo: boolean;
+}
+
+/** Perfil público de um jogador (qualquer autenticado pode ver). */
+export const perfilPublicoQuery = (usuarioId: string | undefined) =>
+  queryOptions({
+    queryKey: ["perfil-publico", usuarioId],
+    enabled: !!usuarioId,
+    queryFn: async () => {
+      if (!usuarioId) return null;
+      const { data, error } = await supabase
+        .from("perfis_publicos")
+        .select(
+          "id, nome, avatar_url, posicao, instagram, nivel_atual, xp_atual, time_coracao, ativo",
+        )
+        .eq("id", usuarioId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as PerfilPublico | null;
+    },
+  });
+
+/** Jogador que possui uma conquista (com dados públicos + total de conquistas). */
+export interface Conquistador {
+  usuario_id: string;
+  desbloqueada_em: string;
+  perfil: {
+    id: string;
+    nome: string;
+    avatar_url: string | null;
+    instagram: string | null;
+    nivel_atual: number;
+    posicao: "goleiro" | "linha";
+    time_coracao: "bahia" | "vitoria" | null;
+  } | null;
+  total_conquistas: number;
+}
+
+/** Todos os jogadores que já desbloquearam uma conquista (ordenado por data). */
+export const conquistadoresQuery = (conquistaId: string | undefined) =>
+  queryOptions({
+    queryKey: ["conquistadores", conquistaId],
+    enabled: !!conquistaId,
+    queryFn: async () => {
+      if (!conquistaId) return [];
+      const { data, error } = await supabase
+        .from("usuario_conquistas")
+        .select("usuario_id, desbloqueada_em")
+        .eq("conquista_id", conquistaId)
+        .order("desbloqueada_em", { ascending: true })
+        .limit(200);
+      if (error) throw error;
+
+      const linhas = data ?? [];
+      const ids = Array.from(new Set(linhas.map((l) => l.usuario_id)));
+
+      const perfis = new Map<string, Conquistador["perfil"]>();
+      const totais = new Map<string, number>();
+      if (ids.length > 0) {
+        const [{ data: lista }, { data: contagem }] = await Promise.all([
+          supabase
+            .from("perfis_publicos")
+            .select("id, nome, avatar_url, instagram, nivel_atual, posicao, time_coracao")
+            .in("id", ids),
+          supabase
+            .from("total_conquistas_usuario")
+            .select("usuario_id, total")
+            .in("usuario_id", ids),
+        ]);
+        for (const p of lista ?? []) {
+          perfis.set(p.id, {
+            id: p.id,
+            nome: p.nome,
+            avatar_url: p.avatar_url,
+            instagram: p.instagram,
+            nivel_atual: p.nivel_atual,
+            posicao: p.posicao,
+            time_coracao: p.time_coracao,
+          });
+        }
+        for (const c of contagem ?? []) totais.set(c.usuario_id ?? "", Number(c.total ?? 0));
+      }
+
+      return linhas.map((l) => ({
+        usuario_id: l.usuario_id,
+        desbloqueada_em: l.desbloqueada_em,
+        perfil: perfis.get(l.usuario_id) ?? null,
+        total_conquistas: totais.get(l.usuario_id) ?? 0,
+      }));
+    },
+  });
+
+/** Quantos jogadores conquistaram cada conquista (mapa conquista_id -> total). */
+export const conquistasContagemQuery = () =>
+  queryOptions({
+    queryKey: ["conquistas-contagem"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("total_conquistadores")
+        .select("conquista_id, total");
+      if (error) throw error;
+      const mapa = new Map<string, number>();
+      for (const c of data ?? []) {
+        if (c.conquista_id) mapa.set(c.conquista_id, Number(c.total ?? 0));
+      }
+      return mapa;
+    },
+  });
+
+// ==================== FEED: curtidas ====================
+
+export interface LikesDoEvento {
+  total: number;
+  curti: boolean;
+}
+
+/** Total de curtidas de um evento + se o usuário atual curtiu. */
+export const likesDoEventoQuery = (eventoId: string | undefined, userId: string | undefined) =>
+  queryOptions({
+    queryKey: ["likes-evento", eventoId, userId],
+    enabled: !!eventoId,
+    queryFn: async () => {
+      if (!eventoId) return { total: 0, curti: false };
+      const [{ count }, { data: meu }] = await Promise.all([
+        supabase
+          .from("feed_likes")
+          .select("id", { count: "exact", head: true })
+          .eq("feed_evento_id", eventoId),
+        userId
+          ? supabase
+              .from("feed_likes")
+              .select("id")
+              .eq("feed_evento_id", eventoId)
+              .eq("user_id", userId)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+      return { total: count ?? 0, curti: !!meu };
+    },
+  });
+
+/** Quem curtiu um evento (para a lista "Curtido por"). */
+export interface Curtidor {
+  id: string;
+  nome: string;
+  avatar_url: string | null;
+  instagram: string | null;
+  nivel_atual: number;
+  criado_em: string;
+}
+
+export const curtidoresQuery = (eventoId: string | undefined) =>
+  queryOptions({
+    queryKey: ["curtidores", eventoId],
+    enabled: !!eventoId,
+    queryFn: async () => {
+      if (!eventoId) return [];
+      const { data, error } = await supabase
+        .from("feed_likes")
+        .select("user_id, criado_em")
+        .eq("feed_evento_id", eventoId)
+        .order("criado_em", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+
+      const ids = Array.from(new Set((data ?? []).map((l) => l.user_id)));
+      const perfis = new Map<string, Omit<Curtidor, "criado_em">>();
+      if (ids.length > 0) {
+        const { data: lista } = await supabase
+          .from("perfis_publicos")
+          .select("id, nome, avatar_url, instagram, nivel_atual")
+          .in("id", ids);
+        for (const p of lista ?? []) {
+          perfis.set(p.id, {
+            id: p.id,
+            nome: p.nome,
+            avatar_url: p.avatar_url,
+            instagram: p.instagram,
+            nivel_atual: p.nivel_atual,
+          });
+        }
+      }
+
+      return (data ?? []).map((l) => ({
+        ...(perfis.get(l.user_id) ?? {
+          id: l.user_id,
+          nome: "Jogador",
+          avatar_url: null,
+          instagram: null,
+          nivel_atual: 1,
+        }),
+        criado_em: l.criado_em,
+      }));
+    },
+  });
+
+/** Alterna a curtida do usuário atual (RPC idempotente no banco). */
+export async function alternarLikeFeed(eventoId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("alternar_like_feed", {
+    p_feed_evento_id: eventoId,
+  });
+  if (error) throw error;
+  return data ?? false;
+}
+
+// ==================== AGENDA DA ARENA ====================
+
+/** Todos os eventos da arena (para a agenda completa e o painel admin). */
+export const agendaEventosQuery = () =>
+  queryOptions({
+    queryKey: ["agenda-eventos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("arena_eventos")
+        .select("*")
+        .order("data_evento", { ascending: true })
+        .order("hora_inicio", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/** Próximos eventos agendados (landing "Próximos Babas"). */
+export const proximosEventosAgendaQuery = (limite = 5) =>
+  queryOptions({
+    queryKey: ["agenda-proximos", limite],
+    queryFn: async () => {
+      const hoje = new Date().toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("arena_eventos")
+        .select("*")
+        .eq("status", "agendado")
+        .gte("data_evento", hoje)
+        .order("data_evento", { ascending: true })
+        .order("hora_inicio", { ascending: true })
+        .limit(limite);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+// ==================== METAS COLETIVAS ====================
+
+/** Metas coletivas da comunidade (mais recentes primeiro). */
+export const metasQuery = () =>
+  queryOptions({
+    queryKey: ["metas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("metas")
+        .select("*")
+        .order("criado_em", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/** Contribuições de uma meta (histórico, respeitando anonimato). */
+export interface ContribuicaoMeta {
+  id: string;
+  meta_id: string;
+  user_id: string;
+  valor: number;
+  anonima: boolean;
+  status: string;
+  criado_em: string;
+  confirmada_em: string | null;
+  perfis_publicos: { id: string; nome: string; avatar_url: string | null } | null;
+}
+
+export const contribuicoesMetaQuery = (metaId: string | undefined) =>
+  queryOptions({
+    queryKey: ["contribuicoes-meta", metaId],
+    enabled: !!metaId,
+    queryFn: async () => {
+      if (!metaId) return [];
+      const { data, error } = await supabase
+        .from("contribuicoes_meta")
+        .select("id, meta_id, user_id, valor, anonima, status, criado_em, confirmada_em")
+        .eq("meta_id", metaId)
+        .order("criado_em", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+
+      const linhas = (data ?? []) as ContribuicaoMeta[];
+      const ids = Array.from(new Set(linhas.filter((l) => !l.anonima).map((l) => l.user_id)));
+      const nomes = new Map<string, { id: string; nome: string; avatar_url: string | null }>();
+      if (ids.length > 0) {
+        const { data: perfis } = await supabase
+          .from("perfis_publicos")
+          .select("id, nome, avatar_url")
+          .in("id", ids);
+        for (const p of perfis ?? []) nomes.set(p.id, p);
+      }
+      return linhas.map((l) => ({
+        ...l,
+        perfis_publicos: l.anonima ? null : (nomes.get(l.user_id) ?? null),
+      }));
+    },
+  });
+
+/** Metas em que o usuário contribuiu (seção "Participações" do perfil). */
+export const minhasContribuicoesQuery = (userId: string | undefined) =>
+  queryOptions({
+    queryKey: ["minhas-contribuicoes", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from("contribuicoes_meta")
+        .select("id, meta_id, valor, anonima, status, criado_em, confirmada_em")
+        .eq("user_id", userId)
+        .order("criado_em", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
     },
   });

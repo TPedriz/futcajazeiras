@@ -5,13 +5,16 @@ import {
   conquistasQuery,
   minhasConquistasQuery,
   totaisConquistasQuery,
+  conquistasContagemQuery,
   type TotaisConquistas,
 } from "@/lib/babaQueries";
 import { rotuloCategoriaConquista, type Conquista } from "@/lib/gamificacao";
 import { RARIDADES, ROTULOS_RARIDADE, rotuloRaridade } from "@/lib/feed";
 import { AchievementProgress } from "@/components/AchievementProgress";
 import { AchievementRarity } from "@/components/AchievementRarity";
-import { Lock } from "lucide-react";
+import { ConquistadoresModal } from "@/components/ConquistadoresModal";
+import type { ConquistaResumoModal } from "@/components/ConquistadoresModal";
+import { Lock, Users } from "lucide-react";
 
 type FiltroRaridade = "todas" | (typeof RARIDADES)[number];
 
@@ -55,9 +58,11 @@ function valorDaCategoria(categoria: string, t: TotaisConquistas): number | null
  */
 export function AchievementCatalog({ usuarioId }: { usuarioId: string | undefined }) {
   const [filtro, setFiltro] = useState<FiltroRaridade>("todas");
+  const [conquistaAberta, setConquistaAberta] = useState<ConquistaResumoModal | null>(null);
   const { data: catalogo } = useQuery(conquistasQuery());
   const { data: minhas } = useQuery(minhasConquistasQuery(usuarioId));
   const { data: totais } = useQuery(totaisConquistasQuery(usuarioId));
+  const { data: contagem } = useQuery(conquistasContagemQuery());
 
   const desbloqueadas = new Set((minhas ?? []).map((m) => m.conquista_id));
 
@@ -148,6 +153,32 @@ export function AchievementCatalog({ usuarioId }: { usuarioId: string | undefine
                         />
                       </div>
                     )}
+
+                    {/* "N jogadores conquistaram" — abre a lista de conquistadores */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConquistaAberta({
+                          id: c.id,
+                          nome: c.nome,
+                          icone: c.icone,
+                          cor: c.cor,
+                          raridade: c.raridade,
+                          descricao: c.descricao,
+                        })
+                      }
+                      className="mt-2 inline-flex items-center gap-1 rounded-full border border-border/60 bg-surface px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-gold/40 hover:text-gold"
+                      aria-label={`Ver jogadores com a conquista ${c.nome}`}
+                    >
+                      <Users className="size-3" />
+                      {(contagem?.get(c.id) ?? 0) === 0
+                        ? "Ninguém conquistou ainda"
+                        : `${contagem?.get(c.id) ?? 0} ${
+                            (contagem?.get(c.id) ?? 0) === 1
+                              ? "jogador conquistou"
+                              : "jogadores conquistaram"
+                          }`}
+                    </button>
                   </div>
                 );
               })}
@@ -155,6 +186,14 @@ export function AchievementCatalog({ usuarioId }: { usuarioId: string | undefine
           </div>
         ))
       )}
+
+      <ConquistadoresModal
+        conquista={conquistaAberta}
+        aberto={!!conquistaAberta}
+        onAbertoChange={(aberto) => {
+          if (!aberto) setConquistaAberta(null);
+        }}
+      />
     </div>
   );
 }

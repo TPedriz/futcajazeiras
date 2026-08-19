@@ -118,7 +118,7 @@ export function AchievementFeed({
   return (
     <div className="space-y-3">
       {eventos.map((e, i) => (
-        <SocialEventCard key={e.id} evento={e} destaque={i === 0} />
+        <SocialEventCard key={e.id} evento={e} destaque={i === 0} userId={userId} />
       ))}
 
       {hasNextPage && (

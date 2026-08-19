@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { feedGlobalPreviewQuery } from "@/lib/babaQueries";
+import { feedGlobalPreviewQuery, perfilAtualQuery } from "@/lib/babaQueries";
 import { SocialEventCard } from "@/components/SocialEventCard";
 import { FeedSkeleton } from "@/components/AchievementFeed";
 import { Trophy, ArrowRight } from "lucide-react";
@@ -20,6 +20,7 @@ export function FeedPreview() {
   const qc = useQueryClient();
   const [nomeCanal] = useState(() => `feed-preview-${++contadorCanais}`);
   const { data: eventos, isLoading, isError } = useQuery(feedGlobalPreviewQuery());
+  const { data: perfilData } = useQuery(perfilAtualQuery());
 
   // Realtime: novo evento -> invalida a prévia (atualiza o cache).
   useEffect(() => {
@@ -62,7 +63,7 @@ export function FeedPreview() {
         <>
           <div className="space-y-2">
             {lista.map((e) => (
-              <SocialEventCard key={e.id} evento={e} />
+              <SocialEventCard key={e.id} evento={e} userId={perfilData?.user.id} />
             ))}
           </div>
           <Link to="/conquistas" className="block">
