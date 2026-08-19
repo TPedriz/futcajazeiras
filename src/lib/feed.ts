@@ -87,8 +87,17 @@ export function rotuloTipoEvento(tipo: string): string {
 // ============================================================================
 // Raridade das conquistas (espelha a coluna `conquistas.raridade`).
 // ============================================================================
-export type RaridadeConquista = "comum" | "incomum" | "rara" | "epica" | "lendaria" | "mitica";
+export type RaridadeConquista =
+  | "comum"
+  | "incomum"
+  | "rara"
+  | "epica"
+  | "lendaria"
+  | "mitica"
+  | "fundadora"
+  | "arquiteto";
 
+/** Ordem crescente de importância — `arquiteto` é o topo absoluto. */
 export const RARIDADES: RaridadeConquista[] = [
   "comum",
   "incomum",
@@ -96,7 +105,28 @@ export const RARIDADES: RaridadeConquista[] = [
   "epica",
   "lendaria",
   "mitica",
+  "fundadora",
+  "arquiteto",
 ];
+
+/** Peso de ordenação (maior = mais raro). */
+export const PESO_RARIDADE: Record<RaridadeConquista, number> = {
+  comum: 0,
+  incomum: 1,
+  rara: 2,
+  epica: 3,
+  lendaria: 4,
+  mitica: 5,
+  fundadora: 6,
+  arquiteto: 7,
+};
+
+export function pesoRaridade(raridade?: string | null): number {
+  if (raridade && raridade in PESO_RARIDADE) {
+    return PESO_RARIDADE[raridade as RaridadeConquista];
+  }
+  return 0;
+}
 
 export const ROTULOS_RARIDADE: Record<RaridadeConquista, string> = {
   comum: "Comum",
@@ -105,6 +135,8 @@ export const ROTULOS_RARIDADE: Record<RaridadeConquista, string> = {
   epica: "Épica",
   lendaria: "Lendária",
   mitica: "Mítica",
+  fundadora: "Fundadora",
+  arquiteto: "Arquiteto",
 };
 
 export function rotuloRaridade(raridade?: string | null): string {
@@ -133,6 +165,10 @@ export function classesRaridade(raridade?: string | null, desbloqueada = true): 
       return "border-gold/60 bg-gold/10 text-gold shadow-[0_0_22px_rgba(217,167,86,0.45)]";
     case "mitica":
       return "border-fuchsia-400/60 bg-fuchsia-400/10 text-fuchsia-300 shadow-[0_0_26px_rgba(232,121,249,0.5)]";
+    case "fundadora":
+      return "border-gold bg-gradient-to-br from-gold/25 via-amber-300/10 to-transparent text-gold shadow-[0_0_30px_rgba(217,167,86,0.65)]";
+    case "arquiteto":
+      return "border-cyan-300/80 bg-gradient-to-br from-cyan-300/20 via-fuchsia-400/15 to-gold/20 text-cyan-200 shadow-[0_0_36px_rgba(103,232,249,0.7)]";
     case "comum":
     default:
       return "border-gold/40 bg-gold/5 text-gold shadow-[0_0_10px_rgba(217,167,86,0.15)]";
@@ -146,6 +182,8 @@ export const ICONES_RARIDADE: Record<RaridadeConquista, string> = {
   epica: "🟣",
   lendaria: "🟡",
   mitica: "💎",
+  fundadora: "👑",
+  arquiteto: "🛠️",
 };
 
 export function iconeRaridade(raridade?: string | null): string {
