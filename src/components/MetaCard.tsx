@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { contribuicoesMetaQuery, perfilAtualQuery } from "@/lib/babaQueries";
+import { contribuicoesMetaQuery, perfilAtualQuery, type ContribuicaoMeta } from "@/lib/babaQueries";
 import {
   formatarReais,
   progressoMeta,
@@ -41,11 +41,13 @@ export function MetaCard({
   meta,
   onContribuir,
   onCadastrarItem,
+  onPagarItem,
   mostrarHistorico = true,
 }: {
   meta: Meta;
   onContribuir?: (meta: Meta) => void;
   onCadastrarItem?: (meta: Meta) => void;
+  onPagarItem?: (meta: Meta, contribuicao: ContribuicaoMeta) => void;
   mostrarHistorico?: boolean;
 }) {
   const { data: contribuicoes } = useQuery(contribuicoesMetaQuery(meta.id));
@@ -209,6 +211,19 @@ export function MetaCard({
               <span className="inline-flex items-center gap-1 text-sm font-semibold text-success">
                 <CheckCircle2 className="size-4" /> Cadastrado e pago ✓
               </span>
+            ) : onPagarItem ? (
+              <div className="flex flex-col items-end gap-1">
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400">
+                  <CreditCard className="size-3.5" /> Cadastro feito — falta o pagamento
+                </span>
+                <Button
+                  variant="gold"
+                  size="sm"
+                  onClick={() => onPagarItem(meta, minhaContribuicao)}
+                >
+                  <CreditCard className="size-4" /> Pagar agora
+                </Button>
+              </div>
             ) : (
               <span className="inline-flex items-center gap-1 text-sm font-semibold text-amber-400">
                 <CreditCard className="size-4" /> Cadastro pendente de pagamento

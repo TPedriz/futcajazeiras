@@ -11,6 +11,8 @@ import {
 import { MetaCard } from "@/components/MetaCard";
 import { ContribuicaoDialog } from "@/components/ContribuicaoDialog";
 import { CadastroItemMetaDialog } from "@/components/CadastroItemMetaDialog";
+import { PixMetaPagamento } from "@/components/PixMetaPagamento";
+import type { ContribuicaoMeta } from "@/lib/babaQueries";
 import { AvatarJogador } from "@/components/AvatarJogador";
 import { LinkPerfilJogador } from "@/components/LinkPerfilJogador";
 import { formatarReais } from "@/lib/redeSocial";
@@ -41,6 +43,10 @@ function MetasPage() {
 
   const [metaEmContribuicao, setMetaEmContribuicao] = useState<Meta | null>(null);
   const [metaEmCadastroItem, setMetaEmCadastroItem] = useState<Meta | null>(null);
+  const [metaEmPagamento, setMetaEmPagamento] = useState<Meta | null>(null);
+  const [contribuicaoEmPagamento, setContribuicaoEmPagamento] = useState<ContribuicaoMeta | null>(
+    null,
+  );
   const [historicoAberto, setHistoricoAberto] = useState<string | null>(null);
 
   const ativas = (metas ?? []).filter((m) => m.status === "ativa");
@@ -120,6 +126,10 @@ function MetasPage() {
                 meta={meta}
                 onContribuir={(m) => setMetaEmContribuicao(m)}
                 onCadastrarItem={(m) => setMetaEmCadastroItem(m)}
+                onPagarItem={(m, c) => {
+                  setMetaEmPagamento(m);
+                  setContribuicaoEmPagamento(c);
+                }}
               />
               <HistoricoMeta
                 metaId={meta.id}
@@ -169,6 +179,19 @@ function MetasPage() {
         aberto={!!metaEmCadastroItem}
         onAbertoChange={(aberto) => {
           if (!aberto) setMetaEmCadastroItem(null);
+        }}
+      />
+
+      {/* Etapa 2 — pagamento de um item já cadastrado (pendente) */}
+      <PixMetaPagamento
+        aberto={!!metaEmPagamento && !!contribuicaoEmPagamento}
+        contribuicaoId={contribuicaoEmPagamento?.id ?? null}
+        titulo={metaEmPagamento?.titulo ?? "Item"}
+        onAbertoChange={(aberto) => {
+          if (!aberto) {
+            setMetaEmPagamento(null);
+            setContribuicaoEmPagamento(null);
+          }
         }}
       />
     </div>
