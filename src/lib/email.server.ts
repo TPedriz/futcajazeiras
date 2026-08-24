@@ -16,11 +16,16 @@ export function urlBase(): string {
 function resendKey(): string {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY não configurado");
-  return key;
+  return key.trim();
 }
 
 function remetente(): string {
-  return process.env.RESEND_FROM_EMAIL || "Fut Cajazeiras <nao-responder@futcajazeiras.com.br>";
+  const raw =
+    process.env.RESEND_FROM_EMAIL || "Fut Cajazeiras <nao-responder@futcajazeiras.com.br>";
+  // Tolera aspas literais/coladas ao colar do .env (ex.: `"Nome <email>"`),
+  // que o Resend rejeitaria com 400 validation_error.
+  const limpo = raw.trim().replace(/^["']|["']$/g, "");
+  return limpo || "Fut Cajazeiras <nao-responder@futcajazeiras.com.br>";
 }
 
 export async function enviarEmail(opts: {
@@ -44,7 +49,9 @@ export async function enviarEmail(opts: {
   if (!res.ok) {
     const texto = await res.text().catch(() => "");
     console.error(`[Resend] falha ao enviar [${res.status}]: ${texto}`);
-    throw new Error(`Falha ao enviar o e-mail [${res.status}]`);
+    // Expõe a resposta real do Resend para diagnóstico (ex.: domínio não
+    // verificado, chave inválida, formato do remetente, etc.).
+    throw new Error(`Falha ao enviar o e-mail [${res.status}]: ${texto}`);
   }
 }
 
