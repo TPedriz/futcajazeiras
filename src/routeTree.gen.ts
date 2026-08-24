@@ -11,13 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as AtualizarCadastroRouteImport } from './routes/atualizar-cadastro'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
 import { Route as AuthenticatedBabaRouteImport } from './routes/_authenticated/baba'
 import { Route as AuthenticatedCartinhasRouteImport } from './routes/_authenticated/cartinhas'
@@ -50,11 +50,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AgendaRoute = AgendaRouteImport.update({
-  id: '/agenda',
-  path: '/agenda',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AtualizarCadastroRoute = AtualizarCadastroRouteImport.update({
   id: '/atualizar-cadastro',
   path: '/atualizar-cadastro',
@@ -83,6 +78,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAjudaRoute = AuthenticatedAjudaRouteImport.update({
@@ -207,13 +207,13 @@ const ApiPublicMercadopagoWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/agenda': typeof AgendaRoute
   '/atualizar-cadastro': typeof AtualizarCadastroRoute
   '/auth': typeof AuthRoute
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/agenda': typeof AuthenticatedAgendaRoute
   '/ajuda': typeof AuthenticatedAjudaRoute
   '/baba': typeof AuthenticatedBabaRoute
   '/cartinhas': typeof AuthenticatedCartinhasRoute
@@ -239,12 +239,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/agenda': typeof AgendaRoute
   '/atualizar-cadastro': typeof AtualizarCadastroRoute
   '/auth': typeof AuthRoute
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/agenda': typeof AuthenticatedAgendaRoute
   '/ajuda': typeof AuthenticatedAjudaRoute
   '/baba': typeof AuthenticatedBabaRoute
   '/cartinhas': typeof AuthenticatedCartinhasRoute
@@ -272,13 +272,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/agenda': typeof AgendaRoute
   '/atualizar-cadastro': typeof AtualizarCadastroRoute
   '/auth': typeof AuthRoute
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
   '/_authenticated/ajuda': typeof AuthenticatedAjudaRoute
   '/_authenticated/baba': typeof AuthenticatedBabaRoute
   '/_authenticated/cartinhas': typeof AuthenticatedCartinhasRoute
@@ -306,13 +306,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/agenda'
     | '/atualizar-cadastro'
     | '/auth'
     | '/esqueci-senha'
     | '/recuperar-senha'
     | '/sitemap.xml'
     | '/admin'
+    | '/agenda'
     | '/ajuda'
     | '/baba'
     | '/cartinhas'
@@ -338,12 +338,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/agenda'
     | '/atualizar-cadastro'
     | '/auth'
     | '/esqueci-senha'
     | '/recuperar-senha'
     | '/sitemap.xml'
+    | '/agenda'
     | '/ajuda'
     | '/baba'
     | '/cartinhas'
@@ -370,13 +370,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/agenda'
     | '/atualizar-cadastro'
     | '/auth'
     | '/esqueci-senha'
     | '/recuperar-senha'
     | '/sitemap.xml'
     | '/_authenticated/admin'
+    | '/_authenticated/agenda'
     | '/_authenticated/ajuda'
     | '/_authenticated/baba'
     | '/_authenticated/cartinhas'
@@ -404,7 +404,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AgendaRoute: typeof AgendaRoute
   AtualizarCadastroRoute: typeof AtualizarCadastroRoute
   AuthRoute: typeof AuthRoute
   EsqueciSenhaRoute: typeof EsqueciSenhaRoute
@@ -428,13 +427,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agenda': {
-      id: '/agenda'
-      path: '/agenda'
-      fullPath: '/agenda'
-      preLoaderRoute: typeof AgendaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/atualizar-cadastro': {
@@ -477,6 +469,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/agenda': {
+      id: '/_authenticated/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AuthenticatedAgendaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ajuda': {
@@ -680,6 +679,7 @@ const AuthenticatedPerfilRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
   AuthenticatedAjudaRoute: typeof AuthenticatedAjudaRoute
   AuthenticatedBabaRoute: typeof AuthenticatedBabaRoute
   AuthenticatedCartinhasRoute: typeof AuthenticatedCartinhasRoute
@@ -692,6 +692,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
   AuthenticatedAjudaRoute: AuthenticatedAjudaRoute,
   AuthenticatedBabaRoute: AuthenticatedBabaRoute,
   AuthenticatedCartinhasRoute: AuthenticatedCartinhasRoute,
@@ -708,7 +709,6 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AgendaRoute: AgendaRoute,
   AtualizarCadastroRoute: AtualizarCadastroRoute,
   AuthRoute: AuthRoute,
   EsqueciSenhaRoute: EsqueciSenhaRoute,

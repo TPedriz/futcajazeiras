@@ -3,6 +3,7 @@ import { useState } from "react";
 import { TrendingUp } from "lucide-react";
 import { todasCartinhasQuery } from "@/lib/babaQueries";
 import { AvatarJogador } from "@/components/AvatarJogador";
+import { InstagramLink } from "@/components/InstagramLink";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -88,6 +89,7 @@ export function RankingCartinhas() {
                 {cat.rotulo} · {c.posicao === "goleiro" ? "Goleiro" : "Linha"}
               </p>
             </div>
+            <InstagramLink valor={c.instagram} compacto className="shrink-0" />
             <p className="font-display text-xl text-gold">{c[cat.chave] ?? 0}</p>
           </div>
         ))}

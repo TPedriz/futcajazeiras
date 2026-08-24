@@ -21,10 +21,28 @@ export async function cartinhaParaPng(
   }
 }
 
-/** Dispara o download do PNG da cartinha. */
+/**
+ * Dispara o download do PNG da cartinha.
+ * No celular, abre o "share sheet" (seleção de app) para enviar a imagem
+ * direto para o WhatsApp/Instagram/etc.; em desktop (ou quando não há suporte)
+ * baixa o arquivo normalmente.
+ */
 export async function baixarCartinha(node: HTMLElement, nomeArquivo = "cartinha.png") {
   const blob = await cartinhaParaPng(node, nomeArquivo);
   if (!blob) return false;
+
+  // No celular: prioriza o Web Share API para o usuário escolher o app.
+  const arquivo = new File([blob], nomeArquivo, { type: "image/png" });
+  const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+  if (nav.canShare?.({ files: [arquivo] })) {
+    try {
+      await navigator.share({ files: [arquivo], title: nomeArquivo });
+      return true;
+    } catch {
+      /* usuário cancelou: cai no download */
+    }
+  }
+
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

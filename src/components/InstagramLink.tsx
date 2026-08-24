@@ -29,12 +29,12 @@ export function InstagramLink({
       onClick={(e) => e.stopPropagation()}
       aria-label={`Instagram ${rotulo}`}
       className={cn(
-        "inline-flex items-center gap-1 text-xs text-sky-400/90 transition-colors hover:text-sky-300 hover:underline",
+        "inline-flex max-w-full shrink-0 items-center gap-1 text-xs text-sky-400/90 transition-colors hover:text-sky-300 hover:underline",
         className,
       )}
     >
       <Instagram className="size-3.5 shrink-0" aria-hidden />
-      <span className="truncate">{compacto ? rotulo : rotulo}</span>
+      <span className="min-w-0 truncate">{compacto ? rotulo : rotulo}</span>
     </a>
   );
 }

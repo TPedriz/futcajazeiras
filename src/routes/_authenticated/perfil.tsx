@@ -773,6 +773,7 @@ function MinhaCartinha({
           nivel={nivel}
           tema={tema}
           conquistas={conquistas}
+          instagram={perfil.instagram}
         />
       </div>
       <div className="grid grid-cols-2 gap-2">

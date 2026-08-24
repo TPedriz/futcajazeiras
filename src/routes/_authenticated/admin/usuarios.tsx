@@ -40,6 +40,7 @@ import { FiltroCargo, type FiltroPapel } from "@/components/FiltroCargo";
 import { AprovacoesConvidados } from "@/components/AprovacoesConvidados";
 import { AprovacoesAssociacao } from "@/components/AprovacoesAssociacao";
 import { EditorEstatisticasAdmin } from "@/components/EditorEstatisticasAdmin";
+import { InstagramLink } from "@/components/InstagramLink";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formataTelefone, normalizaTelefone } from "@/lib/telefone";
@@ -778,17 +779,18 @@ function UsuariosPage() {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
-                  <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="min-w-0 flex-1 basis-full sm:basis-auto sm:flex-1">
                     <p
-                      className={`truncate font-semibold ${p.ativo ? "" : "text-muted-foreground line-through"}`}
+                      className={`break-words font-semibold ${p.ativo ? "" : "text-muted-foreground line-through"}`}
                     >
                       {p.nome}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {p.telefone ? formataTelefone(p.telefone) : "sem WhatsApp"} •{" "}
                       {p.posicao === "goleiro" ? "Goleiro" : "Linha"}
                     </p>
+                    <InstagramLink valor={p.instagram} compacto className="mt-0.5" />
                     <div className="mt-1 flex flex-wrap gap-1">
                       <Badge variant="outline" className="border-gold/40 text-gold capitalize">
                         {papelDe(p.id)}
@@ -979,10 +981,7 @@ function UsuariosPage() {
             </DialogDescription>
           </DialogHeader>
           {estatisticasDe && (
-            <EditorEstatisticasAdmin
-              usuarioId={estatisticasDe.id}
-              nome={estatisticasDe.nome}
-            />
+            <EditorEstatisticasAdmin usuarioId={estatisticasDe.id} nome={estatisticasDe.nome} />
           )}
         </DialogContent>
       </Dialog>
