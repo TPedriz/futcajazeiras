@@ -2,6 +2,11 @@
 // Todas as chamadas ao Resend usam fetch — nada é exposto ao cliente.
 export { emailSintetico, emailReal } from "./email";
 
+// Suporte a process.env sem exigir @types/node no tsconfig deste projeto.
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 const RESEND_API = "https://api.resend.com/emails";
 
 export function urlBase(): string {
