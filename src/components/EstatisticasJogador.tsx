@@ -81,7 +81,7 @@ export function EstatisticasJogador({ usuarioId }: { usuarioId: string | undefin
           <p className="text-sm text-muted-foreground">
             Nenhum cartão amarelo nos últimos {situacao.janela} babas. Jogo limpo! 🟢
           </p>
-        ) : situacao.suspenso ? (
+        ) : suspensaoAtiva ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3">
             <p className="flex items-center gap-2 text-sm font-semibold text-destructive">
               <ShieldAlert className="size-4" /> Você está suspenso do próximo baba
