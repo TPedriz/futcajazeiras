@@ -50,6 +50,10 @@ function AtualizarCadastroPage() {
   const [email, setEmail] = useState(emailCadastrado ?? "");
   const [loading, setLoading] = useState(false);
   const [aguardando, setAguardando] = useState(!!emailCadastrado && !jaConfirmado);
+  // E-mail para o qual o último link foi enviado (mantém a correção do usuário).
+  const [emailEnviado, setEmailEnviado] = useState<string | null>(emailCadastrado);
+
+  const emailExibido = emailEnviado ?? emailCadastrado ?? email;
 
   // Se já estiver confirmado, libera o acesso.
   useEffect(() => {
@@ -66,6 +70,7 @@ function AtualizarCadastroPage() {
     setLoading(true);
     try {
       await solicitar({ data: { email: valor } });
+      setEmailEnviado(valor);
       setAguardando(true);
     } catch (err) {
       toast.error("Não foi possível enviar a confirmação", {
@@ -75,6 +80,7 @@ function AtualizarCadastroPage() {
       setLoading(false);
     }
   };
+
 
   const sair = async () => {
     await supabase.auth.signOut();
