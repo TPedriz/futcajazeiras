@@ -23,6 +23,41 @@ export function rotuloTipoArrecadacao(tipo: string | null | undefined): string {
 /** Tamanhos de camisa disponíveis (padrão brasileiro de uniformes). */
 export const TAMANHOS_CAMISA = ["P", "M", "G", "GG", "XG", "XXG"] as const;
 
+/**
+ * Tamanho único aplicado aos itens genéricos (ex.: colete comum).
+ * Itens genéricos não têm personalização — todos usam este tamanho.
+ */
+export const TAMANHO_ITEM_PADRAO = "Único";
+
+/**
+ * Quantos itens (ex.: coletes) a meta comporta: valor alvo ÷ valor individual.
+ * Retorna 0 quando não há valor individual definido.
+ */
+export function itensAteMeta(
+  valorAlvo: number | null | undefined,
+  valorItem: number | null | undefined,
+): number {
+  const alvo = Number(valorAlvo ?? 0);
+  const item = Number(valorItem ?? 0);
+  if (!Number.isFinite(alvo) || !Number.isFinite(item) || item <= 0 || alvo <= 0) return 0;
+  return Math.floor(alvo / item);
+}
+
+/** Itens que ainda faltam para bater a meta (considera o já arrecadado). */
+export function itensRestantes(
+  valorAlvo: number | null | undefined,
+  valorItem: number | null | undefined,
+  valorArrecadado: number | null | undefined,
+): number {
+  const alvo = Number(valorAlvo ?? 0);
+  const arrecadado = Number(valorArrecadado ?? 0);
+  const restante = Math.max(0, alvo - arrecadado);
+  return itensAteMeta(restante, valorItem);
+}
+
+/** Nome padrão exibido para itens genéricos sem personalização. */
+export const ROTULO_ITEM_GENERICO = "Item genérico (sem personalização)";
+
 export interface ItemArrecadacaoWhatsApp {
   id: string;
   nome: string;
@@ -40,6 +75,17 @@ export interface MetaItemWhatsApp {
   valor_arrecadado: number;
   prazo_cadastro: string | null;
   prazo_pagamento: string | null;
+  exige_personalizacao?: boolean;
+}
+
+/** Uma linha da lista de participantes (pagos ou pendentes) para o WhatsApp. */
+function linhaParticipante(c: ItemArrecadacaoWhatsApp, i: number): string {
+  const partes: string[] = [];
+  if (c.nome_camisa) partes.push(`"${c.nome_camisa}"`);
+  if (c.numero_camisa) partes.push(`#${c.numero_camisa}`);
+  if (c.tamanho) partes.push(`(${c.tamanho})`);
+  const detalhe = partes.length > 0 ? ` — ${partes.join(" ")}` : "";
+  return `${i + 1}. ${c.nome}${detalhe}`;
 }
 
 /** Data dd/MM/yyyy ou "" se ausente. */
@@ -68,6 +114,8 @@ export function formatarArrecadacaoItemParaWhatsApp(
   linhas.push(`Valor por item: ${formatarReais(meta.valor_item)}`);
   if (meta.valor_alvo != null && meta.valor_alvo > 0) {
     linhas.push(`Meta total: ${formatarReais(meta.valor_alvo)}`);
+    const capacidade = itensAteMeta(meta.valor_alvo, meta.valor_item);
+    if (capacidade > 0) linhas.push(`Itens até bater a meta: ${capacidade}`);
   }
   linhas.push(`Arrecadado: ${formatarReais(meta.valor_arrecadado)}`);
   if (meta.prazo_cadastro) linhas.push(`Prazo de cadastro: ${dataCurta(meta.prazo_cadastro)}`);
@@ -78,21 +126,11 @@ export function formatarArrecadacaoItemParaWhatsApp(
 
   linhas.push("");
   linhas.push(`✅ PAGOS (${pagos.length})`);
-  pagos.forEach((c, i) => {
-    const nomeCamisa = c.nome_camisa ? `"${c.nome_camisa}"` : "—";
-    const numero = c.numero_camisa ? `#${c.numero_camisa}` : "";
-    const tamanho = c.tamanho ? `(${c.tamanho})` : "";
-    linhas.push(`${i + 1}. ${c.nome} — ${nomeCamisa} ${numero} ${tamanho}`);
-  });
+  pagos.forEach((c, i) => linhas.push(linhaParticipante(c, i)));
 
   linhas.push("");
   linhas.push(`⏳ PENDENTES DE PAGAMENTO (${pendentes.length})`);
-  pendentes.forEach((c, i) => {
-    const nomeCamisa = c.nome_camisa ? `"${c.nome_camisa}"` : "—";
-    const numero = c.numero_camisa ? `#${c.numero_camisa}` : "";
-    const tamanho = c.tamanho ? `(${c.tamanho})` : "";
-    linhas.push(`${i + 1}. ${c.nome} — ${nomeCamisa} ${numero} ${tamanho}`);
-  });
+  pendentes.forEach((c, i) => linhas.push(linhaParticipante(c, i)));
 
   if (pagos.length === 0 && pendentes.length === 0) {
     linhas.push("");

@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   Plus,
@@ -34,6 +35,7 @@ import {
 import {
   formatarArrecadacaoItemParaWhatsApp,
   formatarReais,
+  itensAteMeta,
   progressoMeta,
   rotuloCategoriaMeta,
   rotuloStatusMeta,
@@ -71,6 +73,8 @@ const FORM_VAZIO = {
   valor_item: "",
   prazo_cadastro: "",
   prazo_pagamento: "",
+  exige_personalizacao: false,
+  tamanho_padrao: "",
 };
 
 function AdminMetas() {
@@ -106,6 +110,8 @@ function AdminMetas() {
         p_valor_item: form.valor_item ? Number(form.valor_item) : undefined,
         p_prazo_cadastro: form.prazo_cadastro || undefined,
         p_prazo_pagamento: form.prazo_pagamento || undefined,
+        p_exige_personalizacao: form.exige_personalizacao,
+        p_tamanho_padrao: form.tamanho_padrao.trim() || undefined,
       });
       if (error) throw error;
       return data;
@@ -134,6 +140,8 @@ function AdminMetas() {
         p_valor_item: editForm.valor_item ? Number(editForm.valor_item) : undefined,
         p_prazo_cadastro: editForm.prazo_cadastro || undefined,
         p_prazo_pagamento: editForm.prazo_pagamento || undefined,
+        p_exige_personalizacao: editForm.exige_personalizacao,
+        p_tamanho_padrao: editForm.tamanho_padrao.trim() || undefined,
       });
       if (error) throw error;
     },
@@ -186,6 +194,8 @@ function AdminMetas() {
       valor_item: m.valor_item != null ? String(m.valor_item) : "",
       prazo_cadastro: m.prazo_cadastro ?? "",
       prazo_pagamento: m.prazo_pagamento ?? "",
+      exige_personalizacao: m.exige_personalizacao ?? false,
+      tamanho_padrao: m.tamanho_padrao ?? "",
     });
   };
 
@@ -281,6 +291,16 @@ function AdminMetas() {
                         <span className="font-semibold text-gold">
                           {formatarReais(m.valor_item)} / item
                         </span>
+                        {!m.exige_personalizacao && (
+                          <span className="rounded-full border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+                            Genérico · {m.tamanho_padrao || "Único"}
+                          </span>
+                        )}
+                        {itensAteMeta(m.valor_alvo, m.valor_item) > 0 && (
+                          <span className="text-muted-foreground">
+                            {itensAteMeta(m.valor_alvo, m.valor_item)} itens até a meta
+                          </span>
+                        )}
                         <ResumoItemMeta metaId={m.id} />
                         <span className="text-muted-foreground">
                           Arrecadado {formatarReais(prog.arrecadado)}
@@ -438,9 +458,11 @@ function ContribuicoesAdmin({
               <p className="truncate text-xs font-semibold text-foreground">
                 {c.anonima ? "Anônima" : (c.perfis_publicos?.nome ?? "Jogador")}
               </p>
-              {ehItem && c.nome_camisa && (
+              {ehItem && (c.nome_camisa || c.tamanho) && (
                 <p className="truncate text-[10px] text-muted-foreground">
-                  Camisa "{c.nome_camisa}" · {c.tamanho} · #{c.numero_camisa}
+                  {c.nome_camisa
+                    ? `Camisa "${c.nome_camisa}" · ${c.tamanho} · #${c.numero_camisa}`
+                    : `Item genérico · ${c.tamanho}`}
                 </p>
               )}
               <p className="text-[10px] text-muted-foreground">
@@ -553,18 +575,40 @@ function FormCampos({
         </div>
 
         {ehItem ? (
-          <div className="space-y-1">
-            <Label htmlFor="meta-valor-item">Valor por item (R$) *</Label>
-            <Input
-              id="meta-valor-item"
-              type="number"
-              min={1}
-              step="0.01"
-              value={form.valor_item}
-              onChange={(e) => setForm({ valor_item: e.target.value })}
-              placeholder="71"
-            />
-          </div>
+          <>
+            <div className="space-y-1">
+              <Label htmlFor="meta-valor-item">Valor por item (R$) *</Label>
+              <Input
+                id="meta-valor-item"
+                type="number"
+                min={1}
+                step="0.01"
+                value={form.valor_item}
+                onChange={(e) => setForm({ valor_item: e.target.value })}
+                placeholder="71"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="meta-alvo-item">Valor alvo total (R$)</Label>
+              <Input
+                id="meta-alvo-item"
+                type="number"
+                min={1}
+                step="0.01"
+                value={form.valor_alvo}
+                onChange={(e) => setForm({ valor_alvo: e.target.value })}
+                placeholder="Opcional — ex.: 1500"
+              />
+              {form.valor_item && form.valor_alvo && (
+                <p className="text-[10px] text-muted-foreground">
+                  <strong className="text-foreground">
+                    {itensAteMeta(Number(form.valor_alvo), Number(form.valor_item))}
+                  </strong>{" "}
+                  itens até bater a meta.
+                </p>
+              )}
+            </div>
+          </>
         ) : (
           <div className="space-y-1">
             <Label htmlFor="meta-alvo">Valor alvo (R$) *</Label>
@@ -578,6 +622,39 @@ function FormCampos({
               placeholder="1500"
             />
           </div>
+        )}
+
+        {ehItem && (
+          <>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
+              <div className="min-w-0">
+                <Label htmlFor="meta-personalizacao" className="text-xs">
+                  Exigir personalização
+                </Label>
+                <p className="text-[10px] leading-snug text-muted-foreground">
+                  Desligado = item genérico (sem nome/número, todos com o tamanho padrão). Ligado =
+                  pede nome, tamanho e número na camisa.
+                </p>
+              </div>
+              <Switch
+                id="meta-personalizacao"
+                checked={form.exige_personalizacao}
+                onCheckedChange={(v) => setForm({ exige_personalizacao: v })}
+              />
+            </div>
+            {!form.exige_personalizacao && (
+              <div className="space-y-1">
+                <Label htmlFor="meta-tamanho-padrao">Tamanho padrão</Label>
+                <Input
+                  id="meta-tamanho-padrao"
+                  value={form.tamanho_padrao}
+                  onChange={(e) => setForm({ tamanho_padrao: e.target.value })}
+                  placeholder="Único"
+                  maxLength={20}
+                />
+              </div>
+            )}
+          </>
         )}
 
         {ehItem ? (

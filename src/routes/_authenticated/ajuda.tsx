@@ -51,7 +51,7 @@ const secoes = [
       ],
       [
         "Por que meu check-in está bloqueado?",
-        "Ou a lista ainda não abriu / já fechou, ou a mensalidade está em aberto depois do dia 10, ou você está cumprindo uma suspensão (cartão vermelho ou faltas).",
+        "Três motivos: a lista ainda não abriu ou já fechou; sua associação está suspensa por inadimplência (mensalidade em aberto há mais de um mês); ou você está cumprindo uma suspensão (cartão vermelho, amarelos ou faltas). Mensalidade atrasada sem completar 1 mês mostra aviso, mas não bloqueia o check-in.",
       ],
       [
         "Não tenho celular / não consigo confirmar. E agora?",
@@ -95,7 +95,19 @@ const secoes = [
     itens: [
       [
         "Quando vence a mensalidade?",
-        "Todo dia 10 de cada mês. Depois disso, o check-in fica bloqueado até o pagamento.",
+        "Todo dia 10 de cada mês. A partir do dia 11, se ainda estiver em aberto, ela recebe automaticamente a multa por atraso.",
+      ],
+      [
+        "Tem multa por atraso?",
+        "Tem. Passou do vencimento (dia 10) e a mensalidade continua em aberto: o sistema soma a multa por atraso definida pela diretoria ao valor do PIX. O valor aparece detalhado na tela de Pagamentos.",
+      ],
+      [
+        "O que acontece se eu ficar muito tempo sem pagar?",
+        "Ao completar 1 mês de atraso, sua associação fica suspensa: você perde temporariamente os direitos de associado e o check-in fica bloqueado até a regularização.",
+      ],
+      [
+        "Como retomo minha associação?",
+        "Na tela de Pagamentos aparece o card “Retomar vínculo”, com todos os meses em aberto (já com as multas) e a Taxa de Associação de reinscrição. Um único PIX quita tudo e reativa sua associação automaticamente.",
       ],
       [
         "Como pago?",

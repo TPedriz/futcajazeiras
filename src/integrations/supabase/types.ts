@@ -585,11 +585,14 @@ export type Database = {
           id: string;
           mp_payment_id: string | null;
           mp_status: string | null;
+          multa_aplicada_em: string | null;
+          multa_valor: number;
           pago_em: string | null;
           pix_expira_em: string | null;
           pix_qr_base64: string | null;
           pix_qr_code: string | null;
           referencia: string;
+          regularizacao_id: string | null;
           status: Database["public"]["Enums"]["status_pagamento"];
           usuario_id: string;
           valor: number;
@@ -601,11 +604,14 @@ export type Database = {
           id?: string;
           mp_payment_id?: string | null;
           mp_status?: string | null;
+          multa_aplicada_em?: string | null;
+          multa_valor?: number;
           pago_em?: string | null;
           pix_expira_em?: string | null;
           pix_qr_base64?: string | null;
           pix_qr_code?: string | null;
           referencia: string;
+          regularizacao_id?: string | null;
           status?: Database["public"]["Enums"]["status_pagamento"];
           usuario_id: string;
           valor?: number;
@@ -617,11 +623,14 @@ export type Database = {
           id?: string;
           mp_payment_id?: string | null;
           mp_status?: string | null;
+          multa_aplicada_em?: string | null;
+          multa_valor?: number;
           pago_em?: string | null;
           pix_expira_em?: string | null;
           pix_qr_base64?: string | null;
           pix_qr_code?: string | null;
           referencia?: string;
+          regularizacao_id?: string | null;
           status?: Database["public"]["Enums"]["status_pagamento"];
           usuario_id?: string;
           valor?: number;
@@ -651,12 +660,14 @@ export type Database = {
           criado_em: string;
           criado_por: string | null;
           descricao: string;
+          exige_personalizacao: boolean;
           id: string;
           imagem_url: string | null;
           prazo: string | null;
           prazo_cadastro: string | null;
           prazo_pagamento: string | null;
           status: string;
+          tamanho_padrao: string;
           tipo_arrecadacao: string;
           titulo: string;
           valor_alvo: number | null;
@@ -669,12 +680,14 @@ export type Database = {
           criado_em?: string;
           criado_por?: string | null;
           descricao?: string;
+          exige_personalizacao?: boolean;
           id?: string;
           imagem_url?: string | null;
           prazo?: string | null;
           prazo_cadastro?: string | null;
           prazo_pagamento?: string | null;
           status?: string;
+          tamanho_padrao?: string;
           tipo_arrecadacao?: string;
           titulo: string;
           valor_alvo?: number | null;
@@ -687,12 +700,14 @@ export type Database = {
           criado_em?: string;
           criado_por?: string | null;
           descricao?: string;
+          exige_personalizacao?: boolean;
           id?: string;
           imagem_url?: string | null;
           prazo?: string | null;
           prazo_cadastro?: string | null;
           prazo_pagamento?: string | null;
           status?: string;
+          tamanho_padrao?: string;
           tipo_arrecadacao?: string;
           titulo?: string;
           valor_alvo?: number | null;
@@ -858,6 +873,7 @@ export type Database = {
           stat_fisico: number;
           stat_passe: number;
           stat_ritmo: number;
+          status_conta: string;
           status_pagamento: Database["public"]["Enums"]["status_pagamento"];
           telefone: string;
           tema_carta: string;
@@ -883,6 +899,7 @@ export type Database = {
           stat_fisico?: number;
           stat_passe?: number;
           stat_ritmo?: number;
+          status_conta?: string;
           status_pagamento?: Database["public"]["Enums"]["status_pagamento"];
           telefone?: string;
           tema_carta?: string;
@@ -908,6 +925,7 @@ export type Database = {
           stat_fisico?: number;
           stat_passe?: number;
           stat_ritmo?: number;
+          status_conta?: string;
           status_pagamento?: Database["public"]["Enums"]["status_pagamento"];
           telefone?: string;
           tema_carta?: string;
@@ -1117,6 +1135,98 @@ export type Database = {
             columns: ["presenca_id"];
             isOneToOne: true;
             referencedRelation: "presencas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      regularizacoes: {
+        Row: {
+          atualizado_em: string;
+          criado_em: string;
+          criado_por: string | null;
+          id: string;
+          pago_em: string | null;
+          status: string;
+          taxa_associacao: number;
+          usuario_id: string;
+          valor_debitos: number;
+          valor_total: number;
+        };
+        Insert: {
+          atualizado_em?: string;
+          criado_em?: string;
+          criado_por?: string | null;
+          id?: string;
+          pago_em?: string | null;
+          status?: string;
+          taxa_associacao?: number;
+          usuario_id: string;
+          valor_debitos?: number;
+          valor_total?: number;
+        };
+        Update: {
+          atualizado_em?: string;
+          criado_em?: string;
+          criado_por?: string | null;
+          id?: string;
+          pago_em?: string | null;
+          status?: string;
+          taxa_associacao?: number;
+          usuario_id?: string;
+          valor_debitos?: number;
+          valor_total?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "regularizacoes_criado_por_fkey";
+            columns: ["criado_por"];
+            isOneToOne: false;
+            referencedRelation: "perfis";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "regularizacoes_usuario_id_fkey";
+            columns: ["usuario_id"];
+            isOneToOne: false;
+            referencedRelation: "perfis";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      regularizacoes_pagamento: {
+        Row: {
+          criado_em: string;
+          mp_payment_id: string | null;
+          mp_status: string | null;
+          pix_expira_em: string | null;
+          pix_qr_base64: string | null;
+          pix_qr_code: string | null;
+          regularizacao_id: string;
+        };
+        Insert: {
+          criado_em?: string;
+          mp_payment_id?: string | null;
+          mp_status?: string | null;
+          pix_expira_em?: string | null;
+          pix_qr_base64?: string | null;
+          pix_qr_code?: string | null;
+          regularizacao_id: string;
+        };
+        Update: {
+          criado_em?: string;
+          mp_payment_id?: string | null;
+          mp_status?: string | null;
+          pix_expira_em?: string | null;
+          pix_qr_base64?: string | null;
+          pix_qr_code?: string | null;
+          regularizacao_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "regularizacoes_pagamento_regularizacao_id_fkey";
+            columns: ["regularizacao_id"];
+            isOneToOne: true;
+            referencedRelation: "regularizacoes";
             referencedColumns: ["id"];
           },
         ];
@@ -1590,16 +1700,19 @@ export type Database = {
         };
         Returns: number;
       };
+      aplica_multas_usuario: { Args: { _usuario_id: string }; Returns: number };
       atualizar_meta_admin: {
         Args: {
           p_categoria?: string;
           p_descricao?: string;
+          p_exige_personalizacao?: boolean;
           p_imagem_url?: string;
           p_meta_id: string;
           p_prazo?: string;
           p_prazo_cadastro?: string;
           p_prazo_pagamento?: string;
           p_status?: string;
+          p_tamanho_padrao?: string;
           p_tipo_arrecadacao?: string;
           p_titulo?: string;
           p_valor_alvo?: number;
@@ -1607,13 +1720,14 @@ export type Database = {
         };
         Returns: undefined;
       };
+      atualiza_situacao_financeira: { Args: { _usuario_id?: string }; Returns: string };
       babas_pagos_convidado: { Args: { _user_id: string }; Returns: number };
       cadastrar_interesse_item: {
         Args: {
           p_meta_id: string;
-          p_nome_camisa: string;
-          p_numero_camisa: string;
-          p_tamanho: string;
+          p_nome_camisa?: string;
+          p_numero_camisa?: string;
+          p_tamanho?: string;
         };
         Returns: string;
       };
@@ -1639,6 +1753,7 @@ export type Database = {
         Args: { p_contribuicao_id: string };
         Returns: undefined;
       };
+      confirmar_regularizacao: { Args: { _regularizacao_id: string }; Returns: undefined };
       conquistas_do_usuario: {
         Args: { _usuario: string };
         Returns: {
@@ -1662,10 +1777,12 @@ export type Database = {
         Args: {
           p_categoria?: string;
           p_descricao?: string;
+          p_exige_personalizacao?: boolean;
           p_imagem_url?: string;
           p_prazo?: string;
           p_prazo_cadastro?: string;
           p_prazo_pagamento?: string;
+          p_tamanho_padrao?: string;
           p_tipo_arrecadacao?: string;
           p_titulo: string;
           p_valor_alvo?: number;
@@ -1686,6 +1803,7 @@ export type Database = {
           status: Database["public"]["Enums"]["status_convidado"];
         }[];
       };
+      criar_regularizacao: { Args: { _usuario_id?: string }; Returns: string };
       decidir_pedido_convidado: {
         Args: { _aprovar: boolean; _pedido_id: string };
         Returns: undefined;
@@ -1694,6 +1812,7 @@ export type Database = {
         Args: { conquista: string; usuario: string };
         Returns: undefined;
       };
+      eh_diretoria: { Args: { _user_id: string }; Returns: boolean };
       garante_mensalidade: {
         Args: { _referencia: string; _usuario_id: string };
         Returns: string;
@@ -1727,7 +1846,9 @@ export type Database = {
         };
         Returns: undefined;
       };
+      pendencias_financeiras: { Args: { _usuario_id?: string }; Returns: Json };
       reajusta_mensalidades_pendentes: { Args: never; Returns: undefined };
+      rotina_financeira_diaria: { Args: never; Returns: number };
       solicita_convite: {
         Args: { _anfitriao_id: string; _baba_id: string };
         Returns: string;
@@ -1749,6 +1870,8 @@ export type Database = {
       };
       total_associados_ativos: { Args: never; Returns: number };
       valor_mensalidade: { Args: never; Returns: number };
+      valor_multa_atraso: { Args: never; Returns: number };
+      valor_taxa_associacao: { Args: never; Returns: number };
       verifica_conquistas: { Args: { usuario: string }; Returns: undefined };
       verifica_evento_ranking: {
         Args: { p_usuario: string };

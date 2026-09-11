@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { contribuicoesMetaQuery, perfilAtualQuery, type ContribuicaoMeta } from "@/lib/babaQueries";
 import {
   formatarReais,
+  itensAteMeta,
   progressoMeta,
   rotuloCategoriaMeta,
   rotuloStatusMeta,
@@ -118,6 +119,23 @@ export function MetaCard({
               Custo por item
             </span>
             <span className="font-display text-2xl text-gold">{formatarReais(itemValor)}</span>
+          </div>
+
+          <div className="space-y-0.5 text-[11px] text-muted-foreground">
+            {!meta.exige_personalizacao && (
+              <p>
+                Item genérico — sem personalização, tamanho padrão{" "}
+                <strong className="text-foreground">{meta.tamanho_padrao || "Único"}</strong>.
+              </p>
+            )}
+            {itensAteMeta(meta.valor_alvo, meta.valor_item) > 0 && (
+              <p>
+                <strong className="text-foreground">
+                  {itensAteMeta(meta.valor_alvo, meta.valor_item)}
+                </strong>{" "}
+                itens até bater a meta.
+              </p>
+            )}
           </div>
 
           {/* Contadores: cadastrados e pagos */}

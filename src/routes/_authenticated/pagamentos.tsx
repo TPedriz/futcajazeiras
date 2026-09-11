@@ -4,10 +4,17 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   perfilAtualQuery,
   minhasMensalidadesQuery,
+  situacaoFinanceiraQuery,
   VALOR_MENSALIDADE_PADRAO,
 } from "@/lib/babaQueries";
 import { tempoDeAssociado } from "@/lib/associado";
-import { criarPixMensalidade, consultarPixMensalidade } from "@/lib/pagamentos.functions";
+import { formatarReais } from "@/lib/redeSocial";
+import {
+  criarPixMensalidade,
+  consultarPixMensalidade,
+  criarPixRegularizacao,
+  consultarPixRegularizacao,
+} from "@/lib/pagamentos.functions";
 import { PixDialog, type DadosPix } from "@/components/PixDialog";
 import { PresentearMensalidade } from "@/components/PresentearMensalidade";
 
@@ -24,6 +31,8 @@ import {
   Heart,
   QrCode,
   MessageCircle,
+  ShieldAlert,
+  RefreshCw,
 } from "lucide-react";
 
 const GRUPO_WHATSAPP_URL = "https://chat.whatsapp.com/HtGUdc005Hd9NLqY8Bcg3W";
@@ -51,15 +60,24 @@ export const Route = createFileRoute("/_authenticated/pagamentos")({
 function PagamentosPage() {
   const { data: perfilData } = useSuspenseQuery(perfilAtualQuery());
   const { data: mensalidades, isLoading } = useQuery(minhasMensalidadesQuery(perfilData?.user.id));
+  const { data: situacaoFin } = useQuery(situacaoFinanceiraQuery(perfilData?.user.id));
   const qc = useQueryClient();
 
   const gerarPix = useServerFn(criarPixMensalidade);
   const consultarPix = useServerFn(consultarPixMensalidade);
+  const gerarPixRegularizacao = useServerFn(criarPixRegularizacao);
+  const consultarPixRegularizacao = useServerFn(consultarPixRegularizacao);
 
   const [pixAberto, setPixAberto] = useState(false);
   const [mensalidadeAtiva, setMensalidadeAtiva] = useState<string | null>(null);
   const [dadosPix, setDadosPix] = useState<DadosPix | null>(null);
   const [pago, setPago] = useState(false);
+
+  // Retomada de vínculo (inadimplência)
+  const [regAberto, setRegAberto] = useState(false);
+  const [regId, setRegId] = useState<string | null>(null);
+  const [regDados, setRegDados] = useState<DadosPix | null>(null);
+  const [regPago, setRegPago] = useState(false);
 
   const cobrar = useMutation({
     mutationFn: async (mensalidadeId: string) => {
@@ -83,6 +101,30 @@ function PagamentosPage() {
     },
   });
 
+  const regularizar = useMutation({
+    mutationFn: async () => {
+      setRegAberto(true);
+      setRegDados(null);
+      setRegPago(false);
+      return await gerarPixRegularizacao();
+    },
+    onSuccess: (res) => {
+      setRegId(res.regularizacaoId);
+      if (res.pago) {
+        setRegPago(true);
+        void qc.invalidateQueries({ queryKey: ["mensalidades-minhas"] });
+        void qc.invalidateQueries({ queryKey: ["situacao-financeira"] });
+        void qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+        return;
+      }
+      setRegDados({ qrCode: res.qrCode, qrBase64: res.qrBase64, valor: res.valor });
+    },
+    onError: (e: Error) => {
+      setRegAberto(false);
+      toast.error("Não foi possível iniciar a regularização", { description: e.message });
+    },
+  });
+
   // Polling enquanto o modal está aberto e o pagamento não foi confirmado
   useEffect(() => {
     if (!pixAberto || pago || !mensalidadeAtiva) return;
@@ -93,6 +135,7 @@ function PagamentosPage() {
           setPago(true);
           qc.invalidateQueries({ queryKey: ["mensalidades-minhas"] });
           qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+          qc.invalidateQueries({ queryKey: ["situacao-financeira"] });
           toast.success("Mensalidade paga!");
         }
       } catch {
@@ -101,6 +144,26 @@ function PagamentosPage() {
     }, 5000);
     return () => clearInterval(id);
   }, [pixAberto, pago, mensalidadeAtiva, consultarPix, qc]);
+
+  // Polling da regularização (retomada de vínculo)
+  useEffect(() => {
+    if (!regAberto || regPago || !regId) return;
+    const id = setInterval(async () => {
+      try {
+        const r = await consultarPixRegularizacao({ data: { regularizacaoId: regId } });
+        if (r.pago) {
+          setRegPago(true);
+          void qc.invalidateQueries({ queryKey: ["mensalidades-minhas"] });
+          void qc.invalidateQueries({ queryKey: ["situacao-financeira"] });
+          void qc.invalidateQueries({ queryKey: ["perfil-atual"] });
+          toast.success("Vínculo restabelecido!");
+        }
+      } catch {
+        /* silencioso: tentamos de novo no próximo ciclo */
+      }
+    }, 5000);
+    return () => clearInterval(id);
+  }, [regAberto, regPago, regId, consultarPixRegularizacao, qc]);
 
   const tempo = tempoDeAssociado(perfilData?.perfil?.criado_em);
   const pagas = (mensalidades ?? []).filter((m) => m.status === "pago").length;
@@ -163,11 +226,69 @@ function PagamentosPage() {
 
       <PresentearMensalidade />
 
+      {situacaoFin?.statusConta === "INADIMPLENTE" && !situacaoFin.ehDiretoria && (
+        <div className="card-premium space-y-3 border border-destructive/40 p-4">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="size-5 shrink-0 text-destructive" />
+            <div>
+              <p className="font-display text-lg text-destructive">
+                Associação suspensa por inadimplência
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Sua mensalidade está em aberto há mais de um mês. Para retomar os direitos de
+                associação, quite os débitos abaixo e a nova Taxa de Associação.
+              </p>
+            </div>
+          </div>
+
+          <ul className="space-y-1.5">
+            {situacaoFin.mensalidades.map((m) => (
+              <li key={m.mensalidadeId} className="flex items-center justify-between gap-2 text-xs">
+                <span className="capitalize text-muted-foreground">
+                  {format(new Date(`${m.referencia}T12:00:00`), "MMMM 'de' yyyy", { locale: ptBR })}
+                  {m.atrasada && <span className="text-destructive"> • atrasada</span>}
+                </span>
+                <span className="shrink-0 text-foreground">
+                  {formatarReais(m.valor)}
+                  {m.multa > 0 && (
+                    <span className="text-destructive"> + {formatarReais(m.multa)}</span>
+                  )}
+                </span>
+              </li>
+            ))}
+            <li className="flex items-center justify-between gap-2 border-t border-border/60 pt-1.5 text-xs">
+              <span className="text-muted-foreground">Taxa de Associação (reinscrição)</span>
+              <span className="shrink-0 text-foreground">
+                {formatarReais(situacaoFin.taxaAssociacao)}
+              </span>
+            </li>
+            <li className="flex items-center justify-between gap-2 text-sm font-semibold">
+              <span>Total para retomar</span>
+              <span className="text-gold">{formatarReais(situacaoFin.totalRegularizacao)}</span>
+            </li>
+          </ul>
+
+          <Button
+            variant="hero"
+            size="lg"
+            className="w-full"
+            disabled={regularizar.isPending}
+            onClick={() => regularizar.mutate()}
+          >
+            <RefreshCw className="size-4" /> Retomar vínculo —{" "}
+            {formatarReais(situacaoFin.totalRegularizacao)}
+          </Button>
+        </div>
+      )}
+
       {isLoading && <p className="text-sm text-muted-foreground">Carregando histórico...</p>}
 
       <ul className="space-y-2">
         {(mensalidades ?? []).map((m) => {
           const pago = m.status === "pago";
+          const multa = Number(m.multa_valor ?? 0);
+          const base = Number(m.valor || VALOR_MENSALIDADE_PADRAO);
+          const total = base + multa;
           const atrasado = !pago && new Date(m.vencimento) < new Date();
           return (
             <li key={m.id} className="card-premium flex flex-wrap items-center gap-3 p-4">
@@ -185,6 +306,11 @@ function PagamentosPage() {
                   Vence em {format(new Date(`${m.vencimento}T12:00:00`), "dd/MM/yyyy")}
                   {pago && m.pago_em && ` • pago em ${format(new Date(m.pago_em), "dd/MM")}`}
                 </p>
+                {!pago && multa > 0 && (
+                  <p className="mt-1 text-[11px] text-destructive">
+                    Multa por atraso: {formatarReais(multa)} (inclusa no PIX)
+                  </p>
+                )}
               </div>
               <span
                 className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-widest ${
@@ -205,10 +331,7 @@ function PagamentosPage() {
                   disabled={cobrar.isPending}
                   onClick={() => cobrar.mutate(m.id)}
                 >
-                  <QrCode className="size-4" /> Pagar com PIX — R${" "}
-                  {Number(m.valor || VALOR_MENSALIDADE_PADRAO)
-                    .toFixed(2)
-                    .replace(".", ",")}
+                  <QrCode className="size-4" /> Pagar com PIX — {formatarReais(total)}
                 </Button>
               )}
             </li>
@@ -234,6 +357,16 @@ function PagamentosPage() {
         dados={dadosPix}
         carregando={cobrar.isPending}
         pago={pago}
+      />
+
+      <PixDialog
+        open={regAberto}
+        onOpenChange={setRegAberto}
+        titulo="Retomar vínculo"
+        descricao="Débitos retroativos + multas + Taxa de Associação em um único PIX."
+        dados={regDados}
+        carregando={regularizar.isPending}
+        pago={regPago}
       />
     </div>
   );

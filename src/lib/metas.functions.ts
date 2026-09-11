@@ -37,19 +37,24 @@ export const criarPixMeta = createServerFn({ method: "POST" })
 
     const { data: meta } = await supabase
       .from("metas")
-      .select("id, titulo, status, tipo_arrecadacao, valor_item")
+      .select("id, titulo, status, tipo_arrecadacao, valor_item, exige_personalizacao")
       .eq("id", contribuicao.meta_id)
       .maybeSingle();
     if (!meta) throw new Error("Meta não encontrada");
     if (meta.status !== "ativa") throw new Error("Esta meta não está mais ativa");
 
-    // Arrecadação por item: valor deve ser o fixo e personalização preenchida
-    // (garante que o cadastro passou pelo RPC cadastrar_interesse_item).
+    // Arrecadação por item: valor deve ser o fixo definido na meta.
+    // A personalização (nome/tamanho/número) só é exigida quando a meta pede —
+    // itens genéricos (ex.: colete comum) usam o tamanho padrão.
     if (meta.tipo_arrecadacao === "item") {
       if (Number(contribuicao.valor) !== Number(meta.valor_item))
         throw new Error("Valor da contribuição não confere com o item");
-      if (!contribuicao.nome_camisa || !contribuicao.tamanho || !contribuicao.numero_camisa)
+      if (
+        meta.exige_personalizacao &&
+        (!contribuicao.nome_camisa || !contribuicao.tamanho || !contribuicao.numero_camisa)
+      ) {
         throw new Error("Complete os dados de personalização do item");
+      }
     }
 
     const { data: perfil } = await supabase

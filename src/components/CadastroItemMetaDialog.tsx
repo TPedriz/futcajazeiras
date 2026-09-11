@@ -56,6 +56,8 @@ export function CadastroItemMetaDialog({
   const [contribuicaoId, setContribuicaoId] = useState<string | null>(null);
 
   const valorItem = Number(meta?.valor_item ?? 0);
+  const exigePersonalizacao = meta?.exige_personalizacao ?? false;
+  const tamanhoPadrao = meta?.tamanho_padrao || "Único";
   const prazoCadastro = meta?.prazo_cadastro ? new Date(`${meta.prazo_cadastro}T12:00:00`) : null;
   const prazoPagamento = meta?.prazo_pagamento
     ? new Date(`${meta.prazo_pagamento}T12:00:00`)
@@ -73,7 +75,8 @@ export function CadastroItemMetaDialog({
 
   const cadastrar = async () => {
     if (!meta) return;
-    if (!nomeCamisa.trim() || !tamanho || !numeroCamisa.trim()) {
+    // Item genérico (ex.: colete comum): cadastro em 1 clique, sem personalização.
+    if (exigePersonalizacao && (!nomeCamisa.trim() || !tamanho || !numeroCamisa.trim())) {
       toast.error("Preencha nome, tamanho e número da camisa.");
       return;
     }
@@ -82,9 +85,9 @@ export function CadastroItemMetaDialog({
       // Etapa 1: cadastra o interesse (custo fixo definido pela diretoria) — grátis.
       const { data: idNovo, error } = await supabase.rpc("cadastrar_interesse_item", {
         p_meta_id: meta.id,
-        p_nome_camisa: nomeCamisa.trim(),
-        p_tamanho: tamanho,
-        p_numero_camisa: numeroCamisa.trim(),
+        p_nome_camisa: exigePersonalizacao ? nomeCamisa.trim() : undefined,
+        p_tamanho: exigePersonalizacao ? tamanho : undefined,
+        p_numero_camisa: exigePersonalizacao ? numeroCamisa.trim() : undefined,
       });
       if (error) throw error;
       if (!idNovo) throw new Error("Não foi possível cadastrar.");
@@ -151,8 +154,8 @@ export function CadastroItemMetaDialog({
                   <Shirt className="size-3.5 text-gold" /> Como funciona — 2 etapas
                 </p>
                 <p className="mt-1">
-                  <strong className="text-foreground">1. Cadastro:</strong> preencha seus dados —{" "}
-                  grátis.
+                  <strong className="text-foreground">1. Cadastro:</strong>{" "}
+                  {exigePersonalizacao ? "preencha seus dados" : "confirme seu interesse"} — grátis.
                 </p>
                 <p>
                   <strong className="text-foreground">2. Pagamento:</strong> pague{" "}
@@ -185,46 +188,61 @@ export function CadastroItemMetaDialog({
                 </div>
               </div>
 
-              {/* Formulário de personalização */}
-              <div className="space-y-1">
-                <Label htmlFor="item-nome-camisa">Nome na camisa *</Label>
-                <Input
-                  id="item-nome-camisa"
-                  value={nomeCamisa}
-                  onChange={(e) => setNomeCamisa(e.target.value)}
-                  placeholder="Ex.: THIAGO"
-                  maxLength={20}
-                />
-              </div>
+              {/* Formulário: personalização só quando a meta exigir. */}
+              {exigePersonalizacao ? (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="item-nome-camisa">Nome na camisa *</Label>
+                    <Input
+                      id="item-nome-camisa"
+                      value={nomeCamisa}
+                      onChange={(e) => setNomeCamisa(e.target.value)}
+                      placeholder="Ex.: THIAGO"
+                      maxLength={20}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="item-tamanho">Tamanho *</Label>
-                  <Select value={tamanho} onValueChange={setTamanho}>
-                    <SelectTrigger id="item-tamanho">
-                      <SelectValue placeholder="Escolha" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TAMANHOS_CAMISA.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="item-tamanho">Tamanho *</Label>
+                      <Select value={tamanho} onValueChange={setTamanho}>
+                        <SelectTrigger id="item-tamanho">
+                          <SelectValue placeholder="Escolha" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TAMANHOS_CAMISA.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {t}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="item-numero">Número na camisa *</Label>
+                      <Input
+                        id="item-numero"
+                        value={numeroCamisa}
+                        onChange={(e) => setNumeroCamisa(e.target.value)}
+                        placeholder="Ex.: 10"
+                        maxLength={3}
+                        inputMode="numeric"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-xl border border-border/60 bg-surface p-3 text-xs leading-relaxed text-muted-foreground">
+                  <p className="flex items-center gap-1.5 font-semibold text-foreground">
+                    <Shirt className="size-3.5 text-gold" /> Item genérico
+                  </p>
+                  <p className="mt-1">
+                    Sem personalização — todos os itens saem no tamanho padrão{" "}
+                    <strong className="text-foreground">{tamanhoPadrao}</strong>. É só confirmar seu
+                    interesse, sem formulário.
+                  </p>
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="item-numero">Número na camisa *</Label>
-                  <Input
-                    id="item-numero"
-                    value={numeroCamisa}
-                    onChange={(e) => setNumeroCamisa(e.target.value)}
-                    placeholder="Ex.: 10"
-                    maxLength={3}
-                    inputMode="numeric"
-                  />
-                </div>
-              </div>
+              )}
 
               <Button
                 variant="gold"
@@ -238,7 +256,7 @@ export function CadastroItemMetaDialog({
                 ) : (
                   <CheckCircle2 className="size-4" />
                 )}
-                Cadastrar interesse (grátis)
+                {exigePersonalizacao ? "Cadastrar interesse (grátis)" : "Quero este item (grátis)"}
               </Button>
 
               <p className="text-center text-[11px] leading-relaxed text-muted-foreground">

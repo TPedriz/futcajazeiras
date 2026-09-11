@@ -1,6 +1,13 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { SocialEvento } from "@/lib/feed";
+import {
+  mensalidadeAtrasada,
+  normalizaStatusConta,
+  parseSituacaoFinanceira,
+  SITUACAO_FINANCEIRA_VAZIA,
+  type SituacaoFinanceira,
+} from "@/lib/financeiro";
 
 export const perfilAtualQuery = () =>
   queryOptions({
@@ -179,6 +186,15 @@ export const todosAssociadosQuery = () =>
 export const mesReferencia = (d: Date = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 
+/**
+ * Recalcula multas/status do associado (rotina idempotente no banco).
+ * Silencioso quando a migration financeira ainda não foi aplicada.
+ */
+async function atualizaSituacaoFinanceira(userId: string) {
+  const { error } = await supabase.rpc("atualiza_situacao_financeira", { _usuario_id: userId });
+  if (error) console.warn("atualiza_situacao_financeira indisponível:", error.message);
+}
+
 export const minhasMensalidadesQuery = (userId: string | undefined) =>
   queryOptions({
     queryKey: ["mensalidades-minhas", userId],
@@ -186,6 +202,7 @@ export const minhasMensalidadesQuery = (userId: string | undefined) =>
     queryFn: async () => {
       if (!userId) return [];
       await supabase.rpc("garante_mensalidades_mes");
+      await atualizaSituacaoFinanceira(userId);
       const { data, error } = await supabase
         .from("mensalidades")
         .select("*")
@@ -605,19 +622,33 @@ export const DIA_VENCIMENTO = 10;
 /** Valores padrão usados quando a configuração ainda não existe (espelha o servidor). */
 export const VALOR_MENSALIDADE_PADRAO = 15;
 export const VALOR_CONVIDADO_PADRAO = 5;
+export const VALOR_MULTA_ATRASO_PADRAO = 5;
 
-/** Situação do jogador para o check-in: inadimplência e suspensão. */
+/** Situação do jogador para o check-in: status da conta (inadimplência) e suspensão. */
 export const situacaoCheckinQuery = (userId: string | undefined, babaId: string | undefined) =>
   queryOptions({
     queryKey: ["situacao-checkin", userId, babaId],
     enabled: !!userId,
     queryFn: async () => {
-      if (!userId) return { inadimplente: false, suspenso: false, motivoSuspensao: "" };
+      if (!userId)
+        return {
+          inadimplente: false,
+          atrasado: false,
+          multa: 0,
+          vencimento: null as string | null,
+          suspenso: false,
+          motivoSuspensao: "",
+        };
+
+      // Aplica multas e recalcula o status da conta (rotina idempotente no banco).
+      await atualizaSituacaoFinanceira(userId);
+
       const referencia = mesReferencia();
-      const [{ data: mensalidade }, { data: suspensao }] = await Promise.all([
+      const [{ data: perfil }, { data: mensalidade }, { data: suspensao }] = await Promise.all([
+        supabase.from("perfis").select("*").eq("id", userId).maybeSingle(),
         supabase
           .from("mensalidades")
-          .select("status")
+          .select("status, vencimento, multa_valor")
           .eq("usuario_id", userId)
           .eq("referencia", referencia)
           .maybeSingle(),
@@ -632,15 +663,104 @@ export const situacaoCheckinQuery = (userId: string | undefined, babaId: string 
           : Promise.resolve({ data: null }),
       ]);
 
-      const hoje = new Date();
-      const passouVencimento = hoje.getDate() > DIA_VENCIMENTO;
-      const pago = mensalidade?.status === "pago";
+      const vencimento = mensalidade?.vencimento ?? null;
+      const pendente = mensalidade?.status === "pendente";
+      const atrasado = pendente && !!vencimento && new Date(`${vencimento}T23:59:59`) < new Date();
 
       return {
-        inadimplente: passouVencimento && !pago,
+        inadimplente: perfil?.status_conta === "INADIMPLENTE",
+        atrasado,
+        multa: Number(mensalidade?.multa_valor ?? 0),
+        vencimento,
         suspenso: !!suspensao,
         motivoSuspensao: suspensao?.motivo ?? "",
       };
+    },
+  });
+
+/** Situação financeira completa: débitos, multas e retomada de vínculo. */
+export const situacaoFinanceiraQuery = (userId: string | undefined) =>
+  queryOptions({
+    queryKey: ["situacao-financeira", userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<SituacaoFinanceira> => {
+      if (!userId) return SITUACAO_FINANCEIRA_VAZIA;
+      // Mantém multas e status em dia antes de montar o painel.
+      await atualizaSituacaoFinanceira(userId);
+      const { data, error } = await supabase.rpc("pendencias_financeiras", {
+        _usuario_id: userId,
+      });
+      if (!error && data) return parseSituacaoFinanceira(data);
+
+      // Fallback (migration ainda não aplicada): monta a situação localmente.
+      const [{ data: perfil }, { data: pendentes }] = await Promise.all([
+        supabase.from("perfis").select("*").eq("id", userId).maybeSingle(),
+        supabase
+          .from("mensalidades")
+          .select("*")
+          .eq("usuario_id", userId)
+          .eq("status", "pendente")
+          .order("referencia", { ascending: true }),
+      ]);
+
+      const statusConta = normalizaStatusConta(perfil?.status_conta);
+      const inadimplente = statusConta === "INADIMPLENTE";
+      const lista = (pendentes ?? []).map((m) => {
+        const valor = Number(m.valor);
+        const multa = Number(m.multa_valor ?? 0);
+        return {
+          mensalidadeId: m.id,
+          referencia: m.referencia,
+          vencimento: m.vencimento,
+          valor,
+          multa,
+          total: valor + multa,
+          atrasada: mensalidadeAtrasada(m.vencimento, false),
+        };
+      });
+      const totalDebitos = lista.reduce((soma, m) => soma + m.total, 0);
+      const taxaAssociacao = inadimplente ? VALOR_MENSALIDADE_PADRAO : 0;
+      return {
+        usuarioId: userId,
+        statusConta,
+        ehDiretoria: false,
+        mensalidades: lista,
+        totalDebitos,
+        valorMulta: VALOR_MULTA_ATRASO_PADRAO,
+        taxaAssociacao,
+        totalRegularizacao: totalDebitos + taxaAssociacao,
+        atrasadas: lista.filter((m) => m.atrasada).length,
+      };
+    },
+  });
+
+/** Valor configurado da multa por atraso (padrão R$ 5,00). */
+export const valorMultaAtrasoQuery = () =>
+  queryOptions({
+    queryKey: ["valor-multa-atraso"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("configuracoes")
+        .select("valor")
+        .eq("chave", "valor_multa_atraso")
+        .maybeSingle();
+      if (error) throw error;
+      return Number(data?.valor ?? VALOR_MULTA_ATRASO_PADRAO);
+    },
+  });
+
+/** Valor configurado da Taxa de Associação (reinscrição). */
+export const valorTaxaAssociacaoQuery = () =>
+  queryOptions({
+    queryKey: ["valor-taxa-associacao"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("configuracoes")
+        .select("valor")
+        .eq("chave", "valor_taxa_associacao")
+        .maybeSingle();
+      if (error) throw error;
+      return Number(data?.valor ?? VALOR_MENSALIDADE_PADRAO);
     },
   });
 

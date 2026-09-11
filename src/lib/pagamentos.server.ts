@@ -42,5 +42,16 @@ export async function aplicarPagamento(externalReference: string, status: string
     return { aplicado: aprovado };
   }
 
+  if (tipo === "regularizacao") {
+    // Quita os débitos do associado e devolve o vínculo (função SECURITY DEFINER).
+    if (aprovado) {
+      const { error } = await supabaseAdmin.rpc("confirmar_regularizacao", {
+        _regularizacao_id: id,
+      });
+      if (error) throw error;
+    }
+    return { aplicado: aprovado };
+  }
+
   return { aplicado: false };
 }

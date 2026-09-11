@@ -12,6 +12,7 @@ import { CartinhaProvider } from "@/components/CartinhaModal";
 import { BubbleConquista } from "@/components/BubbleConquista";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificacoesProvider } from "@/components/NotificacoesProvider";
+import { ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -119,6 +120,22 @@ function AuthenticatedLayout() {
           </header>
 
           <main className="mx-auto w-full max-w-md flex-1 px-4 pt-4 pb-10 md:max-w-6xl md:px-8">
+            {data?.perfil?.status_conta === "INADIMPLENTE" && (
+              <Link
+                to="/pagamentos"
+                className="mb-4 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3"
+              >
+                <ShieldAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-destructive">
+                    Associação suspensa por inadimplência
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Toque para ver os débitos em aberto e retomar seu vínculo.
+                  </p>
+                </div>
+              </Link>
+            )}
             <CartinhaProvider>
               <Outlet />
             </CartinhaProvider>

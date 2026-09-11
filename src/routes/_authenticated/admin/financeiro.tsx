@@ -7,10 +7,13 @@ import {
   papeisTodosQuery,
   valorMensalidadeQuery,
   valorConvidadoQuery,
+  valorMultaAtrasoQuery,
+  valorTaxaAssociacaoQuery,
   vagasAssociadosQuery,
   LIMITE_ASSOCIADOS,
   VALOR_MENSALIDADE_PADRAO,
   VALOR_CONVIDADO_PADRAO,
+  VALOR_MULTA_ATRASO_PADRAO,
 } from "@/lib/babaQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -29,6 +32,8 @@ import {
   Coins,
   Users,
   UserPlus,
+  ShieldAlert,
+  RefreshCw,
 } from "lucide-react";
 import { useState } from "react";
 import { format, addMonths } from "date-fns";
@@ -102,6 +107,7 @@ function FinanceiroPage() {
   });
 
   const emDia = associados.filter((a) => porUsuario.get(a.id)?.status === "pago").length;
+  const inadimplentes = associados.filter((a) => a.status_conta === "INADIMPLENTE").length;
 
   return (
     <div className="space-y-4">
@@ -143,6 +149,16 @@ function FinanceiroPage() {
         </div>
       </div>
 
+      {inadimplentes > 0 && (
+        <div className="card-premium flex items-center gap-2 border border-destructive/40 p-3">
+          <ShieldAlert className="size-4 shrink-0 text-destructive" />
+          <p className="text-xs text-muted-foreground">
+            <strong className="text-destructive">{inadimplentes}</strong> associado(s) com
+            associação suspensa por inadimplência.
+          </p>
+        </div>
+      )}
+
       <div className="card-premium p-4">
         <div className="flex items-center justify-between gap-2">
           <p className="flex items-center gap-2 text-xs uppercase tracking-widest text-gold">
@@ -180,6 +196,9 @@ function FinanceiroPage() {
 
       <ValorMensalidadeCard />
       <ValorConvidadoCard />
+      <ValorMultaCard />
+      <ValorTaxaAssociacaoCard />
+      <RotinaFinanceiraCard />
 
       <ul className="space-y-2">
         {visiveis.map((a) => {
@@ -196,7 +215,14 @@ function FinanceiroPage() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{a.nome}</p>
+                <p className="truncate text-sm font-semibold">
+                  {a.nome}
+                  {a.status_conta === "INADIMPLENTE" && (
+                    <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-widest text-destructive">
+                      Inadimplente
+                    </span>
+                  )}
+                </p>
                 <p className="truncate text-[11px] text-muted-foreground">
                   {a.telefone || a.email}
                 </p>
@@ -381,6 +407,173 @@ function ValorConvidadoCard() {
         O reajuste vale para os próximos PIX de convidado gerados. Convites já cobrados mantêm o
         valor pago.
       </p>
+    </div>
+  );
+}
+
+/** Card genérico para parametrizar um valor em `configuracoes`, com dupla confirmação. */
+function ConfigValorCard({
+  titulo,
+  chave,
+  padrao,
+  consulta,
+  invalidarKey,
+  placeholder,
+  descricao,
+  Icone,
+}: {
+  titulo: string;
+  chave: string;
+  padrao: number;
+  consulta: ReturnType<typeof valorMultaAtrasoQuery>;
+  invalidarKey: string;
+  placeholder: string;
+  descricao: string;
+  Icone: React.ComponentType<{ className?: string }>;
+}) {
+  const qc = useQueryClient();
+  const { data: valorAtual } = useQuery(consulta);
+  const [novo, setNovo] = useState("");
+  const [confirmando, setConfirmando] = useState(false);
+
+  const salvar = useMutation({
+    mutationFn: async () => {
+      const valor = Number(novo.replace(",", "."));
+      if (!Number.isFinite(valor) || valor < 0)
+        throw new Error("Informe um valor válido em reais.");
+      const { error } = await supabase
+        .from("configuracoes")
+        .upsert({ chave, valor, atualizado_em: new Date().toISOString() }, { onConflict: "chave" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(`${titulo} atualizado`, { description: descricao });
+      setConfirmando(false);
+      setNovo("");
+      void qc.invalidateQueries({ queryKey: [invalidarKey] });
+      void qc.invalidateQueries({ queryKey: ["situacao-financeira"] });
+      void qc.invalidateQueries({ queryKey: ["mensalidades-minhas"] });
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  const formatado = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  return (
+    <div className="card-premium space-y-3 p-4">
+      <div className="flex items-center gap-2">
+        <Icone className="size-4 text-gold" />
+        <p className="text-xs uppercase tracking-widest text-gold">{titulo}</p>
+      </div>
+      <p className="font-display text-3xl text-gold">{formatado(Number(valorAtual ?? padrao))}</p>
+      <div className="flex gap-2">
+        <Input
+          inputMode="decimal"
+          placeholder={placeholder}
+          aria-label={`Novo valor — ${titulo}`}
+          value={novo}
+          className="h-11"
+          onChange={(e) => {
+            setNovo(e.target.value);
+            setConfirmando(false);
+          }}
+        />
+        <Button
+          variant={confirmando ? "destructive" : "gold"}
+          size="lg"
+          disabled={!novo || salvar.isPending}
+          onClick={() => (confirmando ? salvar.mutate() : setConfirmando(true))}
+        >
+          {confirmando ? "Confirmar" : "Alterar"}
+        </Button>
+      </div>
+      {confirmando && (
+        <p className="text-[11px] text-destructive">
+          Confirme novamente: o valor passará a ser {novo.replace(".", ",")} reais. Toque em
+          “Confirmar” para aplicar.
+        </p>
+      )}
+      <p className="text-[11px] text-muted-foreground">{descricao}</p>
+    </div>
+  );
+}
+
+/** Multa por atraso (padrão R$ 5,00), aplicada em mensalidades vencidas. */
+function ValorMultaCard() {
+  return (
+    <ConfigValorCard
+      titulo="Multa por atraso"
+      chave="valor_multa_atraso"
+      padrao={VALOR_MULTA_ATRASO_PADRAO}
+      consulta={valorMultaAtrasoQuery()}
+      invalidarKey="valor-multa-atraso"
+      placeholder="Novo valor (ex.: 5)"
+      descricao="Acréscimo cobrado em cada mensalidade vencida e ainda pendente. Use 0 para desativar a multa."
+      Icone={AlertCircle}
+    />
+  );
+}
+
+/** Taxa de Associação (reinscrição), exigida na retomada de vínculo. */
+function ValorTaxaAssociacaoCard() {
+  return (
+    <ConfigValorCard
+      titulo="Taxa de Associação (reinscrição)"
+      chave="valor_taxa_associacao"
+      padrao={VALOR_MENSALIDADE_PADRAO}
+      consulta={valorTaxaAssociacaoQuery()}
+      invalidarKey="valor-taxa-associacao"
+      placeholder="Novo valor (ex.: 15)"
+      descricao="Cobrada junto com os débitos retroativos quando o associado inadimplente retoma o vínculo."
+      Icone={ShieldAlert}
+    />
+  );
+}
+
+/** Executa manualmente a rotina financeira (multas + suspensão por 1 mês de atraso). */
+function RotinaFinanceiraCard() {
+  const qc = useQueryClient();
+
+  const rodar = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("rotina_financeira_diaria");
+      if (error) throw error;
+      return Number(data ?? 0);
+    },
+    onSuccess: (qtd) => {
+      toast.success("Rotina financeira executada", {
+        description:
+          qtd > 0
+            ? `${qtd} conta(s) marcada(s) como inadimplente.`
+            : "Nenhuma nova inadimplência encontrada.",
+      });
+      void qc.invalidateQueries({ queryKey: ["associados-todos"] });
+      void qc.invalidateQueries({ queryKey: ["mensalidades-mes"] });
+    },
+    onError: (e: Error) => toast.error("Não foi possível executar", { description: e.message }),
+  });
+
+  return (
+    <div className="card-premium space-y-3 p-4">
+      <div className="flex items-center gap-2">
+        <RefreshCw className="size-4 text-gold" />
+        <p className="text-xs uppercase tracking-widest text-gold">Rotina financeira</p>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Recalcula multas e suspende (status{" "}
+        <strong className="text-foreground">INADIMPLENTE</strong>) quem está com 1 mês de atraso.
+        Roda automaticamente todo dia; use o botão para forçar agora.
+      </p>
+      <Button
+        variant="goldOutline"
+        size="lg"
+        className="w-full"
+        disabled={rodar.isPending}
+        onClick={() => rodar.mutate()}
+      >
+        <RefreshCw className="size-4" /> Executar agora
+      </Button>
     </div>
   );
 }

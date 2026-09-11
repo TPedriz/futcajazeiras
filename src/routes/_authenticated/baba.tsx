@@ -7,11 +7,11 @@ import {
   presencasDaSessaoQuery,
   situacaoCheckinQuery,
   todosAssociadosQuery,
-  DIA_VENCIMENTO,
   fechamentoEfetivo,
   aberturaEfetivo,
   baviRelacionadosQuery,
 } from "@/lib/babaQueries";
+import { formatarReais } from "@/lib/redeSocial";
 import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
 import { BadgeBaxvi } from "@/components/BadgeBaxvi";
@@ -382,13 +382,31 @@ function BabaPage() {
         </div>
       ) : situacao?.inadimplente ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center">
-          <p className="font-semibold text-destructive">Mensalidade em aberto</p>
+          <p className="font-semibold text-destructive">Associação suspensa</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            O vencimento é todo dia {DIA_VENCIMENTO}. Pague o PIX para liberar o check-in e os
-            convidados — a liberação é automática.
+            Sua mensalidade está em aberto há mais de um mês. Quite os débitos e a Taxa de
+            Associação para retomar o vínculo e liberar o check-in e os convidados.
           </p>
           <Link to="/pagamentos">
             <Button variant="gold" size="sm" className="mt-3">
+              Retomar vínculo
+            </Button>
+          </Link>
+        </div>
+      ) : situacao?.atrasado ? (
+        <div className="rounded-lg border border-gold/40 bg-gold/10 p-4 text-center">
+          <p className="font-semibold text-gold">Mensalidade atrasada</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Venceu em{" "}
+            {situacao.vencimento
+              ? format(new Date(`${situacao.vencimento}T12:00:00`), "dd/MM/yyyy", { locale: ptBR })
+              : "—"}
+            {situacao.multa > 0 && ` • multa de ${formatarReais(situacao.multa)}`}. Você ainda pode
+            confirmar presença, mas regularize antes de completar 1 mês de atraso para não ter a
+            associação suspensa.
+          </p>
+          <Link to="/pagamentos">
+            <Button variant="goldOutline" size="sm" className="mt-3">
               Pagar mensalidade
             </Button>
           </Link>
