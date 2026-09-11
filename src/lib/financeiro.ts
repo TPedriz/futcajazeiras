@@ -45,6 +45,10 @@ export interface SituacaoFinanceira {
   usuarioId: string | null;
   statusConta: StatusConta;
   ehDiretoria: boolean;
+  /** Possui cargo de associado (tem obrigação de mensalidade). */
+  ehAssociado: boolean;
+  /** false = caso sob gestão manual da diretoria (a rotina automática não atua). */
+  financeiroAutomatico: boolean;
   mensalidades: MensalidadePendente[];
   totalDebitos: number;
   valorMulta: number;
@@ -57,6 +61,8 @@ export const SITUACAO_FINANCEIRA_VAZIA: SituacaoFinanceira = {
   usuarioId: null,
   statusConta: "ATIVO",
   ehDiretoria: false,
+  ehAssociado: false,
+  financeiroAutomatico: true,
   mensalidades: [],
   totalDebitos: 0,
   valorMulta: 0,
@@ -95,6 +101,8 @@ export function parseSituacaoFinanceira(json: unknown): SituacaoFinanceira {
     usuarioId: bruto.usuarioId ? String(bruto.usuarioId) : null,
     statusConta: normalizaStatusConta(bruto.statusConta as string | undefined),
     ehDiretoria: bruto.ehDiretoria === true,
+    ehAssociado: bruto.ehAssociado === true,
+    financeiroAutomatico: bruto.financeiroAutomatico !== false,
     mensalidades,
     totalDebitos: numero(bruto.totalDebitos),
     valorMulta: numero(bruto.valorMulta),

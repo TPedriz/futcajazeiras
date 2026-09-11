@@ -84,6 +84,17 @@ ok("parse reconstrói total da mensalidade", situacao.mensalidades[1].total === 
 const vazio = parseSituacaoFinanceira(null);
 ok("parse nulo -> vazio", vazio.statusConta === "ATIVO" && vazio.mensalidades.length === 0);
 ok("parse nulo -> total zero", vazio.totalRegularizacao === 0);
+ok("parse nulo -> automático por padrão", vazio.financeiroAutomatico === true);
+ok("parse nulo -> não é associado", vazio.ehAssociado === false);
+
+const manual = parseSituacaoFinanceira({
+  statusConta: "INADIMPLENTE",
+  ehAssociado: false,
+  financeiroAutomatico: false,
+  mensalidades: [],
+});
+ok("parse gestão manual", manual.financeiroAutomatico === false);
+ok("parse ex-associado rebaixado", manual.ehAssociado === false);
 
 const tolerante = parseSituacaoFinanceira({ statusConta: "INADIMPLENTE", mensalidades: "x" });
 ok("parse tolera payload inválido", tolerante.mensalidades.length === 0);

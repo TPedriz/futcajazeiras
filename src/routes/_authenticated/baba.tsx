@@ -384,8 +384,9 @@ function BabaPage() {
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center">
           <p className="font-semibold text-destructive">Associação suspensa</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Sua mensalidade está em aberto há mais de um mês. Quite os débitos e a Taxa de
-            Associação para retomar o vínculo e liberar o check-in e os convidados.
+            Sua mensalidade está em aberto há mais de um mês: você voltou ao cargo de convidado.
+            Quite os débitos e a Taxa de Associação para retomar o vínculo e liberar o check-in e os
+            convidados.
           </p>
           <Link to="/pagamentos">
             <Button variant="gold" size="sm" className="mt-3">

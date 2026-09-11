@@ -278,6 +278,12 @@ function PagamentosPage() {
             <RefreshCw className="size-4" /> Retomar vínculo —{" "}
             {formatarReais(situacaoFin.totalRegularizacao)}
           </Button>
+
+          {!situacaoFin.financeiroAutomatico && (
+            <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+              Sua situação está sendo acompanhada manualmente pela diretoria.
+            </p>
+          )}
         </div>
       )}
 

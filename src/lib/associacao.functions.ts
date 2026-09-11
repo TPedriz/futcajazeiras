@@ -78,6 +78,16 @@ export const decidirSolicitacaoAssociacao = createServerFn({ method: "POST" })
         _referencia: referenciaMes(),
       });
 
+      // Se o solicitante estava suspenso por inadimplência, aprovar a associação é
+      // uma decisão manual da diretoria: congela o caso para a rotina automática não
+      // rebaixá-lo de novo no próximo carregamento (ele segue precisando regularizar
+      // os débitos, que continuam pendentes).
+      await supabaseAdmin
+        .from("perfis")
+        .update({ financeiro_automatico: false })
+        .eq("id", sol.usuario_id)
+        .eq("status_conta", "INADIMPLENTE");
+
       await supabaseAdmin.from("notificacoes").insert({
         usuario_id: sol.usuario_id,
         tipo: "associacao",

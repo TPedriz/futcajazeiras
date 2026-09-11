@@ -103,11 +103,11 @@ const secoes = [
       ],
       [
         "O que acontece se eu ficar muito tempo sem pagar?",
-        "Ao completar 1 mês de atraso, sua associação fica suspensa: você perde temporariamente os direitos de associado e o check-in fica bloqueado até a regularização.",
+        "Ao completar 1 mês de atraso, sua associação é suspensa: você perde o cargo de associado e volta a ser convidado, e o check-in fica bloqueado até a regularização.",
       ],
       [
         "Como retomo minha associação?",
-        "Na tela de Pagamentos aparece o card “Retomar vínculo”, com todos os meses em aberto (já com as multas) e a Taxa de Associação de reinscrição. Um único PIX quita tudo e reativa sua associação automaticamente.",
+        "Na tela de Pagamentos aparece o card “Retomar vínculo”, com todos os meses em aberto (já com as multas) e a Taxa de Associação de reinscrição. Um único PIX quita tudo, devolve o cargo de associado e reativa sua associação automaticamente.",
       ],
       [
         "Como pago?",

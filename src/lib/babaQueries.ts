@@ -227,6 +227,24 @@ export const mensalidadesDoMesQuery = (referencia: string) =>
     },
   });
 
+/**
+ * Todas as mensalidades em aberto de todos os associados (visão da diretoria).
+ * Usada no painel financeiro para mostrar meses e valores devidos por associado.
+ */
+export const mensalidadesPendentesTodasQuery = () =>
+  queryOptions({
+    queryKey: ["mensalidades-pendentes-todas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("mensalidades")
+        .select("id, usuario_id, referencia, vencimento, valor, multa_valor")
+        .eq("status", "pendente")
+        .order("referencia", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
 export const rankingDoMesQuery = (referencia: string) =>
   queryOptions({
     queryKey: ["ranking-mes", referencia],
@@ -693,7 +711,7 @@ export const situacaoFinanceiraQuery = (userId: string | undefined) =>
       if (!error && data) return parseSituacaoFinanceira(data);
 
       // Fallback (migration ainda não aplicada): monta a situação localmente.
-      const [{ data: perfil }, { data: pendentes }] = await Promise.all([
+      const [{ data: perfil }, { data: pendentes }, { data: papeis }] = await Promise.all([
         supabase.from("perfis").select("*").eq("id", userId).maybeSingle(),
         supabase
           .from("mensalidades")
@@ -701,8 +719,10 @@ export const situacaoFinanceiraQuery = (userId: string | undefined) =>
           .eq("usuario_id", userId)
           .eq("status", "pendente")
           .order("referencia", { ascending: true }),
+        supabase.from("papeis_usuario").select("papel").eq("user_id", userId),
       ]);
 
+      const listaPapeis = (papeis ?? []).map((p) => p.papel);
       const statusConta = normalizaStatusConta(perfil?.status_conta);
       const inadimplente = statusConta === "INADIMPLENTE";
       const lista = (pendentes ?? []).map((m) => {
@@ -723,7 +743,9 @@ export const situacaoFinanceiraQuery = (userId: string | undefined) =>
       return {
         usuarioId: userId,
         statusConta,
-        ehDiretoria: false,
+        ehDiretoria: listaPapeis.includes("administrador"),
+        ehAssociado: listaPapeis.includes("associado"),
+        financeiroAutomatico: perfil?.financeiro_automatico !== false,
         mensalidades: lista,
         totalDebitos,
         valorMulta: VALOR_MULTA_ATRASO_PADRAO,

@@ -861,6 +861,7 @@ export type Database = {
           criado_em: string;
           email: string | null;
           email_confirmado: boolean;
+          financeiro_automatico: boolean;
           id: string;
           instagram: string | null;
           nivel_atual: number;
@@ -887,6 +888,7 @@ export type Database = {
           criado_em?: string;
           email?: string | null;
           email_confirmado?: boolean;
+          financeiro_automatico?: boolean;
           id: string;
           instagram?: string | null;
           nivel_atual?: number;
@@ -913,6 +915,7 @@ export type Database = {
           criado_em?: string;
           email?: string | null;
           email_confirmado?: boolean;
+          financeiro_automatico?: boolean;
           id?: string;
           instagram?: string | null;
           nivel_atual?: number;
@@ -1682,6 +1685,10 @@ export type Database = {
         Args: { _conquista: string; _usuario: string };
         Returns: string;
       };
+      admin_definir_situacao_associado: {
+        Args: { p_acao: string; p_usuario_id: string };
+        Returns: string;
+      };
       admin_remove_conquista: {
         Args: { _conquista: string; _usuario: string };
         Returns: undefined;
@@ -1813,6 +1820,7 @@ export type Database = {
         Returns: undefined;
       };
       eh_diretoria: { Args: { _user_id: string }; Returns: boolean };
+      eh_associado: { Args: { _user_id: string }; Returns: boolean };
       garante_mensalidade: {
         Args: { _referencia: string; _usuario_id: string };
         Returns: string;
@@ -1847,6 +1855,8 @@ export type Database = {
         Returns: undefined;
       };
       pendencias_financeiras: { Args: { _usuario_id?: string }; Returns: Json };
+      promove_para_associado: { Args: { _usuario_id: string }; Returns: undefined };
+      rebaixa_para_convidado: { Args: { _usuario_id: string }; Returns: undefined };
       reajusta_mensalidades_pendentes: { Args: never; Returns: undefined };
       rotina_financeira_diaria: { Args: never; Returns: number };
       solicita_convite: {

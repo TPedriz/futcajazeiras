@@ -3,6 +3,7 @@ import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import {
   todosAssociadosQuery,
   mensalidadesDoMesQuery,
+  mensalidadesPendentesTodasQuery,
   mesReferencia,
   papeisTodosQuery,
   valorMensalidadeQuery,
@@ -15,6 +16,8 @@ import {
   VALOR_CONVIDADO_PADRAO,
   VALOR_MULTA_ATRASO_PADRAO,
 } from "@/lib/babaQueries";
+import { formatarReais } from "@/lib/redeSocial";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +36,9 @@ import {
   Users,
   UserPlus,
   ShieldAlert,
+  ShieldOff,
+  UserCheck,
+  RotateCcw,
   RefreshCw,
 } from "lucide-react";
 import { useState } from "react";
@@ -44,7 +50,14 @@ export const Route = createFileRoute("/_authenticated/admin/financeiro")({
   component: FinanceiroPage,
 });
 
-type FiltroStatus = "todos" | "pago" | "pendente";
+type FiltroStatus = "todos" | "pago" | "pendente" | "inadimplente";
+
+const FILTROS_STATUS = [
+  { id: "todos", rotulo: "Todos" },
+  { id: "pago", rotulo: "Pagos" },
+  { id: "pendente", rotulo: "Pendentes" },
+  { id: "inadimplente", rotulo: "Inadimplentes" },
+] as const satisfies readonly { id: FiltroStatus; rotulo: string }[];
 
 function FinanceiroPage() {
   const { data: todos } = useSuspenseQuery(todosAssociadosQuery());
@@ -55,6 +68,7 @@ function FinanceiroPage() {
   const [statusFiltro, setStatusFiltro] = useState<FiltroStatus>("todos");
   const referencia = mesReferencia(refDate);
   const { data: mensalidades } = useQuery(mensalidadesDoMesQuery(referencia));
+  const { data: pendentesTodas } = useQuery(mensalidadesPendentesTodasQuery());
   const qc = useQueryClient();
 
   const papelDe = (id: string) => {
@@ -64,12 +78,37 @@ function FinanceiroPage() {
     return "convidado";
   };
   const porUsuario = new Map((mensalidades ?? []).map((m) => [m.usuario_id, m]));
+
+  // Débitos acumulados (todos os meses em aberto + multas) por associado.
+  const dividas = new Map<string, { meses: number; total: number }>();
+  for (const m of pendentesTodas ?? []) {
+    const atual = dividas.get(m.usuario_id) ?? { meses: 0, total: 0 };
+    atual.meses += 1;
+    atual.total += Number(m.valor) + Number(m.multa_valor ?? 0);
+    dividas.set(m.usuario_id, atual);
+  }
+
   const associados = todos.filter((a) => filtro === "todos" || papelDe(a.id) === filtro);
+  const ehInadimplente = (a: (typeof associados)[number]) => a.status_conta === "INADIMPLENTE";
   const visiveis = associados.filter((a) => {
     if (statusFiltro === "todos") return true;
+    if (statusFiltro === "inadimplente") return ehInadimplente(a);
     const ok = porUsuario.get(a.id)?.status === "pago";
     return statusFiltro === "pago" ? ok : !ok;
   });
+
+  const emDia = associados.filter((a) => porUsuario.get(a.id)?.status === "pago").length;
+  const inadimplentes = associados.filter(ehInadimplente);
+  const totalSuspensos = inadimplentes.reduce(
+    (soma, a) => soma + (dividas.get(a.id)?.total ?? 0),
+    0,
+  );
+  const contagens: Record<FiltroStatus, number> = {
+    todos: associados.length,
+    pago: emDia,
+    pendente: associados.length - emDia,
+    inadimplente: inadimplentes.length,
+  };
   const ultimoDia = format(
     new Date(new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0)),
     "dd/MM/yyyy",
@@ -100,14 +139,48 @@ function FinanceiroPage() {
     onSuccess: () => {
       toast.success("Mensalidade atualizada");
       qc.invalidateQueries({ queryKey: ["mensalidades-mes", referencia] });
+      qc.invalidateQueries({ queryKey: ["mensalidades-pendentes-todas"] });
       qc.invalidateQueries({ queryKey: ["associados-todos"] });
       qc.invalidateQueries({ queryKey: ["perfil-atual"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
-  const emDia = associados.filter((a) => porUsuario.get(a.id)?.status === "pago").length;
-  const inadimplentes = associados.filter((a) => a.status_conta === "INADIMPLENTE").length;
+  // Ações manuais da diretoria: suspendem/rebaixam, reativam ou devolvem ao automático.
+  const definirSituacao = useMutation({
+    mutationFn: async ({
+      usuarioId,
+      acao,
+    }: {
+      usuarioId: string;
+      acao: "suspender" | "reativar" | "automatico";
+    }) => {
+      const { error } = await supabase.rpc("admin_definir_situacao_associado", {
+        p_usuario_id: usuarioId,
+        p_acao: acao,
+      });
+      if (error) throw error;
+      return acao;
+    },
+    onSuccess: (acao) => {
+      toast.success(
+        acao === "suspender"
+          ? "Suspenso e rebaixado para convidado"
+          : acao === "reativar"
+            ? "Associado reativado"
+            : "Caso devolvido ao modo automático",
+        acao === "automatico"
+          ? undefined
+          : { description: "A situação fica sob controle manual da diretoria." },
+      );
+      void qc.invalidateQueries({ queryKey: ["associados-todos"] });
+      void qc.invalidateQueries({ queryKey: ["papeis-todos"] });
+      void qc.invalidateQueries({ queryKey: ["mensalidades-pendentes-todas"] });
+      void qc.invalidateQueries({ queryKey: ["mensalidades-mes"] });
+    },
+    onError: (e: Error) =>
+      toast.error("Não foi possível alterar a situação", { description: e.message }),
+  });
 
   return (
     <div className="space-y-4">
@@ -149,14 +222,34 @@ function FinanceiroPage() {
         </div>
       </div>
 
-      {inadimplentes > 0 && (
-        <div className="card-premium flex items-center gap-2 border border-destructive/40 p-3">
+      {contagens.inadimplente > 0 && (
+        <button
+          type="button"
+          onClick={() =>
+            setStatusFiltro((atual) => (atual === "inadimplente" ? "todos" : "inadimplente"))
+          }
+          aria-pressed={statusFiltro === "inadimplente"}
+          className={cn(
+            "card-premium flex w-full items-center gap-2 border border-destructive/40 p-3 text-left transition-colors hover:bg-destructive/5",
+            statusFiltro === "inadimplente" && "bg-destructive/10",
+          )}
+        >
           <ShieldAlert className="size-4 shrink-0 text-destructive" />
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-destructive">{inadimplentes}</strong> associado(s) com
-            associação suspensa por inadimplência.
+          <p className="min-w-0 flex-1 text-xs text-muted-foreground">
+            <strong className="text-destructive">{contagens.inadimplente}</strong> suspenso(s) por
+            inadimplência ·{" "}
+            <strong className="text-foreground">{formatarReais(totalSuspensos)}</strong> em aberto.
+            <span className="ml-1 text-destructive/80">
+              {statusFiltro === "inadimplente" ? "Toque para limpar." : "Toque para filtrar."}
+            </span>
           </p>
-        </div>
+          <ChevronRight
+            className={cn(
+              "size-4 shrink-0 text-muted-foreground transition-transform",
+              statusFiltro === "inadimplente" && "rotate-90",
+            )}
+          />
+        </button>
       )}
 
       <div className="card-premium p-4">
@@ -181,15 +274,18 @@ function FinanceiroPage() {
 
       <FiltroCargo valor={filtro} onChange={setFiltro} total={associados.length} />
 
-      <div className="grid grid-cols-3 gap-2">
-        {(["todos", "pago", "pendente"] as const).map((s) => (
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {FILTROS_STATUS.map(({ id, rotulo }) => (
           <Button
-            key={s}
-            variant={statusFiltro === s ? "gold" : "outline"}
+            key={id}
+            variant={statusFiltro === id ? "gold" : "outline"}
             size="sm"
-            onClick={() => setStatusFiltro(s)}
+            className="flex-col gap-0 py-2 leading-tight"
+            aria-pressed={statusFiltro === id}
+            onClick={() => setStatusFiltro(id)}
           >
-            {s === "todos" ? "Todos" : s === "pago" ? "Pagos" : "Pendentes"}
+            <span className="text-[11px]">{rotulo}</span>
+            <span className="text-[10px] font-normal opacity-80">{contagens[id]}</span>
           </Button>
         ))}
       </div>
@@ -203,8 +299,18 @@ function FinanceiroPage() {
       <ul className="space-y-2">
         {visiveis.map((a) => {
           const ok = porUsuario.get(a.id)?.status === "pago";
+          const divida = dividas.get(a.id);
+          const papel = papelDe(a.id);
+          const ehDiretoriaLinha = papel === "administrador";
+          const manual = a.financeiro_automatico === false;
           return (
-            <li key={a.id} className="card-premium flex items-center gap-3 p-3">
+            <li
+              key={a.id}
+              className={cn(
+                "card-premium flex flex-wrap items-center gap-3 p-3",
+                ehInadimplente(a) && "border-destructive/40",
+              )}
+            >
               <div
                 className={`flex size-9 items-center justify-center rounded-full ${ok ? "bg-gold/10 text-gold" : "bg-destructive/10 text-destructive"}`}
               >
@@ -217,15 +323,26 @@ function FinanceiroPage() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">
                   {a.nome}
-                  {a.status_conta === "INADIMPLENTE" && (
+                  {ehInadimplente(a) && (
                     <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-widest text-destructive">
                       Inadimplente
+                    </span>
+                  )}
+                  {manual && (
+                    <span className="ml-2 rounded-full bg-muted px-2 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+                      Gestão manual
                     </span>
                   )}
                 </p>
                 <p className="truncate text-[11px] text-muted-foreground">
                   {a.telefone || a.email}
                 </p>
+                {divida && divida.meses > 0 && (
+                  <p className="truncate text-[11px] text-destructive">
+                    {divida.meses} {divida.meses === 1 ? "mês" : "meses"} em aberto •{" "}
+                    {formatarReais(divida.total)}
+                  </p>
+                )}
               </div>
               <Button
                 variant={ok ? "goldOutline" : "success"}
@@ -245,10 +362,62 @@ function FinanceiroPage() {
                   </>
                 )}
               </Button>
+
+              {!ehDiretoriaLinha && (
+                <div className="flex w-full flex-wrap items-center gap-2">
+                  {ehInadimplente(a) ? (
+                    <Button
+                      variant="goldOutline"
+                      size="sm"
+                      disabled={definirSituacao.isPending}
+                      title="Devolve o cargo de associado e marca a conta como ativa"
+                      onClick={() => definirSituacao.mutate({ usuarioId: a.id, acao: "reativar" })}
+                    >
+                      <UserCheck className="size-3" /> Reativar (associado)
+                    </Button>
+                  ) : papel === "associado" ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={definirSituacao.isPending}
+                      title="Marca como inadimplente e rebaixa para convidado"
+                      onClick={() => definirSituacao.mutate({ usuarioId: a.id, acao: "suspender" })}
+                    >
+                      <ShieldOff className="size-3" /> Suspender (rebaixar)
+                    </Button>
+                  ) : null}
+
+                  {manual && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={definirSituacao.isPending}
+                      title="Devolve o caso ao motor automático de multas e suspensão"
+                      onClick={() =>
+                        definirSituacao.mutate({ usuarioId: a.id, acao: "automatico" })
+                      }
+                    >
+                      <RotateCcw className="size-3" /> Voltar ao automático
+                    </Button>
+                  )}
+                </div>
+              )}
             </li>
           );
         })}
       </ul>
+
+      {visiveis.length === 0 && (
+        <div className="card-premium p-6 text-center">
+          <ShieldAlert className="mx-auto size-8 text-muted-foreground/50" />
+          <p className="mt-2 font-display text-lg">Nenhum associado neste filtro</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {statusFiltro === "inadimplente"
+              ? "Ninguém com a associação suspensa por inadimplência."
+              : "Ajuste o cargo ou o status para ver outros associados."}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -550,6 +719,7 @@ function RotinaFinanceiraCard() {
       });
       void qc.invalidateQueries({ queryKey: ["associados-todos"] });
       void qc.invalidateQueries({ queryKey: ["mensalidades-mes"] });
+      void qc.invalidateQueries({ queryKey: ["mensalidades-pendentes-todas"] });
     },
     onError: (e: Error) => toast.error("Não foi possível executar", { description: e.message }),
   });
