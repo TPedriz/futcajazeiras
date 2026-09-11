@@ -5,7 +5,7 @@ import { CalendarDays, MapPin } from "lucide-react";
 import { agendaEventosQuery } from "@/lib/babaQueries";
 import { AgendaCard } from "@/components/AgendaCard";
 
-export const Route = createFileRoute("/_authenticated/agenda")({
+export const Route = createFileRoute("/agenda")({
   head: () => ({
     meta: [
       { title: "Agenda dos Babas — Arena Cajazeiras | Fut Cajazeiras" },
