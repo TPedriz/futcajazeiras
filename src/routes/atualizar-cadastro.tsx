@@ -136,14 +136,14 @@ function AtualizarCadastroPage() {
                 Quase lá! Enviamos um link de confirmação para o seu e-mail. Clique nele para
                 validar seu cadastro e acessar a plataforma.
               </p>
-              <p className="text-xs text-muted-foreground">E-mail: {emailCadastrado}</p>
+              <p className="text-xs text-muted-foreground">E-mail: {emailExibido}</p>
               <Button
                 variant="outline"
                 className="w-full"
                 disabled={loading}
                 onClick={() => {
                   setLoading(true);
-                  solicitar({ data: { email: emailCadastrado ?? email } })
+                  solicitar({ data: { email: emailExibido } })
                     .then(() =>
                       toast.success("Link reenviado!", {
                         description: "Confira sua caixa de entrada.",
