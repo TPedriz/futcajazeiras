@@ -7,6 +7,7 @@ import {
   cartoesDoUsuarioQuery,
   todasSessoesQuery,
   politicaSuspensaoQuery,
+  suspensoesQuery,
 } from "@/lib/babaQueries";
 import { situacaoCartoesAmarelos } from "@/lib/situacaoAmarelos";
 
@@ -16,6 +17,12 @@ export function EstatisticasJogador({ usuarioId }: { usuarioId: string | undefin
   const { data: cartoes } = useQuery(cartoesDoUsuarioQuery(usuarioId));
   const { data: babas } = useQuery(todasSessoesQuery());
   const { data: pol } = useQuery(politicaSuspensaoQuery());
+  const { data: suspensoes } = useQuery(suspensoesQuery());
+
+  // Só avisamos "suspenso" quando existe uma suspensão ATIVA registrada
+  // (baba bloqueado ainda no futuro). A janela de amarelos sozinha continua
+  // marcada mesmo depois da punição já cumprida.
+  const suspensaoAtiva = (suspensoes ?? []).some((s) => s.usuario_id === usuarioId);
 
   const situacao = situacaoCartoesAmarelos({
     babas: (babas ?? []).map((b) => ({ id: b.id, data_horario: b.data_horario })),
@@ -26,6 +33,7 @@ export function EstatisticasJogador({ usuarioId }: { usuarioId: string | undefin
     janela: pol?.janelaAmarelos ?? 5,
     limite: pol?.limiteAmarelos ?? 3,
   });
+
 
   const itens = [
     { rotulo: "Gols", valor: stats?.gols ?? 0, cor: "text-gold" },
@@ -73,7 +81,7 @@ export function EstatisticasJogador({ usuarioId }: { usuarioId: string | undefin
           <p className="text-sm text-muted-foreground">
             Nenhum cartão amarelo nos últimos {situacao.janela} babas. Jogo limpo! 🟢
           </p>
-        ) : situacao.suspenso ? (
+        ) : suspensaoAtiva ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3">
             <p className="flex items-center gap-2 text-sm font-semibold text-destructive">
               <ShieldAlert className="size-4" /> Você está suspenso do próximo baba

@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { CalendarDays, MapPin } from "lucide-react";
 import { agendaEventosQuery } from "@/lib/babaQueries";
 import { AgendaCard } from "@/components/AgendaCard";
 
-export const Route = createFileRoute("/_authenticated/agenda")({
+export const Route = createFileRoute("/agenda")({
   head: () => ({
     meta: [
       { title: "Agenda dos Babas — Arena Cajazeiras | Fut Cajazeiras" },
@@ -43,7 +43,11 @@ function AgendaLogadaPage() {
   }, [eventos, hoje]);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto min-h-screen w-full max-w-3xl space-y-6 bg-background px-4 py-8">
+      <Link to="/" className="text-xs font-semibold text-gold hover:underline">
+        ← Voltar
+      </Link>
+
       <div className="text-center">
         <p className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/5 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-gold">
           <CalendarDays className="size-4" /> Arena Cajazeiras
