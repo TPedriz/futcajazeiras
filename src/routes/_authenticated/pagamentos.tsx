@@ -66,7 +66,7 @@ function PagamentosPage() {
   const gerarPix = useServerFn(criarPixMensalidade);
   const consultarPix = useServerFn(consultarPixMensalidade);
   const gerarPixRegularizacao = useServerFn(criarPixRegularizacao);
-  const consultarPixRegularizacao = useServerFn(consultarPixRegularizacao);
+  const checarPixRegularizacao = useServerFn(consultarPixRegularizacao);
 
   const [pixAberto, setPixAberto] = useState(false);
   const [mensalidadeAtiva, setMensalidadeAtiva] = useState<string | null>(null);
@@ -150,7 +150,7 @@ function PagamentosPage() {
     if (!regAberto || regPago || !regId) return;
     const id = setInterval(async () => {
       try {
-        const r = await consultarPixRegularizacao({ data: { regularizacaoId: regId } });
+        const r = await checarPixRegularizacao({ data: { regularizacaoId: regId } });
         if (r.pago) {
           setRegPago(true);
           void qc.invalidateQueries({ queryKey: ["mensalidades-minhas"] });
@@ -163,7 +163,7 @@ function PagamentosPage() {
       }
     }, 5000);
     return () => clearInterval(id);
-  }, [regAberto, regPago, regId, consultarPixRegularizacao, qc]);
+  }, [regAberto, regPago, regId, checarPixRegularizacao, qc]);
 
   const tempo = tempoDeAssociado(perfilData?.perfil?.criado_em);
   const pagas = (mensalidades ?? []).filter((m) => m.status === "pago").length;
