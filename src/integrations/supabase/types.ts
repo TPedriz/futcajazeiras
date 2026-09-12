@@ -861,88 +861,88 @@ export type Database = {
       }
       perfis: {
         Row: {
-          ativo: boolean;
-          atualizado_em: string;
-          avatar_url: string | null;
-          criado_em: string;
-          email: string | null;
-          email_confirmado: boolean;
-          financeiro_automatico: boolean;
-          id: string;
-          instagram: string | null;
-          nivel_atual: number;
-          nome: string;
-          ovr: number;
-          posicao: Database["public"]["Enums"]["posicao_jogador"];
-          stat_defesa: number;
-          stat_drible: number;
-          stat_finalizacao: number;
-          stat_fisico: number;
-          stat_passe: number;
-          stat_ritmo: number;
-          status_conta: string;
-          status_pagamento: Database["public"]["Enums"]["status_pagamento"];
-          telefone: string;
-          tema_carta: string;
-          time_coracao: Database["public"]["Enums"]["time_coracao"] | null;
-          xp_atual: number;
-        };
+          ativo: boolean
+          atualizado_em: string
+          avatar_url: string | null
+          criado_em: string
+          email: string | null
+          email_confirmado: boolean
+          financeiro_automatico: boolean
+          id: string
+          instagram: string | null
+          nivel_atual: number
+          nome: string
+          ovr: number
+          posicao: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa: number
+          stat_drible: number
+          stat_finalizacao: number
+          stat_fisico: number
+          stat_passe: number
+          stat_ritmo: number
+          status_conta: string
+          status_pagamento: Database["public"]["Enums"]["status_pagamento"]
+          telefone: string
+          tema_carta: string
+          time_coracao: Database["public"]["Enums"]["time_coracao"] | null
+          xp_atual: number
+        }
         Insert: {
-          ativo?: boolean;
-          atualizado_em?: string;
-          avatar_url?: string | null;
-          criado_em?: string;
-          email?: string | null;
-          email_confirmado?: boolean;
-          financeiro_automatico?: boolean;
-          id: string;
-          instagram?: string | null;
-          nivel_atual?: number;
-          nome: string;
-          ovr?: number;
-          posicao?: Database["public"]["Enums"]["posicao_jogador"];
-          stat_defesa?: number;
-          stat_drible?: number;
-          stat_finalizacao?: number;
-          stat_fisico?: number;
-          stat_passe?: number;
-          stat_ritmo?: number;
-          status_conta?: string;
-          status_pagamento?: Database["public"]["Enums"]["status_pagamento"];
-          telefone?: string;
-          tema_carta?: string;
-          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null;
-          xp_atual?: number;
-        };
+          ativo?: boolean
+          atualizado_em?: string
+          avatar_url?: string | null
+          criado_em?: string
+          email?: string | null
+          email_confirmado?: boolean
+          financeiro_automatico?: boolean
+          id: string
+          instagram?: string | null
+          nivel_atual?: number
+          nome: string
+          ovr?: number
+          posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa?: number
+          stat_drible?: number
+          stat_finalizacao?: number
+          stat_fisico?: number
+          stat_passe?: number
+          stat_ritmo?: number
+          status_conta?: string
+          status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
+          telefone?: string
+          tema_carta?: string
+          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
+          xp_atual?: number
+        }
         Update: {
-          ativo?: boolean;
-          atualizado_em?: string;
-          avatar_url?: string | null;
-          criado_em?: string;
-          email?: string | null;
-          email_confirmado?: boolean;
-          financeiro_automatico?: boolean;
-          id?: string;
-          instagram?: string | null;
-          nivel_atual?: number;
-          nome?: string;
-          ovr?: number;
-          posicao?: Database["public"]["Enums"]["posicao_jogador"];
-          stat_defesa?: number;
-          stat_drible?: number;
-          stat_finalizacao?: number;
-          stat_fisico?: number;
-          stat_passe?: number;
-          stat_ritmo?: number;
-          status_conta?: string;
-          status_pagamento?: Database["public"]["Enums"]["status_pagamento"];
-          telefone?: string;
-          tema_carta?: string;
-          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null;
-          xp_atual?: number;
-        };
-        Relationships: [];
-      };
+          ativo?: boolean
+          atualizado_em?: string
+          avatar_url?: string | null
+          criado_em?: string
+          email?: string | null
+          email_confirmado?: boolean
+          financeiro_automatico?: boolean
+          id?: string
+          instagram?: string | null
+          nivel_atual?: number
+          nome?: string
+          ovr?: number
+          posicao?: Database["public"]["Enums"]["posicao_jogador"]
+          stat_defesa?: number
+          stat_drible?: number
+          stat_finalizacao?: number
+          stat_fisico?: number
+          stat_passe?: number
+          stat_ritmo?: number
+          status_conta?: string
+          status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
+          telefone?: string
+          tema_carta?: string
+          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
+          xp_atual?: number
+        }
+        Relationships: []
+      }
       perfis_publicos: {
         Row: {
           ativo: boolean
@@ -1708,13 +1708,13 @@ export type Database = {
     }
     Functions: {
       admin_concede_conquista: {
-        Args: { _conquista: string; _usuario: string };
-        Returns: string;
-      };
+        Args: { _conquista: string; _usuario: string }
+        Returns: string
+      }
       admin_definir_situacao_associado: {
-        Args: { p_acao: string; p_usuario_id: string };
-        Returns: string;
-      };
+        Args: { p_acao: string; p_usuario_id: string }
+        Returns: string
+      }
       admin_remove_conquista: {
         Args: { _conquista: string; _usuario: string }
         Returns: undefined
@@ -1848,11 +1848,11 @@ export type Database = {
         Returns: undefined
       }
       desbloqueia_conquista: {
-        Args: { conquista: string; usuario: string };
-        Returns: undefined;
-      };
-      eh_diretoria: { Args: { _user_id: string }; Returns: boolean };
-      eh_associado: { Args: { _user_id: string }; Returns: boolean };
+        Args: { conquista: string; usuario: string }
+        Returns: undefined
+      }
+      eh_associado: { Args: { _user_id: string }; Returns: boolean }
+      eh_diretoria: { Args: { _user_id: string }; Returns: boolean }
       garante_mensalidade: {
         Args: { _referencia: string; _usuario_id: string }
         Returns: string
@@ -1879,18 +1879,24 @@ export type Database = {
       }
       notifica_admins: {
         Args: {
-          _link?: string;
-          _mensagem: string;
-          _tipo: string;
-          _titulo: string;
-        };
-        Returns: undefined;
-      };
-      pendencias_financeiras: { Args: { _usuario_id?: string }; Returns: Json };
-      promove_para_associado: { Args: { _usuario_id: string }; Returns: undefined };
-      rebaixa_para_convidado: { Args: { _usuario_id: string }; Returns: undefined };
-      reajusta_mensalidades_pendentes: { Args: never; Returns: undefined };
-      rotina_financeira_diaria: { Args: never; Returns: number };
+          _link?: string
+          _mensagem: string
+          _tipo: string
+          _titulo: string
+        }
+        Returns: undefined
+      }
+      pendencias_financeiras: { Args: { _usuario_id?: string }; Returns: Json }
+      promove_para_associado: {
+        Args: { _usuario_id: string }
+        Returns: undefined
+      }
+      reajusta_mensalidades_pendentes: { Args: never; Returns: undefined }
+      rebaixa_para_convidado: {
+        Args: { _usuario_id: string }
+        Returns: undefined
+      }
+      rotina_financeira_diaria: { Args: never; Returns: number }
       solicita_convite: {
         Args: { _anfitriao_id: string; _baba_id: string }
         Returns: string
