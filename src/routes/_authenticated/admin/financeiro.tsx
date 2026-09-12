@@ -16,6 +16,11 @@ import {
   VALOR_CONVIDADO_PADRAO,
   VALOR_MULTA_ATRASO_PADRAO,
 } from "@/lib/babaQueries";
+import {
+  formatarCobrancaInadimplentesParaWhatsApp,
+  totalCobranca,
+  type InadimplenteCobranca,
+} from "@/lib/cobrancaInadimplentes";
 import { formatarReais } from "@/lib/redeSocial";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +45,8 @@ import {
   UserCheck,
   RotateCcw,
   RefreshCw,
+  Copy,
+  Send,
 } from "lucide-react";
 import { useState } from "react";
 import { format, addMonths } from "date-fns";
@@ -103,6 +110,22 @@ function FinanceiroPage() {
     (soma, a) => soma + (dividas.get(a.id)?.total ?? 0),
     0,
   );
+
+  // Lista de cobrança (nomes + valores) — sempre com TODOS os inadimplentes,
+  // independente dos filtros da tela, para montar o texto do WhatsApp.
+  const cobranca: InadimplenteCobranca[] = todos
+    .filter((a) => ehInadimplente(a))
+    .map((a) => ({
+      nome: a.nome,
+      mensalidades: (pendentesTodas ?? [])
+        .filter((m) => m.usuario_id === a.id)
+        .map((m) => ({
+          referencia: m.referencia,
+          valor: Number(m.valor),
+          multa: Number(m.multa_valor ?? 0),
+        })),
+    }))
+    .filter((c) => c.mensalidades.length > 0);
   const contagens: Record<FiltroStatus, number> = {
     todos: associados.length,
     pago: emDia,
@@ -251,6 +274,8 @@ function FinanceiroPage() {
           />
         </button>
       )}
+
+      {cobranca.length > 0 && <ExportarInadimplentesWhatsApp lista={cobranca} />}
 
       <div className="card-premium p-4">
         <div className="flex items-center justify-between gap-2">
@@ -418,6 +443,71 @@ function FinanceiroPage() {
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Exporta a lista de inadimplentes (nome + valor devido) para o WhatsApp, com
+ * a legenda explicando a cobrança: mensalidades atrasadas + multa por mês.
+ */
+function ExportarInadimplentesWhatsApp({ lista }: { lista: InadimplenteCobranca[] }) {
+  const { data: valorMensalidade } = useQuery(valorMensalidadeQuery());
+  const { data: valorMulta } = useQuery(valorMultaAtrasoQuery());
+  const { data: valorTaxa } = useQuery(valorTaxaAssociacaoQuery());
+  const [copiado, setCopiado] = useState(false);
+
+  const montarTexto = () =>
+    formatarCobrancaInadimplentesParaWhatsApp(lista, {
+      valorMensalidade,
+      valorMulta,
+      valorTaxaAssociacao: valorTaxa,
+    });
+
+  const total = totalCobranca(lista, valorTaxa);
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(montarTexto());
+      setCopiado(true);
+      toast.success("Lista copiada! Cole no grupo do WhatsApp.", {
+        description: `${lista.length} inadimplente(s) • ${formatarReais(total)}`,
+      });
+    } catch {
+      toast.error("Não foi possível copiar", { description: "Selecione o texto manualmente." });
+    }
+  };
+
+  const enviar = () => {
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(montarTexto())}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  return (
+    <div className="card-premium space-y-2 border border-destructive/40 p-3">
+      <p className="flex items-center gap-2 text-xs uppercase tracking-widest text-destructive">
+        <Send className="size-4" /> Cobrança no WhatsApp
+      </p>
+      <p className="text-[11px] text-muted-foreground">
+        Gera a lista com o <strong className="text-foreground">nome</strong> e o{" "}
+        <strong className="text-foreground">valor devido</strong> de cada inadimplente, com a
+        legenda explicando a cobrança: mensalidades atrasadas + multa por mês de atraso + Taxa de
+        Associação (reinscrição).
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="goldOutline" size="sm" onClick={() => void copiar()}>
+          <Copy className="size-3" /> {copiado ? "Copiar de novo" : "Copiar lista"}
+        </Button>
+        <Button variant="outline" size="sm" onClick={enviar}>
+          <Send className="size-3" /> Enviar no WhatsApp
+        </Button>
+        <span className="text-[11px] text-muted-foreground">
+          {lista.length} inadimplente(s) • {formatarReais(total)}
+        </span>
+      </div>
     </div>
   );
 }

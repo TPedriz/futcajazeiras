@@ -861,7 +861,6 @@ export type Database = {
       }
       perfis: {
         Row: {
-<<<<<<< HEAD
           ativo: boolean;
           atualizado_em: string;
           avatar_url: string | null;
@@ -944,87 +943,6 @@ export type Database = {
         };
         Relationships: [];
       };
-=======
-          ativo: boolean
-          atualizado_em: string
-          avatar_url: string | null
-          criado_em: string
-          email: string | null
-          email_confirmado: boolean
-          id: string
-          instagram: string | null
-          nivel_atual: number
-          nome: string
-          ovr: number
-          posicao: Database["public"]["Enums"]["posicao_jogador"]
-          stat_defesa: number
-          stat_drible: number
-          stat_finalizacao: number
-          stat_fisico: number
-          stat_passe: number
-          stat_ritmo: number
-          status_conta: string
-          status_pagamento: Database["public"]["Enums"]["status_pagamento"]
-          telefone: string
-          tema_carta: string
-          time_coracao: Database["public"]["Enums"]["time_coracao"] | null
-          xp_atual: number
-        }
-        Insert: {
-          ativo?: boolean
-          atualizado_em?: string
-          avatar_url?: string | null
-          criado_em?: string
-          email?: string | null
-          email_confirmado?: boolean
-          id: string
-          instagram?: string | null
-          nivel_atual?: number
-          nome: string
-          ovr?: number
-          posicao?: Database["public"]["Enums"]["posicao_jogador"]
-          stat_defesa?: number
-          stat_drible?: number
-          stat_finalizacao?: number
-          stat_fisico?: number
-          stat_passe?: number
-          stat_ritmo?: number
-          status_conta?: string
-          status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
-          telefone?: string
-          tema_carta?: string
-          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
-          xp_atual?: number
-        }
-        Update: {
-          ativo?: boolean
-          atualizado_em?: string
-          avatar_url?: string | null
-          criado_em?: string
-          email?: string | null
-          email_confirmado?: boolean
-          id?: string
-          instagram?: string | null
-          nivel_atual?: number
-          nome?: string
-          ovr?: number
-          posicao?: Database["public"]["Enums"]["posicao_jogador"]
-          stat_defesa?: number
-          stat_drible?: number
-          stat_finalizacao?: number
-          stat_fisico?: number
-          stat_passe?: number
-          stat_ritmo?: number
-          status_conta?: string
-          status_pagamento?: Database["public"]["Enums"]["status_pagamento"]
-          telefone?: string
-          tema_carta?: string
-          time_coracao?: Database["public"]["Enums"]["time_coracao"] | null
-          xp_atual?: number
-        }
-        Relationships: []
-      }
->>>>>>> d3274debf6143384c88f15f1fb737d2bd9746ffa
       perfis_publicos: {
         Row: {
           ativo: boolean
@@ -1790,7 +1708,6 @@ export type Database = {
     }
     Functions: {
       admin_concede_conquista: {
-<<<<<<< HEAD
         Args: { _conquista: string; _usuario: string };
         Returns: string;
       };
@@ -1798,11 +1715,6 @@ export type Database = {
         Args: { p_acao: string; p_usuario_id: string };
         Returns: string;
       };
-=======
-        Args: { _conquista: string; _usuario: string }
-        Returns: string
-      }
->>>>>>> d3274debf6143384c88f15f1fb737d2bd9746ffa
       admin_remove_conquista: {
         Args: { _conquista: string; _usuario: string }
         Returns: undefined
@@ -1936,18 +1848,11 @@ export type Database = {
         Returns: undefined
       }
       desbloqueia_conquista: {
-<<<<<<< HEAD
         Args: { conquista: string; usuario: string };
         Returns: undefined;
       };
       eh_diretoria: { Args: { _user_id: string }; Returns: boolean };
       eh_associado: { Args: { _user_id: string }; Returns: boolean };
-=======
-        Args: { conquista: string; usuario: string }
-        Returns: undefined
-      }
-      eh_diretoria: { Args: { _user_id: string }; Returns: boolean }
->>>>>>> d3274debf6143384c88f15f1fb737d2bd9746ffa
       garante_mensalidade: {
         Args: { _referencia: string; _usuario_id: string }
         Returns: string
@@ -1974,7 +1879,6 @@ export type Database = {
       }
       notifica_admins: {
         Args: {
-<<<<<<< HEAD
           _link?: string;
           _mensagem: string;
           _tipo: string;
@@ -1987,18 +1891,6 @@ export type Database = {
       rebaixa_para_convidado: { Args: { _usuario_id: string }; Returns: undefined };
       reajusta_mensalidades_pendentes: { Args: never; Returns: undefined };
       rotina_financeira_diaria: { Args: never; Returns: number };
-=======
-          _link?: string
-          _mensagem: string
-          _tipo: string
-          _titulo: string
-        }
-        Returns: undefined
-      }
-      pendencias_financeiras: { Args: { _usuario_id?: string }; Returns: Json }
-      reajusta_mensalidades_pendentes: { Args: never; Returns: undefined }
-      rotina_financeira_diaria: { Args: never; Returns: number }
->>>>>>> d3274debf6143384c88f15f1fb737d2bd9746ffa
       solicita_convite: {
         Args: { _anfitriao_id: string; _baba_id: string }
         Returns: string
