@@ -55,3 +55,19 @@ export async function aplicarPagamento(externalReference: string, status: string
 
   return { aplicado: false };
 }
+
+/**
+ * Confirma uma cobrança direto na API do Mercado Pago, pela referência externa,
+ * e aplica o resultado no banco.
+ *
+ * Funciona para PIX (cobrança transparente) e cartão (Checkout Pro) e é
+ * resistente a várias tentativas de cobrança para a mesma referência — procura
+ * qualquer pagamento aprovado antes de dizer que está pendente.
+ */
+export async function sincronizarPorReferencia(externalReference: string) {
+  const { consultarPagamentoPorReferencia } = await import("@/lib/mercadopago.server");
+  const pagamento = await consultarPagamentoPorReferencia(externalReference);
+  if (!pagamento) return { status: "sem_cobranca", pago: false };
+  await aplicarPagamento(externalReference, pagamento.status);
+  return { status: pagamento.status, pago: pagamento.status === "approved" };
+}

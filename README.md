@@ -5,7 +5,7 @@
 **A gestão do seu baba na palma da mão — com ranking, gamificação e cartinhas de craque.**
 
 Plataforma mobile-first para organizar o futebol de fim de semana: lista de presença, convidados,
-pagamentos por PIX, sorteio de times, ranking mensal, conquistas, XP, níveis e **cartinhas de jogador
+pagamentos por PIX ou cartão, sorteio de times, ranking mensal, conquistas, XP, níveis e **cartinhas de jogador
 estilo EA FC / Ultimate Team** — tudo em um só lugar.
 
 </div>
@@ -17,10 +17,10 @@ estilo EA FC / Ultimate Team** — tudo em um só lugar.
 Chega de planilha, caderno ou grupo de WhatsApp bagunçado. O Fut Cajazeiras transforma a rotina do
 baba em uma experiência organizada **e divertida**:
 
-- 🎯 **Menos trabalho para a diretoria** — presença, convidados, PIX e sorteio automatizados.
+- 🎯 **Menos trabalho para a diretoria** — presença, convidados, pagamentos e sorteio automatizados.
 - 🎮 **Jogo dentro e fora de campo** — XP, níveis, conquistas e cartinha de cada jogador.
 - 📱 **100% mobile** — o associado resolve tudo pelo celular, em segundos.
-- 🔒 **Seguro e privado** — RLS no banco, admin separado, webhook de PIX validado.
+- 🔒 **Seguro e privado** — RLS no banco, admin separado, webhook de pagamento validado.
 
 > _"Confirme presença, leve seu convidado, acompanhe o pagamento e receba os times sorteados — tudo direto pelo celular. E agora, veja sua carreira no baba virar jogo."_
 
@@ -50,8 +50,8 @@ Painel administrativo com tudo o que a gestão do baba precisa:
 
 - 🗓️ **Sessões** — agenda babas com data, horário, local e GPS da arena.
 - 📋 **Lista de presença** — abertura às 22h da véspera, fechamento 3h antes, com trava manual pela diretoria.
-- 🧑‍🤝‍🧑 **Convidados** — solicitação, aprovação (novos passam pela diretoria) e diária por PIX.
-- 💳 **Financeiro** — mensalidades que vencem dia 10, PIX com confirmação automática, "presentear mensalidade" e diária de convidado.
+- 🧑‍🤝‍🧑 **Convidados** — solicitação, aprovação (novos passam pela diretoria) e diária por PIX ou cartão.
+- 💳 **Financeiro** — mensalidades que vencem dia 10, cobrança por PIX (QR na hora) ou cartão de crédito/débito com confirmação automática, "presentear mensalidade", diária de convidado, metas coletivas e taxa de recebimento configurável por forma de pagamento.
 - 🎲 **Sorteio de times** — 3 modos: **Aleatório**, **Ordem de chegada** (check-in GPS em 2 etapas) e **BAxVI** (Bahia × Vitória pelo time do coração).
 - 🧮 **Resultados e estatísticas** — lança gols, assistências, pênaltis defendidos e cartões; ranking recalculado na hora.
 - 🚨 **Punições automáticas** — cartão vermelho e faltas (3 em 5 babas) geram suspensão com política configurável.
@@ -64,7 +64,7 @@ Painel administrativo com tudo o que a gestão do baba precisa:
 
 Uma visão rápida do que a plataforma já entrega:
 
-- 🔔 **Notificações em tempo real** (sino) para abertura/fechamento da lista, PIX aprovado, convidado e suspensão.
+- 🔔 **Notificações em tempo real** (sino) para abertura/fechamento da lista, pagamento aprovado, convidado e suspensão.
 - 📍 **Check-in por GPS** com ordem de chegada para o sorteio.
 - 🧑‍💼 **Fila de aprovação** de convidados para a diretoria.
 - 📸 **Foto de perfil** com editor (zoom/reposicionar) e armazenamento privado.
@@ -77,14 +77,14 @@ Uma visão rápida do que a plataforma já entrega:
 
 ## 🏗️ Stack
 
-| Camada           | Tecnologia                                     |
-| ---------------- | ---------------------------------------------- |
-| Frontend         | React 19 + TanStack Start (file-based routing) |
-| Estilo           | Tailwind CSS v4 + shadcn/ui (dark theme)       |
-| Dados            | TanStack React Query                           |
-| Backend          | Supabase (PostgreSQL, Auth, Storage, Realtime) |
-| Pagamentos       | Mercado Pago — PIX (API + webhook)             |
-| Export de imagem | html-to-image                                  |
+| Camada           | Tecnologia                                       |
+| ---------------- | ------------------------------------------------ |
+| Frontend         | React 19 + TanStack Start (file-based routing)   |
+| Estilo           | Tailwind CSS v4 + shadcn/ui (dark theme)         |
+| Dados            | TanStack React Query                             |
+| Backend          | Supabase (PostgreSQL, Auth, Storage, Realtime)   |
+| Pagamentos       | Mercado Pago — PIX (API) + cartão (Checkout Pro) |
+| Export de imagem | html-to-image                                    |
 
 ---
 
@@ -94,7 +94,7 @@ Uma visão rápida do que a plataforma já entrega:
 
 - Node.js 20+ (recomendado via [nvm](https://github.com/nvm-sh/nvm))
 - Uma conta no [Supabase](https://supabase.com) com o schema aplicado (`supabase/migrations`)
-- Credenciais do **Mercado Pago** para o PIX em produção
+- Credenciais do **Mercado Pago** para o PIX e o cartão em produção
 
 ### Instalação
 

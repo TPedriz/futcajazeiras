@@ -2,7 +2,7 @@
 
 > **Objetivo:** servir como especificação técnica completa para **recriar o sistema do zero** com qualquer LLM/equipe (Gemini, ChatGPT, Claude, DeepSeek etc.), reproduzindo comportamento, modelo de dados, segurança e visual.
 
-**Sistema:** plataforma de gestão de um "baba" (pelada/futebol amador) — confirmação de presença, convidados, pagamentos por PIX, sorteio de times, ranking e punições.
+**Sistema:** plataforma de gestão de um "baba" (pelada/futebol amador) — confirmação de presença, convidados, pagamentos por PIX ou cartão (com taxa por forma de pagamento), sorteio de times, ranking e punições.
 
 ---
 
@@ -29,8 +29,8 @@
 
 O **Fut Cajazeiras** é um app **mobile-first, dark-only** para gerenciar um baba semanal:
 
-- **Associados** confirmam presença na lista (que abre 22h do dia anterior e fecha 3h antes do jogo), pagam mensalidade por PIX, fazem check-in no campo por GPS (ordem de chegada) e participam do sorteio de times.
-- **Convidados** entram via um associado (anfitrião), com aprovação da diretoria para novos, e pagam uma diária por PIX.
+- **Associados** confirmam presença na lista (que abre 22h do dia anterior e fecha 3h antes do jogo), pagam mensalidade por PIX ou cartão, fazem check-in no campo por GPS (ordem de chegada) e participam do sorteio de times.
+- **Convidados** entram via um associado (anfitrião), com aprovação da diretoria para novos, e pagam uma diária por PIX ou cartão.
 - **Diretoria (admin)** agenda babas, controla financeiro, faz o sorteio (Aleatório / Ordem de chegada / BAxVI), lança resultados e estatísticas, gerencia cargos, aplica/remove punições, ajusta valores e a política de suspensões.
 - **Gamificação completa:** XP automático (+10 presença, +5 gol, +3 assistência), níveis com bônus no OVR, conquistas com destaque (até 3), badges de destaque mensal (top 3 em gols/assistências/pênaltis/cartões) e **cartinhas de jogador estilo EA FC** (OVR + RIT/FIN/PAS/DRI/DEF/FÍS) com temas Bronze/Prata/Ouro e especiais (TOTW, Lenda do Baba, Paredão), exportáveis como PNG.
 - **Feed social de gamificação:** um feed global de acontecimentos (conquistas desbloqueadas, raridade, níveis alcançados, marcas históricas e ranking do mês) gerado por funções/triggers seguras no banco — o jogador vê a carreira da galera virar conteúdo social em tempo real (`feed_eventos` + Realtime).
@@ -42,20 +42,20 @@ O **Fut Cajazeiras** é um app **mobile-first, dark-only** para gerenciar um bab
 
 ## 2. Stack tecnológica
 
-| Camada        | Tecnologia                                 | Versão/Nota                              |
-| ------------- | ------------------------------------------ | ---------------------------------------- |
-| Runtime       | Node.js (TS com type-stripping p/ scripts) | Node 26 no dev                           |
-| Framework     | **TanStack Start** (React 19 + Vite)       | Roteamento file-based + server functions |
-| Roteador      | TanStack Router                            | `routeTree.gen.ts` gerado                |
-| Dados         | TanStack React Query                       | `queryOptions` centralizados             |
-| Backend/Banco | **Supabase** (PostgreSQL 15+)              | Auth, Postgres, Storage, Realtime        |
-| UI            | React + shadcn/ui + Tailwind CSS v4        | Tema dark custom (oklch)                 |
-| Ícones        | lucide-react                               | —                                        |
-| Datas         | date-fns (locale pt-BR)                    | Fuso America/Bahia (UTC-3)               |
-| Pagamentos    | **Mercado Pago — PIX**                     | Webhook + API v1 payments                |
-| Formulários   | react-hook-form + zod (parcial)            | —                                        |
-| Gráficos      | recharts                                   | (presente; pouco usado)                  |
-| Toasts        | sonner                                     | `Toaster top-center richColors`          |
+| Camada        | Tecnologia                                 | Versão/Nota                                                                      |
+| ------------- | ------------------------------------------ | -------------------------------------------------------------------------------- |
+| Runtime       | Node.js (TS com type-stripping p/ scripts) | Node 26 no dev                                                                   |
+| Framework     | **TanStack Start** (React 19 + Vite)       | Roteamento file-based + server functions                                         |
+| Roteador      | TanStack Router                            | `routeTree.gen.ts` gerado                                                        |
+| Dados         | TanStack React Query                       | `queryOptions` centralizados                                                     |
+| Backend/Banco | **Supabase** (PostgreSQL 15+)              | Auth, Postgres, Storage, Realtime                                                |
+| UI            | React + shadcn/ui + Tailwind CSS v4        | Tema dark custom (oklch)                                                         |
+| Ícones        | lucide-react                               | —                                                                                |
+| Datas         | date-fns (locale pt-BR)                    | Fuso America/Bahia (UTC-3)                                                       |
+| Pagamentos    | **Mercado Pago — PIX + cartão**            | PIX via API v1 payments; cartão via Checkout Pro; webhook + busca por referência |
+| Formulários   | react-hook-form + zod (parcial)            | —                                                                                |
+| Gráficos      | recharts                                   | (presente; pouco usado)                                                          |
+| Toasts        | sonner                                     | `Toaster top-center richColors`                                                  |
 
 **Build:** `@lovable.dev/vite-tanstack-config` (inclui TanStack devtools, Vite React, Tailwind, alias `@`, Nitro/Cloudflare como alvo de build, injeção de env `VITE_*`). Não adicionar plugins duplicados manualmente.
 
@@ -185,7 +185,7 @@ futcajazeiras/
 | **Baba / Sessão**          | `sessoes_baba` — jogo agendado com data/horário, local, GPS (lat/lng/raio), janela de lista (`abertura_lista`, `fechamento_lista`), trava manual (`esta_fechado`) e visibilidade da lista de chegada |
 | **Presença**               | `presencas` — assinatura na lista. Uma linha = presença do associado **ou** de um convidado que ele leva                                                                                             |
 | **Convidado**              | Pessoa não-associada levada por um anfitrião; paga diária; novos passam por aprovação da diretoria                                                                                                   |
-| **Mensalidade**            | `mensalidades` — cobrança mensal por associado, vence dia 10, paga via PIX                                                                                                                           |
+| **Mensalidade**            | `mensalidades` — cobrança mensal por associado, vence dia 10, paga via PIX ou cartão                                                                                                                 |
 | **Sorteio**                | Algoritmo que monta os times (6 ou 7) a partir da lista; ninguém fica de fora                                                                                                                        |
 | **Ranking**                | View `ranking_mensal` agregando estatísticas por mês; categorias: gols, assistências, pênaltis defendidos, cartões, vitórias/derrotas/empates                                                        |
 | **Destaque/Gamificação**   | Badge de top-3 mensal em cada categoria (🥇🥈🥉 + ⚽🅰️🧤🟥)                                                                                                                                          |

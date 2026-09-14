@@ -11,29 +11,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PixDialog, type DadosPix } from "@/components/PixDialog";
-import { listarAnfitrioes, solicitarConvite, pixDaSolicitacao } from "@/lib/convidados.functions";
+import { PagamentoDialog } from "@/components/PagamentoDialog";
+import type { DadosCobranca, MetodoPagamento } from "@/lib/taxasPagamento";
+import {
+  listarAnfitrioes,
+  solicitarConvite,
+  pixDaSolicitacao,
+  gerarCobrancaSolicitacao,
+} from "@/lib/convidados.functions";
 import {
   minhasSolicitacoesQuery,
   valorConvidadoQuery,
   VALOR_CONVIDADO_PADRAO,
 } from "@/lib/babaQueries";
-import { HandHeart, QrCode } from "lucide-react";
+import { HandHeart, CreditCard } from "lucide-react";
 
 export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: string }) {
   const qc = useQueryClient();
   const buscarAnfitrioes = useServerFn(listarAnfitrioes);
   const pedir = useServerFn(solicitarConvite);
   const verPix = useServerFn(pixDaSolicitacao);
+  const gerarPixSolicitacao = useServerFn(gerarCobrancaSolicitacao);
   const { data: valorConvidado } = useQuery(valorConvidadoQuery());
 
   const [anfitriao, setAnfitriao] = useState<string>("");
   const [pixAberto, setPixAberto] = useState(false);
-  const [dadosPix, setDadosPix] = useState<DadosPix | null>(null);
+  const [dadosPix, setDadosPix] = useState<DadosCobranca | null>(null);
   const [pago, setPago] = useState(false);
-  const [carregandoPix, setCarregandoPix] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
   const [aguardandoDiretoria, setAguardandoDiretoria] = useState(false);
-  const [semCobranca, setSemCobranca] = useState(false);
 
   const { data: anfitrioes } = useQuery({
     queryKey: ["anfitrioes"],
@@ -54,34 +60,35 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
     onError: (e: Error) => toast.error("Não deu certo", { description: e.message }),
   });
 
-  const abrirPix = async () => {
+  const abrirPagamento = () => {
     if (!ativa) return;
-    setPixAberto(true);
-    setPago(false);
     setDadosPix(null);
-    setAguardandoDiretoria(false);
-    setSemCobranca(false);
-    setCarregandoPix(true);
-    try {
-      const r = await verPix({ data: { solicitacaoId: ativa.id } });
+    setPago(false);
+    setErro(null);
+    setPixAberto(true);
+  };
+
+  const cobrar = useMutation({
+    mutationFn: async (metodo: MetodoPagamento) => {
+      if (!ativa) throw new Error("Solicitação não encontrada");
+      setDadosPix(null);
+      setPago(false);
+      setErro(null);
+      return await gerarPixSolicitacao({ data: { solicitacaoId: ativa.id, metodo } });
+    },
+    onSuccess: (r) => {
       if (r.pago) {
         setPago(true);
-      } else if (r.status === "aguardando_diretoria") {
-        setAguardandoDiretoria(true);
-        setPixAberto(false);
-      } else if (r.status === "sem_cobranca") {
-        setSemCobranca(true);
-        setPixAberto(false);
-      } else {
-        setDadosPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
+        qc.invalidateQueries({ queryKey: ["presencas", babaId] });
+        return;
       }
-    } catch (e) {
-      setPixAberto(false);
-      toast.error("Erro", { description: (e as Error).message });
-    } finally {
-      setCarregandoPix(false);
-    }
-  };
+      setDadosPix(r);
+    },
+    onError: (e: Error) => {
+      setErro(e.message);
+      toast.error("Erro", { description: e.message });
+    },
+  });
 
   useEffect(() => {
     if (!ativa || ativa.status !== "aprovado" || pago) return;
@@ -91,21 +98,11 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
         if (r.pago) {
           setPago(true);
           setAguardandoDiretoria(false);
-          setSemCobranca(false);
           qc.invalidateQueries({ queryKey: ["presencas", babaId] });
           toast.success("Pagamento confirmado! Você está na lista.");
         } else if (r.status === "aguardando_diretoria") {
           setAguardandoDiretoria(true);
-          setSemCobranca(false);
           setPixAberto(false);
-        } else if (r.status === "sem_cobranca") {
-          setSemCobranca(true);
-          setAguardandoDiretoria(false);
-          setPixAberto(false);
-        } else if (r.qrCode) {
-          setDadosPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
-          setAguardandoDiretoria(false);
-          setSemCobranca(false);
         }
       } catch {
         /* tenta de novo */
@@ -129,7 +126,7 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
                 .toFixed(2)
                 .replace(".", ",")}
             </strong>{" "}
-            via PIX e entra na lista.
+            via PIX ou cartão e entra na lista.
           </p>
 
           {ativa ? (
@@ -140,9 +137,7 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
                     ? "Aguardando resposta do associado"
                     : aguardandoDiretoria
                       ? "Aguardando aprovação da diretoria"
-                      : semCobranca
-                        ? "Aguardando o PIX ser gerado"
-                        : "Convite aceito"}
+                      : "Convite aceito"}
                 </p>
                 {ativa.status === "pendente" ? (
                   <Badge variant="outline" className="border-gold/40 text-gold">
@@ -161,16 +156,11 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
                   O associado aceitou, mas a diretoria ainda precisa aprovar. Você será avisado.
                 </p>
               )}
-              {semCobranca && (
-                <p className="text-xs text-muted-foreground">
-                  Aprovado! O associado ainda não gerou o PIX. Quando ele gerar, ele aparece aqui.
-                </p>
-              )}
               {pago ? (
                 <p className="text-sm text-success">Pagamento confirmado! Você está na lista.</p>
-              ) : ativa.status === "aprovado" && !aguardandoDiretoria && !semCobranca ? (
-                <Button variant="hero" size="lg" className="w-full" onClick={abrirPix}>
-                  <QrCode className="size-4" /> Pagar taxa com PIX
+              ) : ativa.status === "aprovado" && !aguardandoDiretoria ? (
+                <Button variant="hero" size="lg" className="w-full" onClick={abrirPagamento}>
+                  <CreditCard className="size-4" /> Pagar taxa (PIX ou cartão)
                 </Button>
               ) : null}
             </div>
@@ -202,14 +192,17 @@ export function ConviteConvidado({ babaId, userId }: { babaId: string; userId: s
         </div>
       </div>
 
-      <PixDialog
+      <PagamentoDialog
         open={pixAberto}
         onOpenChange={setPixAberto}
         titulo="Taxa do convidado"
         descricao="Escaneie o QR Code ou copie o código no app do seu banco. A confirmação é automática."
+        valorBase={Number(valorConvidado ?? VALOR_CONVIDADO_PADRAO)}
         dados={dadosPix}
-        carregando={carregandoPix}
+        carregando={cobrar.isPending}
         pago={pago}
+        erro={erro}
+        onEscolherMetodo={(metodo) => cobrar.mutate(metodo)}
       />
     </div>
   );

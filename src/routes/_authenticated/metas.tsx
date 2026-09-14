@@ -187,6 +187,7 @@ function MetasPage() {
         aberto={!!metaEmPagamento && !!contribuicaoEmPagamento}
         contribuicaoId={contribuicaoEmPagamento?.id ?? null}
         titulo={metaEmPagamento?.titulo ?? "Item"}
+        valorBase={Number(contribuicaoEmPagamento?.valor ?? 0)}
         onAbertoChange={(aberto) => {
           if (!aberto) {
             setMetaEmPagamento(null);

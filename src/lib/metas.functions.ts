@@ -1,28 +1,33 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  cobrancaDoMetodo,
+  cobrarNoCartao,
+  dadosCalculados,
+  dadosDoPix,
+  metodoPagamento,
+} from "@/lib/cobranca.server";
+import type { CobrancaResposta } from "@/lib/taxasPagamento";
 
-export interface PixMetaResposta {
-  status: string;
-  pago: boolean;
-  qrCode: string | null;
-  qrBase64: string | null;
-  expiraEm: string | null;
-  valor: number;
+export type PixMetaResposta = CobrancaResposta & {
   contribuicaoId: string;
-}
+};
 
 /**
- * Cria um PIX para uma contribuição já cadastrada (pendente).
+ * Cria uma cobrança (PIX ou cartão) para uma contribuição já cadastrada (pendente).
  *
  * Fluxo:
  *  - Arrecadação aberta: o cliente insere a contribuição (valor livre) e chama este.
  *  - Arrecadação por item: o cliente usa `cadastrar_interesse_item` (valor fixo) e chama este.
- * O valor cobrado é sempre o da contribuição (fixo no item, escolhido na aberta).
+ * O valor base é sempre o da contribuição (fixo no item, escolhido na aberta); a
+ * taxa da forma de pagamento é somada por cima.
  */
 export const criarPixMeta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ contribuicaoId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ contribuicaoId: z.string().uuid(), metodo: metodoPagamento }).parse(d),
+  )
   .handler(async ({ data, context }): Promise<PixMetaResposta> => {
     const { supabase, userId } = context;
 
@@ -57,6 +62,8 @@ export const criarPixMeta = createServerFn({ method: "POST" })
       }
     }
 
+    const cobranca = await cobrancaDoMetodo(Number(contribuicao.valor), data.metodo);
+
     const { data: perfil } = await supabase
       .from("perfis")
       .select("nome, telefone")
@@ -64,16 +71,42 @@ export const criarPixMeta = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const { criarPagamentoPix, emailPagador } = await import("@/lib/mercadopago.server");
+    const email = emailPagador(perfil?.telefone, userId);
+    const descricao = `Contribuição: ${meta.titulo}`;
+    const externalReference = `meta:${contribuicao.id}`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (data.metodo !== "pix") {
+      const dados = await cobrarNoCartao({
+        metodo: data.metodo,
+        cobranca,
+        descricao,
+        email,
+        externalReference,
+        retorno: "/metas",
+        idempotencyKey: `meta-${contribuicao.id}-${data.metodo}-${Date.now()}`,
+      });
+      await supabaseAdmin.from("contribuicoes_meta_pagamento").upsert(
+        {
+          contribuicao_id: contribuicao.id,
+          pix_qr_code: null,
+          pix_qr_base64: null,
+          pix_expira_em: null,
+        },
+        { onConflict: "contribuicao_id" },
+      );
+      return { ...dados, contribuicaoId: contribuicao.id, status: "pending", pago: false };
+    }
+
     const pix = await criarPagamentoPix({
-      valor: Number(contribuicao.valor),
-      descricao: `Contribuição: ${meta.titulo}`,
-      email: emailPagador(perfil?.telefone, userId),
+      valor: cobranca.total,
+      descricao,
+      email,
       nome: perfil?.nome ?? "Associado",
-      externalReference: `meta:${contribuicao.id}`,
-      idempotencyKey: `meta-${contribuicao.id}`,
+      externalReference,
+      idempotencyKey: `meta-${contribuicao.id}-${Date.now()}`,
     });
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("contribuicoes_meta_pagamento").upsert(
       {
         contribuicao_id: contribuicao.id,
@@ -86,17 +119,14 @@ export const criarPixMeta = createServerFn({ method: "POST" })
     );
 
     return {
+      ...dadosDoPix(pix, cobranca),
       contribuicaoId: contribuicao.id,
       status: pix.status,
       pago: pix.status === "approved",
-      qrCode: pix.qrCode,
-      qrBase64: pix.qrBase64,
-      expiraEm: pix.expiraEm,
-      valor: Number(contribuicao.valor),
     };
   });
 
-/** Consulta o status de uma contribuição (PIX) e confirma quando aprovado. */
+/** Consulta o status de uma contribuição e confirma quando aprovada. */
 export const consultarPixMeta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ contribuicaoId: z.string().uuid() }).parse(d))
@@ -113,18 +143,7 @@ export const consultarPixMeta = createServerFn({ method: "POST" })
 
     if (contribuicao.status === "confirmada") return { pago: true, status: "approved" };
 
-    const { data: pagamento } = await supabase
-      .from("contribuicoes_meta_pagamento")
-      .select("mp_payment_id")
-      .eq("contribuicao_id", data.contribuicaoId)
-      .maybeSingle();
-    if (!pagamento?.mp_payment_id) return { pago: false, status: "sem_cobranca" };
-
-    const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
-    const mp = await consultarPagamentoMp(pagamento.mp_payment_id);
-
-    const { aplicarPagamento } = await import("@/lib/pagamentos.server");
-    await aplicarPagamento(`meta:${contribuicao.id}`, mp.status);
-
-    return { pago: mp.status === "approved", status: mp.status };
+    // Confirma na API do Mercado Pago (PIX ou cartão) e aplica no banco.
+    const { sincronizarPorReferencia } = await import("@/lib/pagamentos.server");
+    return await sincronizarPorReferencia(`meta:${contribuicao.id}`);
   });

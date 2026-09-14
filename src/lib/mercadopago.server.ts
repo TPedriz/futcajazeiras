@@ -1,4 +1,12 @@
-// Integração com a API do Mercado Pago (PIX). Somente servidor.
+// Integração com a API do Mercado Pago (PIX e cartão). Somente servidor.
+import {
+  CHAVES_TAXA,
+  TAXAS_PADRAO,
+  calcularCobranca,
+  type CobrancaCalculada,
+  type MetodoPagamento,
+} from "@/lib/taxasPagamento";
+
 const MP_API = "https://api.mercadopago.com";
 
 export const VALOR_MENSALIDADE = 15;
@@ -27,6 +35,45 @@ export function urlBase() {
 
 export function urlWebhook() {
   return `${urlBase()}/api/public/mercadopago-webhook`;
+}
+
+/* ========================== Taxas do pagador ========================== */
+
+/**
+ * Taxas por forma de pagamento lidas de `configuracoes` (ajustáveis pela
+ * diretoria em Admin › Financeiro).
+ */
+export async function taxasPagamento(): Promise<Record<MetodoPagamento, number>> {
+  const taxas: Record<MetodoPagamento, number> = { ...TAXAS_PADRAO };
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("configuracoes")
+      .select("chave, valor")
+      .in("chave", Object.values(CHAVES_TAXA));
+    const metodos = Object.keys(CHAVES_TAXA) as MetodoPagamento[];
+    for (const linha of data ?? []) {
+      const metodo = metodos.find((m) => CHAVES_TAXA[m] === linha.chave);
+      if (!metodo) continue;
+      const percentual = Number(linha.valor);
+      if (Number.isFinite(percentual) && percentual >= 0) taxas[metodo] = percentual;
+    }
+  } catch (e) {
+    console.error("[MercadoPago] não foi possível ler as taxas; usando o padrão", e);
+  }
+  return taxas;
+}
+
+/**
+ * Valor a cobrar do pagador: base + taxa do método, com a taxa arredondada
+ * para cima até o centavo.
+ */
+export async function cobrancaComTaxa(
+  valorBase: number,
+  metodo: MetodoPagamento,
+): Promise<CobrancaCalculada> {
+  const taxas = await taxasPagamento();
+  return calcularCobranca(valorBase, taxas[metodo] ?? 0);
 }
 
 export interface PixCriado {
@@ -113,4 +160,132 @@ export function emailPagador(telefone: string | null | undefined, userId: string
   const digitos = (telefone ?? "").replace(/\D/g, "");
   const local = digitos || userId.replace(/-/g, "").slice(0, 16);
   return `pagador.${local}@futcajazeiras.com.br`;
+}
+
+/* ====================== Cartão de crédito / débito ====================== */
+
+/**
+ * Checkout Pro (redirecionamento): cria uma preferência restrita ao tipo de
+ * cartão escolhido. O Mercado Pago cuida do formulário, 3DS, CPF e parcelas —
+ * nenhum dado de cartão passa pela aplicação.
+ */
+export interface PreferenciaCartao {
+  preferenceId: string;
+  initPoint: string;
+  sandboxInitPoint: string | null;
+}
+
+interface MpPreference {
+  id: string;
+  init_point?: string;
+  sandbox_init_point?: string;
+}
+
+/** Tipos de pagamento bloqueados para garantir só cartão de crédito ou débito. */
+const TIPOS_EXCLUIDOS: Record<"credito" | "debito", string[]> = {
+  credito: ["debit_card", "ticket", "bank_transfer", "atm", "prepaid_card"],
+  debito: ["credit_card", "ticket", "bank_transfer", "atm", "prepaid_card"],
+};
+
+export async function criarPreferenciaCartao(opts: {
+  metodo: "credito" | "debito";
+  valor: number;
+  descricao: string;
+  email: string;
+  externalReference: string;
+  /** Caminho interno para onde o Mercado Pago devolve o usuário. */
+  retorno: string;
+  idempotencyKey: string;
+}): Promise<PreferenciaCartao> {
+  const caminho = opts.retorno.startsWith("/") ? opts.retorno : "/pagamentos";
+  const separador = caminho.includes("?") ? "&" : "?";
+  const voltar = `${urlBase()}${caminho}${separador}mp_ref=${encodeURIComponent(
+    opts.externalReference,
+  )}`;
+
+  const res = await fetch(`${MP_API}/checkout/preferences`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token()}`,
+      "Content-Type": "application/json",
+      "X-Idempotency-Key": opts.idempotencyKey,
+    },
+    body: JSON.stringify({
+      items: [
+        {
+          id: opts.externalReference.slice(0, 64),
+          title: opts.descricao.slice(0, 250),
+          description: opts.descricao.slice(0, 250),
+          category_id: "others",
+          quantity: 1,
+          currency_id: "BRL",
+          unit_price: Number(opts.valor),
+        },
+      ],
+      payer: { email: opts.email },
+      external_reference: opts.externalReference,
+      notification_url: urlWebhook(),
+      back_urls: {
+        success: `${voltar}&mp_status=approved`,
+        pending: `${voltar}&mp_status=pending`,
+        failure: `${voltar}&mp_status=failure`,
+      },
+      auto_return: "approved",
+      payment_methods: {
+        excluded_payment_types: TIPOS_EXCLUIDOS[opts.metodo].map((id) => ({ id })),
+        installments: opts.metodo === "credito" ? 3 : 1,
+        default_installments: 1,
+      },
+    }),
+  });
+
+  const texto = await res.text();
+  if (!res.ok) {
+    console.error(`[MercadoPago] /checkout/preferences falhou [${res.status}]: ${texto}`);
+    throw new Error(`Mercado Pago recusou a cobrança no cartão [${res.status}]: ${texto}`);
+  }
+  const preferencia = JSON.parse(texto) as MpPreference;
+  return {
+    preferenceId: preferencia.id,
+    initPoint: preferencia.init_point ?? "",
+    sandboxInitPoint: preferencia.sandbox_init_point ?? null,
+  };
+}
+
+/** Em sandbox o `init_point` não funciona — nesse caso usamos o de teste. */
+export function urlCheckout(p: PreferenciaCartao): string {
+  if (token().startsWith("TEST-")) return p.sandboxInitPoint || p.initPoint;
+  return p.initPoint || p.sandboxInitPoint || "";
+}
+
+/**
+ * Busca o pagamento mais relevante de uma referência externa, seja PIX ou
+ * cartão. Prefere um pagamento aprovado; sem ele, um pendente.
+ */
+export async function consultarPagamentoPorReferencia(externalReference: string) {
+  const url =
+    `${MP_API}/v1/payments/search?sort=date&criteria=desc` +
+    `&external_reference=${encodeURIComponent(externalReference)}`;
+
+  let corpo: { results?: MpPayment[] };
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token()}` } });
+    const texto = await res.text();
+    if (!res.ok) {
+      console.error(`[MercadoPago] busca por referência falhou [${res.status}]: ${texto}`);
+      return null;
+    }
+    corpo = JSON.parse(texto) as { results?: MpPayment[] };
+  } catch (e) {
+    console.error("[MercadoPago] busca por referência", e);
+    return null;
+  }
+
+  const resultados = corpo.results ?? [];
+  if (resultados.length === 0) return null;
+  const escolhido =
+    resultados.find((p) => p.status === "approved") ??
+    resultados.find((p) => ["pending", "in_process", "authorized"].includes(p.status)) ??
+    resultados[0];
+  return { ...mapear(escolhido), externalReference: escolhido.external_reference ?? null };
 }

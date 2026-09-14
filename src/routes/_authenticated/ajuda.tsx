@@ -14,13 +14,13 @@ export const Route = createFileRoute("/_authenticated/ajuda")({
       {
         name: "description",
         content:
-          "Tire dúvidas sobre check-in no baba, como levar convidados, pagamento da mensalidade por PIX, as regras do ranking e a gamificação (XP, níveis, conquistas e cartinhas) do Fut Cajazeiras.",
+          "Tire dúvidas sobre check-in no baba, como levar convidados, pagamento da mensalidade por PIX ou cartão, as regras do ranking e a gamificação (XP, níveis, conquistas e cartinhas) do Fut Cajazeiras.",
       },
       { property: "og:title", content: "Central de Ajuda — Fut Cajazeiras" },
       {
         property: "og:description",
         content:
-          "Guia rápido do Fut Cajazeiras: presença, convidados, PIX, regras do ranking, XP, conquistas e cartinhas.",
+          "Guia rápido do Fut Cajazeiras: presença, convidados, PIX e cartão, regras do ranking, XP, conquistas e cartinhas.",
       },
       { property: "og:type", content: "website" },
     ],
@@ -69,15 +69,15 @@ const secoes = [
     itens: [
       [
         "Sou associado, como levo alguém?",
-        "Na aba Baba, use “Adicionar convidado”, informe o nome e gere o PIX do convidado.",
+        "Na aba Baba, use “Adicionar convidado”, informe o nome e pague a diária por PIX ou cartão.",
       ],
       [
         "Sou convidado, como entro?",
-        "Convidado não entra direto: escolha um associado e envie uma solicitação. Ele aceita e, se você for convidado novo, a diretoria aprova antes de qualquer PIX. Aprovado, o PIX é gerado para você pagar.",
+        "Convidado não entra direto: escolha um associado e envie uma solicitação. Ele aceita e, se você for convidado novo, a diretoria aprova antes de qualquer cobrança. Aprovado, você paga a diária por PIX ou cartão.",
       ],
       [
         "Quando o convidado é confirmado?",
-        "Assim que o PIX é aprovado, o status muda de “Aguardando pagamento” para “Confirmado”.",
+        "Assim que o pagamento é aprovado, o status muda de “Aguardando pagamento” para “Confirmado”.",
       ],
       [
         "A janela da lista vale para convidados?",
@@ -91,7 +91,7 @@ const secoes = [
   },
   {
     id: "pagamentos",
-    titulo: "Pagamentos e PIX",
+    titulo: "Pagamentos (PIX e cartão)",
     itens: [
       [
         "Quando vence a mensalidade?",
@@ -99,7 +99,7 @@ const secoes = [
       ],
       [
         "Tem multa por atraso?",
-        "Tem. Passou do vencimento (dia 10) e a mensalidade continua em aberto: o sistema soma a multa por atraso definida pela diretoria ao valor do PIX. O valor aparece detalhado na tela de Pagamentos.",
+        "Tem. Passou do vencimento (dia 10) e a mensalidade continua em aberto: o sistema soma a multa por atraso definida pela diretoria ao valor da cobrança. O valor aparece detalhado na tela de Pagamentos.",
       ],
       [
         "O que acontece se eu ficar muito tempo sem pagar?",
@@ -107,15 +107,19 @@ const secoes = [
       ],
       [
         "Como retomo minha associação?",
-        "Na tela de Pagamentos aparece o card “Retomar vínculo”, com todos os meses em aberto (já com as multas) e a Taxa de Associação de reinscrição. Um único PIX quita tudo, devolve o cargo de associado e reativa sua associação automaticamente.",
+        "Na tela de Pagamentos aparece o card “Retomar vínculo”, com todos os meses em aberto (já com as multas) e a Taxa de Associação de reinscrição. Uma única cobrança quita tudo, devolve o cargo de associado e reativa sua associação automaticamente.",
       ],
       [
         "Como pago?",
-        "Na aba Pagamentos, toque em gerar PIX. Escaneie o QR Code ou copie o código.",
+        "Em qualquer cobrança do app você escolhe a forma de pagamento: PIX (QR Code na hora) ou cartão de crédito (em até 3x com juros) e débito — nesse caso o pagamento abre no checkout seguro do Mercado Pago. O valor mostrado já inclui a taxa da forma escolhida, então não há surpresa no valor final.",
+      ],
+      [
+        "Por que o valor no cartão é um pouco maior?",
+        "Porque o cartão tem taxa de recebimento. Para o clube receber o valor cheio no mesmo dia, a taxa (arredondada para cima até o centavo) entra no valor cobrado de você. No PIX não há taxa.",
       ],
       [
         "Quando libera?",
-        "A confirmação é automática: assim que o PIX cai, o bloqueio some e você recebe uma notificação.",
+        "A confirmação é automática: assim que o pagamento cai, o bloqueio some e você recebe uma notificação. No cartão, pode voltar para o app depois de pagar — a confirmação acontece sozinha.",
       ],
       [
         "Posso pagar por outra pessoa?",

@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { SocialEvento } from "@/lib/feed";
+import { CHAVES_TAXA, TAXAS_PADRAO, type MetodoPagamento } from "@/lib/taxasPagamento";
 import {
   mensalidadeAtrasada,
   normalizaStatusConta,
@@ -8,6 +9,32 @@ import {
   SITUACAO_FINANCEIRA_VAZIA,
   type SituacaoFinanceira,
 } from "@/lib/financeiro";
+
+/**
+ * Taxas (%) cobradas por forma de pagamento, configuradas pela diretoria em
+ * Admin › Financeiro. Cai no padrão do Mercado Pago quando não configuradas.
+ */
+export const taxasPagamentoQuery = () =>
+  queryOptions({
+    queryKey: ["taxas-pagamento"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<Record<MetodoPagamento, number>> => {
+      const { data, error } = await supabase
+        .from("configuracoes")
+        .select("chave, valor")
+        .in("chave", Object.values(CHAVES_TAXA));
+      if (error) throw error;
+      const taxas: Record<MetodoPagamento, number> = { ...TAXAS_PADRAO };
+      const metodos = Object.keys(CHAVES_TAXA) as MetodoPagamento[];
+      for (const linha of data ?? []) {
+        const metodo = metodos.find((m) => CHAVES_TAXA[m] === linha.chave);
+        if (!metodo) continue;
+        const percentual = Number(linha.valor);
+        if (Number.isFinite(percentual) && percentual >= 0) taxas[metodo] = percentual;
+      }
+      return taxas;
+    },
+  });
 
 export const perfilAtualQuery = () =>
   queryOptions({

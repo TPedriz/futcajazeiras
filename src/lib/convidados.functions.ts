@@ -2,6 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { VALOR_CONVIDADO } from "@/lib/mercadopago.server";
+import {
+  cobrancaDoMetodo,
+  cobrarNoCartao,
+  dadosCalculados,
+  dadosDoPix,
+  metodoPagamento,
+} from "@/lib/cobranca.server";
+import type { DadosCobranca, MetodoPagamento } from "@/lib/taxasPagamento";
 
 export interface PixConvite {
   pago: boolean;
@@ -9,6 +17,88 @@ export interface PixConvite {
   qrCode: string | null;
   qrBase64: string | null;
   valor: number;
+  /** Forma de pagamento da última cobrança criada. */
+  metodo?: MetodoPagamento;
+  /** Link do checkout do Mercado Pago (só cartão de crédito/débito). */
+  checkoutUrl?: string | null;
+  expiraEm?: string | null;
+  valorBase?: number;
+  taxa?: number;
+  taxaPercentual?: number;
+}
+
+/** Cobrança de convidado recém-criada, pronta para o diálogo de pagamento. */
+export type CobrancaConvidado = DadosCobranca & {
+  presencaId: string;
+  pago: boolean;
+  status: string;
+};
+
+/**
+ * Cria a cobrança (PIX ou cartão) da diária de um convidado e guarda o estado
+ * em `presencas` / `presencas_pagamento`. O valor cobrado é o valor base da
+ * presença + a taxa da forma de pagamento (arredondada para cima).
+ */
+async function criarCobrancaPresenca(opts: {
+  presencaId: string;
+  valorBase: number;
+  nomeConvidado: string;
+  email: string;
+  nomePagador: string;
+  metodo: MetodoPagamento;
+}): Promise<DadosCobranca> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { criarPagamentoPix } = await import("@/lib/mercadopago.server");
+  const cobranca = await cobrancaDoMetodo(opts.valorBase, opts.metodo);
+  const externalReference = `convidado:${opts.presencaId}`;
+  const descricao = `Diária de convidado — ${opts.nomeConvidado}`;
+
+  if (opts.metodo !== "pix") {
+    const dados = await cobrarNoCartao({
+      metodo: opts.metodo,
+      cobranca,
+      descricao,
+      email: opts.email,
+      externalReference,
+      retorno: "/baba",
+      idempotencyKey: `convidado-${opts.presencaId}-${opts.metodo}-${Date.now()}`,
+    });
+    await supabaseAdmin
+      .from("presencas")
+      .update({ mp_status: "pending" })
+      .eq("id", opts.presencaId);
+    await supabaseAdmin.from("presencas_pagamento").upsert(
+      {
+        presenca_id: opts.presencaId,
+        pix_qr_code: null,
+        pix_qr_base64: null,
+        pix_expira_em: null,
+      },
+      { onConflict: "presenca_id" },
+    );
+    return dados;
+  }
+
+  const pix = await criarPagamentoPix({
+    valor: cobranca.total,
+    descricao,
+    email: opts.email,
+    nome: opts.nomePagador,
+    externalReference,
+    idempotencyKey: `convidado-${opts.presencaId}-${Date.now()}`,
+  });
+  await supabaseAdmin.from("presencas").update({ mp_status: pix.status }).eq("id", opts.presencaId);
+  await supabaseAdmin.from("presencas_pagamento").upsert(
+    {
+      presenca_id: opts.presencaId,
+      mp_payment_id: pix.paymentId,
+      pix_qr_code: pix.qrCode,
+      pix_qr_base64: pix.qrBase64,
+      pix_expira_em: pix.expiraEm,
+    },
+    { onConflict: "presenca_id" },
+  );
+  return dadosDoPix(pix, cobranca);
 }
 
 /** Lista associados e diretoria que podem receber uma solicitação de convite. */
@@ -194,13 +284,16 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
         );
     }
 
+    // Cobrança automática em PIX ao liberar a vaga (o convidado pode trocar
+    // para cartão depois, pelo diálogo de pagamento).
+    const cobranca = await cobrancaDoMetodo(valorConvidado, "pix");
     const pix = await criarPagamentoPix({
-      valor: valorConvidado,
+      valor: cobranca.total,
       descricao: `Taxa de convidado — ${perfilSolicitante?.nome ?? "Convidado"}`,
       email: emailPagador(perfilSolicitante?.telefone, sol.solicitante_id),
       nome: perfilSolicitante?.nome ?? "Convidado",
       externalReference: `convidado:${presenca.id}`,
-      idempotencyKey: `convidado-${presenca.id}`,
+      idempotencyKey: `convidado-${presenca.id}-${Date.now()}`,
     });
 
     await supabaseAdmin.from("presencas").update({ mp_status: pix.status }).eq("id", presenca.id);
@@ -223,7 +316,7 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
     return { aceito: true, presencaId: presenca.id };
   });
 
-/** Status de uma presença de convidado (PIX) — consulta a API do Mercado Pago para confirmar. */
+/** Status de uma presença de convidado — confirma na API do Mercado Pago. */
 async function statusDaPresenca(presencaId: string): Promise<PixConvite> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: presenca } = await supabaseAdmin
@@ -235,7 +328,7 @@ async function statusDaPresenca(presencaId: string): Promise<PixConvite> {
 
   const { data: cobranca } = await supabaseAdmin
     .from("presencas_pagamento")
-    .select("mp_payment_id, pix_qr_code, pix_qr_base64")
+    .select("pix_qr_code, pix_qr_base64")
     .eq("presenca_id", presenca.id)
     .maybeSingle();
 
@@ -246,14 +339,11 @@ async function statusDaPresenca(presencaId: string): Promise<PixConvite> {
   };
 
   if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...base };
-  if (!cobranca?.mp_payment_id) return { pago: false, status: "sem_cobranca", ...base };
 
-  const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
-  const pagamento = await consultarPagamentoMp(cobranca.mp_payment_id);
-  const { aplicarPagamento } = await import("@/lib/pagamentos.server");
-  await aplicarPagamento(`convidado:${presenca.id}`, pagamento.status);
-
-  return { pago: pagamento.status === "approved", status: pagamento.status, ...base };
+  // Confirma na API do Mercado Pago (PIX ou cartão) e aplica no banco.
+  const { sincronizarPorReferencia } = await import("@/lib/pagamentos.server");
+  const resultado = await sincronizarPorReferencia(`convidado:${presenca.id}`);
+  return { pago: resultado.pago, status: resultado.status, ...base };
 }
 
 /** PIX da solicitação — acessível ao convidado solicitante e ao anfitrião. */
@@ -364,11 +454,13 @@ export const decidirPedidoConvidado = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Gera (ou reaproveita) o PIX da diária do convidado — só depois do pedido aprovado. */
+/** Gera a cobrança (PIX ou cartão) da diária do convidado — só depois do pedido aprovado. */
 export const gerarPixPedido = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ pedidoId: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }): Promise<PixConvite & { presencaId: string }> => {
+  .inputValidator((d: unknown) =>
+    z.object({ pedidoId: z.string().uuid(), metodo: metodoPagamento }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<CobrancaConvidado> => {
     const { supabase, userId } = context;
     const { data: pedido } = await supabase
       .from("pedidos_convidado")
@@ -424,34 +516,17 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
       .eq("id", presencaId)
       .maybeSingle();
 
-    const { data: cobranca } = await supabaseAdmin
-      .from("presencas_pagamento")
-      .select("mp_payment_id, pix_qr_code, pix_qr_base64, pix_expira_em")
-      .eq("presenca_id", presencaId)
-      .maybeSingle();
+    const valorBase =
+      Number(presencaAtual?.valor) > 0 ? Number(presencaAtual?.valor) : VALOR_CONVIDADO;
+
+    const valorCobrado = await cobrancaDoMetodo(valorBase, data.metodo);
 
     if (presencaAtual?.status_convidado === "aprovado") {
       return {
+        ...dadosCalculados(valorCobrado, data.metodo),
         presencaId,
         pago: true,
         status: "approved",
-        qrCode: cobranca?.pix_qr_code ?? null,
-        qrBase64: cobranca?.pix_qr_base64 ?? null,
-        valor: VALOR_CONVIDADO,
-      };
-    }
-
-    const valido =
-      cobranca?.pix_qr_code &&
-      (!cobranca.pix_expira_em || new Date(cobranca.pix_expira_em) > new Date());
-    if (valido) {
-      return {
-        presencaId,
-        pago: false,
-        status: "pending",
-        qrCode: cobranca!.pix_qr_code,
-        qrBase64: cobranca!.pix_qr_base64,
-        valor: VALOR_CONVIDADO,
       };
     }
 
@@ -461,36 +536,107 @@ export const gerarPixPedido = createServerFn({ method: "POST" })
       .eq("id", userId)
       .maybeSingle();
 
-    const { criarPagamentoPix, emailPagador } = await import("@/lib/mercadopago.server");
-    const valorPix =
-      Number(presencaAtual?.valor) > 0 ? Number(presencaAtual?.valor) : VALOR_CONVIDADO;
-    const pix = await criarPagamentoPix({
-      valor: valorPix,
-      descricao: `Diária de convidado — ${cad.nome}`,
+    const { emailPagador } = await import("@/lib/mercadopago.server");
+    const dados = await criarCobrancaPresenca({
+      presencaId,
+      valorBase,
+      nomeConvidado: cad.nome,
       email: emailPagador(anfitriao?.telefone, userId),
-      nome: anfitriao?.nome ?? "Associado",
-      externalReference: `convidado:${presencaId}`,
-      idempotencyKey: `convidado-${presencaId}-${Date.now()}`,
+      nomePagador: anfitriao?.nome ?? "Associado",
+      metodo: data.metodo,
     });
 
-    await supabaseAdmin.from("presencas").update({ mp_status: pix.status }).eq("id", presencaId);
-    await supabaseAdmin.from("presencas_pagamento").upsert(
-      {
-        presenca_id: presencaId,
-        mp_payment_id: pix.paymentId,
-        pix_qr_code: pix.qrCode,
-        pix_qr_base64: pix.qrBase64,
-        pix_expira_em: pix.expiraEm,
-      },
-      { onConflict: "presenca_id" },
-    );
-
     return {
+      ...dados,
       presencaId,
-      pago: pix.status === "approved",
-      status: pix.status,
-      qrCode: pix.qrCode,
-      qrBase64: pix.qrBase64,
-      valor: valorPix,
+      pago: false,
+      status: "pending",
     };
+  });
+
+/** Status de pagamento do pedido (somente leitura) — usado no polling do anfitrião. */
+export const statusPagamentoPedido = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ pedidoId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ pago: boolean; status: string }> => {
+    const { supabase, userId } = context;
+    const { data: pedido } = await supabase
+      .from("pedidos_convidado")
+      .select("id, anfitriao_id, presenca_id")
+      .eq("id", data.pedidoId)
+      .maybeSingle();
+    if (!pedido || pedido.anfitriao_id !== userId) throw new Error("Pedido não encontrado");
+    if (!pedido.presenca_id) return { pago: false, status: "sem_cobranca" };
+
+    const { sincronizarPorReferencia } = await import("@/lib/pagamentos.server");
+    return await sincronizarPorReferencia(`convidado:${pedido.presenca_id}`);
+  });
+
+/**
+ * Gera a cobrança da diária do convidado (PIX ou cartão) para o convidado pagar
+ * — liberado ao solicitante e ao anfitrião, depois que a vaga existe.
+ */
+export const gerarCobrancaSolicitacao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ solicitacaoId: z.string().uuid(), metodo: metodoPagamento }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<CobrancaConvidado> => {
+    const { supabase, userId } = context;
+    const { data: sol } = await supabase
+      .from("solicitacoes_convidado")
+      .select("id, solicitante_id, anfitriao_id, presenca_id")
+      .eq("id", data.solicitacaoId)
+      .maybeSingle();
+    if (!sol || (sol.solicitante_id !== userId && sol.anfitriao_id !== userId)) {
+      throw new Error("Solicitação não encontrada");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let presencaId = sol.presenca_id;
+    if (!presencaId) {
+      const { data: pedido } = await supabaseAdmin
+        .from("pedidos_convidado")
+        .select("id, presenca_id")
+        .eq("solicitacao_id", sol.id)
+        .maybeSingle();
+      presencaId = pedido?.presenca_id ?? null;
+    }
+    if (!presencaId) throw new Error("Aguarde o associado liberar a vaga do convidado");
+
+    const { data: presenca } = await supabaseAdmin
+      .from("presencas")
+      .select("id, status_convidado, valor, nome_convidado")
+      .eq("id", presencaId)
+      .maybeSingle();
+    if (!presenca) throw new Error("Cobrança não encontrada");
+
+    const valorBase = Number(presenca.valor) > 0 ? Number(presenca.valor) : VALOR_CONVIDADO;
+    const valorCobrado = await cobrancaDoMetodo(valorBase, data.metodo);
+    if (presenca.status_convidado === "aprovado") {
+      return {
+        ...dadosCalculados(valorCobrado, data.metodo),
+        presencaId,
+        pago: true,
+        status: "approved",
+      };
+    }
+
+    const { data: perfil } = await supabaseAdmin
+      .from("perfis")
+      .select("nome, telefone")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const { emailPagador } = await import("@/lib/mercadopago.server");
+    const dados = await criarCobrancaPresenca({
+      presencaId,
+      valorBase,
+      nomeConvidado: presenca.nome_convidado ?? "Convidado",
+      email: emailPagador(perfil?.telefone, userId),
+      nomePagador: perfil?.nome ?? "Associado",
+      metodo: data.metodo,
+    });
+
+    return { ...dados, presencaId, pago: false, status: "pending" };
   });

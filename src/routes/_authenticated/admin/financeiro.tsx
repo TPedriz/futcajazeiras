@@ -10,12 +10,21 @@ import {
   valorConvidadoQuery,
   valorMultaAtrasoQuery,
   valorTaxaAssociacaoQuery,
+  taxasPagamentoQuery,
   vagasAssociadosQuery,
   LIMITE_ASSOCIADOS,
   VALOR_MENSALIDADE_PADRAO,
   VALOR_CONVIDADO_PADRAO,
   VALOR_MULTA_ATRASO_PADRAO,
 } from "@/lib/babaQueries";
+import {
+  CHAVES_TAXA,
+  METODOS_PAGAMENTO,
+  ROTULO_METODO,
+  TAXAS_PADRAO,
+  calcularCobranca,
+  type MetodoPagamento,
+} from "@/lib/taxasPagamento";
 import {
   formatarCobrancaInadimplentesParaWhatsApp,
   totalCobranca,
@@ -47,8 +56,9 @@ import {
   RefreshCw,
   Copy,
   Send,
+  CreditCard,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -319,6 +329,7 @@ function FinanceiroPage() {
       <ValorConvidadoCard />
       <ValorMultaCard />
       <ValorTaxaAssociacaoCard />
+      <TaxasPagamentoCard />
       <RotinaFinanceiraCard />
 
       <ul className="space-y-2">
@@ -787,6 +798,139 @@ function ValorTaxaAssociacaoCard() {
       descricao="Cobrada junto com os débitos retroativos quando o associado inadimplente retoma o vínculo."
       Icone={ShieldAlert}
     />
+  );
+}
+
+/** Taxas cobradas por forma de pagamento (repasse ao pagador). */
+function TaxasPagamentoCard() {
+  const qc = useQueryClient();
+  const { data: taxas } = useQuery(taxasPagamentoQuery());
+  const [valores, setValores] = useState<Record<MetodoPagamento, string>>({
+    pix: "",
+    debito: "",
+    credito: "",
+  });
+  const [confirmando, setConfirmando] = useState(false);
+
+  useEffect(() => {
+    if (!taxas) return;
+    setValores({
+      pix: String(taxas.pix).replace(".", ","),
+      debito: String(taxas.debito).replace(".", ","),
+      credito: String(taxas.credito).replace(".", ","),
+    });
+  }, [taxas]);
+
+  const salvar = useMutation({
+    mutationFn: async () => {
+      const linhas = METODOS_PAGAMENTO.map((metodo) => {
+        const percentual = Number(valores[metodo].replace(",", "."));
+        if (!Number.isFinite(percentual) || percentual < 0 || percentual > 100)
+          throw new Error("Informe percentuais entre 0 e 100.");
+        return {
+          chave: CHAVES_TAXA[metodo],
+          valor: percentual,
+          atualizado_em: new Date().toISOString(),
+        };
+      });
+      const { error } = await supabase
+        .from("configuracoes")
+        .upsert(linhas, { onConflict: "chave" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Taxas atualizadas", {
+        description: "Vale para todas as próximas cobranças (PIX, débito e crédito).",
+      });
+      setConfirmando(false);
+      void qc.invalidateQueries({ queryKey: ["taxas-pagamento"] });
+    },
+    onError: (e: Error) => toast.error("Erro", { description: e.message }),
+  });
+
+  const exemplo = 20;
+
+  return (
+    <div className="card-premium space-y-3 p-4">
+      <div className="flex items-center gap-2">
+        <CreditCard className="size-4 text-gold" />
+        <p className="text-xs uppercase tracking-widest text-gold">Taxas por forma de pagamento</p>
+      </div>
+
+      <div className="space-y-2">
+        {METODOS_PAGAMENTO.map((metodo) => {
+          const digitado = Number(valores[metodo].replace(",", "."));
+          const percentual = Number.isFinite(digitado) && digitado > 0 ? digitado : 0;
+          return (
+            <div
+              key={metodo}
+              className="space-y-1 rounded-lg border border-border/60 bg-surface p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-foreground">
+                  {ROTULO_METODO[metodo]}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Input
+                    inputMode="decimal"
+                    aria-label={`Taxa do ${ROTULO_METODO[metodo]} em %`}
+                    className="h-9 w-20 text-right"
+                    value={valores[metodo]}
+                    onChange={(e) => {
+                      setValores((v) => ({ ...v, [metodo]: e.target.value }));
+                      setConfirmando(false);
+                    }}
+                  />
+                  <span className="text-sm text-muted-foreground">%</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Em {formatarReais(exemplo)} o cliente paga{" "}
+                <strong className="text-foreground">
+                  {formatarReais(calcularCobranca(exemplo, percentual).total)}
+                </strong>
+                .
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      <Button
+        variant={confirmando ? "destructive" : "gold"}
+        size="lg"
+        className="w-full"
+        disabled={salvar.isPending}
+        onClick={() => (confirmando ? salvar.mutate() : setConfirmando(true))}
+      >
+        {confirmando ? "Confirmar taxas" : "Salvar taxas"}
+      </Button>
+      {confirmando && (
+        <p className="text-[11px] text-destructive">
+          Confirme novamente: as taxas passam a valer para todas as próximas cobranças.
+        </p>
+      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full text-muted-foreground"
+        onClick={() => {
+          setValores({
+            pix: String(TAXAS_PADRAO.pix).replace(".", ","),
+            debito: String(TAXAS_PADRAO.debito).replace(".", ","),
+            credito: String(TAXAS_PADRAO.credito).replace(".", ","),
+          });
+          setConfirmando(false);
+        }}
+      >
+        <RotateCcw className="size-3" /> Restaurar padrão do Mercado Pago
+      </Button>
+      <p className="text-[11px] text-muted-foreground">
+        A taxa é somada ao valor e arredondada para cima (até o centavo), para o líquido cair no
+        mesmo dia na conta do Mercado Pago. O PIX já cai na hora; nos cartões a taxa cobre o
+        recebimento no mesmo dia. Use 0 para não repassar taxa nenhuma.
+      </p>
+    </div>
   );
 }
 

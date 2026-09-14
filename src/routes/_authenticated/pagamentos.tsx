@@ -15,8 +15,9 @@ import {
   criarPixRegularizacao,
   consultarPixRegularizacao,
 } from "@/lib/pagamentos.functions";
-import { PixDialog, type DadosPix } from "@/components/PixDialog";
+import { PagamentoDialog } from "@/components/PagamentoDialog";
 import { PresentearMensalidade } from "@/components/PresentearMensalidade";
+import type { DadosCobranca, MetodoPagamento } from "@/lib/taxasPagamento";
 
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -29,7 +30,6 @@ import {
   CalendarClock,
   Wallet,
   Heart,
-  QrCode,
   MessageCircle,
   ShieldAlert,
   RefreshCw,
@@ -69,23 +69,36 @@ function PagamentosPage() {
   const checarPixRegularizacao = useServerFn(consultarPixRegularizacao);
 
   const [pixAberto, setPixAberto] = useState(false);
-  const [mensalidadeAtiva, setMensalidadeAtiva] = useState<string | null>(null);
-  const [dadosPix, setDadosPix] = useState<DadosPix | null>(null);
+  const [mensalidadeAtiva, setMensalidadeAtiva] = useState<{
+    id: string;
+    valorBase: number;
+  } | null>(null);
+  const [dadosPix, setDadosPix] = useState<DadosCobranca | null>(null);
   const [pago, setPago] = useState(false);
+  const [erroPix, setErroPix] = useState<string | null>(null);
 
   // Retomada de vínculo (inadimplência)
   const [regAberto, setRegAberto] = useState(false);
   const [regId, setRegId] = useState<string | null>(null);
-  const [regDados, setRegDados] = useState<DadosPix | null>(null);
+  const [regDados, setRegDados] = useState<DadosCobranca | null>(null);
   const [regPago, setRegPago] = useState(false);
+  const [regErro, setRegErro] = useState<string | null>(null);
+
+  /** Abre o diálogo de pagamento (a forma é escolhida antes de gerar a cobrança). */
+  const abrirCobranca = (mensalidade: { id: string; valorBase: number }) => {
+    setMensalidadeAtiva(mensalidade);
+    setDadosPix(null);
+    setPago(false);
+    setErroPix(null);
+    setPixAberto(true);
+  };
 
   const cobrar = useMutation({
-    mutationFn: async (mensalidadeId: string) => {
-      setMensalidadeAtiva(mensalidadeId);
+    mutationFn: async (args: { mensalidadeId: string; metodo: MetodoPagamento }) => {
       setDadosPix(null);
       setPago(false);
-      setPixAberto(true);
-      return await gerarPix({ data: { mensalidadeId } });
+      setErroPix(null);
+      return await gerarPix({ data: args });
     },
     onSuccess: (res) => {
       if (res.pago) {
@@ -93,20 +106,20 @@ function PagamentosPage() {
         qc.invalidateQueries({ queryKey: ["mensalidades-minhas"] });
         return;
       }
-      setDadosPix({ qrCode: res.qrCode, qrBase64: res.qrBase64, valor: res.valor });
+      setDadosPix(res);
     },
     onError: (e: Error) => {
-      setPixAberto(false);
-      toast.error("Não foi possível gerar o PIX", { description: e.message });
+      setErroPix(e.message);
+      toast.error("Não foi possível gerar a cobrança", { description: e.message });
     },
   });
 
   const regularizar = useMutation({
-    mutationFn: async () => {
-      setRegAberto(true);
+    mutationFn: async (metodo: MetodoPagamento) => {
       setRegDados(null);
       setRegPago(false);
-      return await gerarPixRegularizacao();
+      setRegErro(null);
+      return await gerarPixRegularizacao({ data: { metodo } });
     },
     onSuccess: (res) => {
       setRegId(res.regularizacaoId);
@@ -117,20 +130,20 @@ function PagamentosPage() {
         void qc.invalidateQueries({ queryKey: ["perfil-atual"] });
         return;
       }
-      setRegDados({ qrCode: res.qrCode, qrBase64: res.qrBase64, valor: res.valor });
+      setRegDados(res);
     },
     onError: (e: Error) => {
-      setRegAberto(false);
+      setRegErro(e.message);
       toast.error("Não foi possível iniciar a regularização", { description: e.message });
     },
   });
 
   // Polling enquanto o modal está aberto e o pagamento não foi confirmado
   useEffect(() => {
-    if (!pixAberto || pago || !mensalidadeAtiva) return;
+    if (!pixAberto || pago || !mensalidadeAtiva || !dadosPix) return;
     const id = setInterval(async () => {
       try {
-        const r = await consultarPix({ data: { mensalidadeId: mensalidadeAtiva } });
+        const r = await consultarPix({ data: { mensalidadeId: mensalidadeAtiva.id } });
         if (r.pago) {
           setPago(true);
           qc.invalidateQueries({ queryKey: ["mensalidades-minhas"] });
@@ -143,11 +156,11 @@ function PagamentosPage() {
       }
     }, 5000);
     return () => clearInterval(id);
-  }, [pixAberto, pago, mensalidadeAtiva, consultarPix, qc]);
+  }, [pixAberto, pago, mensalidadeAtiva, dadosPix, consultarPix, qc]);
 
   // Polling da regularização (retomada de vínculo)
   useEffect(() => {
-    if (!regAberto || regPago || !regId) return;
+    if (!regAberto || regPago || !regId || !regDados) return;
     const id = setInterval(async () => {
       try {
         const r = await checarPixRegularizacao({ data: { regularizacaoId: regId } });
@@ -163,7 +176,7 @@ function PagamentosPage() {
       }
     }, 5000);
     return () => clearInterval(id);
-  }, [regAberto, regPago, regId, checarPixRegularizacao, qc]);
+  }, [regAberto, regPago, regId, regDados, checarPixRegularizacao, qc]);
 
   const tempo = tempoDeAssociado(perfilData?.perfil?.criado_em);
   const pagas = (mensalidades ?? []).filter((m) => m.status === "pago").length;
@@ -273,7 +286,13 @@ function PagamentosPage() {
             size="lg"
             className="w-full"
             disabled={regularizar.isPending}
-            onClick={() => regularizar.mutate()}
+            onClick={() => {
+              setRegId(null);
+              setRegDados(null);
+              setRegPago(false);
+              setRegErro(null);
+              setRegAberto(true);
+            }}
           >
             <RefreshCw className="size-4" /> Retomar vínculo —{" "}
             {formatarReais(situacaoFin.totalRegularizacao)}
@@ -334,10 +353,9 @@ function PagamentosPage() {
                   variant="hero"
                   size="lg"
                   className="w-full"
-                  disabled={cobrar.isPending}
-                  onClick={() => cobrar.mutate(m.id)}
+                  onClick={() => abrirCobranca({ id: m.id, valorBase: total })}
                 >
-                  <QrCode className="size-4" /> Pagar com PIX — {formatarReais(total)}
+                  <Wallet className="size-4" /> Pagar mensalidade — {formatarReais(total)}
                 </Button>
               )}
             </li>
@@ -355,24 +373,32 @@ function PagamentosPage() {
         </div>
       )}
 
-      <PixDialog
+      <PagamentoDialog
         open={pixAberto}
         onOpenChange={setPixAberto}
         titulo="Pagar mensalidade"
         descricao="Escaneie o QR Code ou copie o código no app do seu banco."
+        valorBase={mensalidadeAtiva?.valorBase ?? 0}
         dados={dadosPix}
         carregando={cobrar.isPending}
         pago={pago}
+        erro={erroPix}
+        onEscolherMetodo={(metodo) => {
+          if (mensalidadeAtiva) cobrar.mutate({ mensalidadeId: mensalidadeAtiva.id, metodo });
+        }}
       />
 
-      <PixDialog
+      <PagamentoDialog
         open={regAberto}
         onOpenChange={setRegAberto}
         titulo="Retomar vínculo"
-        descricao="Débitos retroativos + multas + Taxa de Associação em um único PIX."
+        descricao="Débitos retroativos + multas + Taxa de Associação em uma única cobrança."
+        valorBase={situacaoFin?.totalRegularizacao ?? 0}
         dados={regDados}
         carregando={regularizar.isPending}
         pago={regPago}
+        erro={regErro}
+        onEscolherMetodo={(metodo) => regularizar.mutate(metodo)}
       />
     </div>
   );

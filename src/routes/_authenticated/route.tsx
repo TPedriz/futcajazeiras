@@ -12,6 +12,7 @@ import { CartinhaProvider } from "@/components/CartinhaModal";
 import { BubbleConquista } from "@/components/BubbleConquista";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificacoesProvider } from "@/components/NotificacoesProvider";
+import { RetornoPagamento } from "@/components/RetornoPagamento";
 import { ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -73,6 +74,7 @@ function AuthenticatedLayout() {
     <NotificacoesProvider userId={data?.user.id}>
       <div className="min-h-screen bg-background">
         <BubbleConquista />
+        <RetornoPagamento />
 
         <AppSidebar
           isAdmin={isAdmin}

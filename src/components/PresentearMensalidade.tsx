@@ -10,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PixDialog, type DadosPix } from "@/components/PixDialog";
+import { PagamentoDialog } from "@/components/PagamentoDialog";
+import type { DadosCobranca, MetodoPagamento } from "@/lib/taxasPagamento";
 import {
   listarMensalidadesPendentes,
   criarPixPresente,
@@ -26,8 +27,9 @@ export function PresentearMensalidade() {
 
   const [escolhida, setEscolhida] = useState<string>("");
   const [aberto, setAberto] = useState(false);
-  const [dadosPix, setDadosPix] = useState<DadosPix | null>(null);
+  const [dadosPix, setDadosPix] = useState<DadosCobranca | null>(null);
   const [pago, setPago] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
   const [nomePresenteado, setNomePresenteado] = useState("");
 
   const { data: pendentes } = useQuery({
@@ -35,13 +37,27 @@ export function PresentearMensalidade() {
     queryFn: () => listar({ data: undefined }),
   });
 
+  const escolhidaInfo = (pendentes ?? []).find((m) => m.mensalidadeId === escolhida);
+
+  /** Abre o diálogo: a forma de pagamento é escolhida antes de gerar a cobrança. */
+  const abrir = () => {
+    if (!escolhida) {
+      toast.error("Escolha quem você quer presentear");
+      return;
+    }
+    setNomePresenteado(escolhidaInfo?.nome ?? "");
+    setDadosPix(null);
+    setPago(false);
+    setErro(null);
+    setAberto(true);
+  };
+
   const presentear = useMutation({
-    mutationFn: async () => {
-      if (!escolhida) throw new Error("Escolha quem você quer presentear");
+    mutationFn: async (metodo: MetodoPagamento) => {
       setDadosPix(null);
       setPago(false);
-      setAberto(true);
-      return await gerar({ data: { mensalidadeId: escolhida } });
+      setErro(null);
+      return await gerar({ data: { mensalidadeId: escolhida, metodo } });
     },
     onSuccess: (r) => {
       setNomePresenteado(r.nome);
@@ -49,16 +65,16 @@ export function PresentearMensalidade() {
         setPago(true);
         return;
       }
-      setDadosPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
+      setDadosPix(r);
     },
     onError: (e: Error) => {
-      setAberto(false);
-      toast.error("Não foi possível gerar o PIX", { description: e.message });
+      setErro(e.message);
+      toast.error("Não foi possível gerar a cobrança", { description: e.message });
     },
   });
 
   useEffect(() => {
-    if (!aberto || pago || !escolhida) return;
+    if (!aberto || pago || !escolhida || !dadosPix) return;
     const id = setInterval(async () => {
       try {
         const r = await conferir({ data: { mensalidadeId: escolhida } });
@@ -73,7 +89,7 @@ export function PresentearMensalidade() {
       }
     }, 5000);
     return () => clearInterval(id);
-  }, [aberto, pago, escolhida, conferir, qc, nomePresenteado]);
+  }, [aberto, pago, escolhida, dadosPix, conferir, qc, nomePresenteado]);
 
   return (
     <div className="card-premium p-5">
@@ -82,8 +98,8 @@ export function PresentearMensalidade() {
         <div className="flex-1">
           <p className="font-display text-lg">Presentear alguém</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Pague a mensalidade de outro jogador. Assim que o PIX cair, ele fica em dia
-            automaticamente.
+            Pague a mensalidade de outro jogador com PIX ou cartão. Assim que o pagamento cair, ele
+            fica em dia automaticamente.
           </p>
 
           <div className="mt-3 space-y-2">
@@ -104,9 +120,9 @@ export function PresentearMensalidade() {
               size="lg"
               className="w-full"
               disabled={!escolhida || presentear.isPending}
-              onClick={() => presentear.mutate()}
+              onClick={abrir}
             >
-              <Gift className="size-4" /> Gerar PIX do presente
+              <Gift className="size-4" /> Presentear mensalidade
             </Button>
             {(pendentes ?? []).length === 0 && (
               <p className="text-xs text-muted-foreground">
@@ -117,14 +133,17 @@ export function PresentearMensalidade() {
         </div>
       </div>
 
-      <PixDialog
+      <PagamentoDialog
         open={aberto}
         onOpenChange={setAberto}
         titulo={nomePresenteado ? `Presente para ${nomePresenteado}` : "Presentear mensalidade"}
         descricao="Escaneie o QR Code ou copie o código no app do seu banco."
+        valorBase={escolhidaInfo?.valor ?? 0}
         dados={dadosPix}
         carregando={presentear.isPending}
         pago={pago}
+        erro={erro}
+        onEscolherMetodo={(metodo) => presentear.mutate(metodo)}
       />
     </div>
   );

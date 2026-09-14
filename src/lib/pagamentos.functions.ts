@@ -1,35 +1,33 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { VALOR_MENSALIDADE, VALOR_CONVIDADO } from "@/lib/mercadopago.server";
+import { VALOR_MENSALIDADE } from "@/lib/mercadopago.server";
+import {
+  cobrancaDoMetodo,
+  cobrarNoCartao,
+  dadosCalculados,
+  dadosDoPix,
+  metodoPagamento,
+} from "@/lib/cobranca.server";
+import type { CobrancaResposta } from "@/lib/taxasPagamento";
 
-export interface PixResposta {
-  status: string;
-  pago: boolean;
-  qrCode: string | null;
-  qrBase64: string | null;
-  expiraEm: string | null;
-  valor: number;
-  /** Acréscimo por atraso embutido no valor cobrado (0 quando não há). */
+export type PixResposta = CobrancaResposta & {
+  /** Acréscimo por atraso embutido no valor base cobrado (0 quando não há). */
   multa?: number;
-}
+};
 
-export interface RegularizacaoResposta {
+export type RegularizacaoResposta = CobrancaResposta & {
   regularizacaoId: string;
-  status: string;
-  pago: boolean;
-  qrCode: string | null;
-  qrBase64: string | null;
-  expiraEm: string | null;
-  /** Total cobrado: débitos retroativos + multas + Taxa de Associação. */
-  valor: number;
+  /** Débitos retroativos + multas (sem a Taxa de Associação). */
   valorDebitos: number;
   taxaAssociacao: number;
-}
+};
 
 export const criarPixMensalidade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ mensalidadeId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ mensalidadeId: z.string().uuid(), metodo: metodoPagamento }).parse(d),
+  )
   .handler(async ({ data, context }): Promise<PixResposta> => {
     const { supabase, userId } = context;
 
@@ -47,33 +45,14 @@ export const criarPixMensalidade = createServerFn({ method: "POST" })
 
     const base = Number(mensalidade.valor) > 0 ? Number(mensalidade.valor) : VALOR_MENSALIDADE;
     const multa = Number(mensalidade.multa_valor ?? 0);
-    const valor = base + multa;
+    // Valor base (mensalidade + multa) + taxa da forma de pagamento escolhida.
+    const cobranca = await cobrancaDoMetodo(base + multa, data.metodo);
 
     if (mensalidade.status === "pago") {
       return {
+        ...dadosCalculados(cobranca, data.metodo),
         status: "approved",
         pago: true,
-        qrCode: null,
-        qrBase64: null,
-        expiraEm: null,
-        valor,
-        multa,
-      };
-    }
-
-    const aindaValido =
-      mensalidade.pix_qr_code &&
-      mensalidade.mp_status === "pending" &&
-      (!mensalidade.pix_expira_em || new Date(mensalidade.pix_expira_em) > new Date());
-
-    if (aindaValido) {
-      return {
-        status: "pending",
-        pago: false,
-        qrCode: mensalidade.pix_qr_code,
-        qrBase64: mensalidade.pix_qr_base64,
-        expiraEm: mensalidade.pix_expira_em,
-        valor,
         multa,
       };
     }
@@ -85,19 +64,49 @@ export const criarPixMensalidade = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const { criarPagamentoPix, emailPagador } = await import("@/lib/mercadopago.server");
+    const email = emailPagador(perfil?.telefone, userId);
+    const nome = perfil?.nome ?? "Associado";
+    const descricao =
+      multa > 0
+        ? `Mensalidade + multa Fut Cajazeiras — ${mensalidade.referencia}`
+        : `Mensalidade Fut Cajazeiras — ${mensalidade.referencia}`;
+    const externalReference = `mensalidade:${mensalidade.id}`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (data.metodo !== "pix") {
+      // Cartão de crédito/débito: checkout do Mercado Pago.
+      const dados = await cobrarNoCartao({
+        metodo: data.metodo,
+        cobranca,
+        descricao,
+        email,
+        externalReference,
+        retorno: "/pagamentos",
+        idempotencyKey: `mensalidade-${mensalidade.id}-${data.metodo}-${Date.now()}`,
+      });
+      await supabaseAdmin
+        .from("mensalidades")
+        .update({
+          mp_status: "pending",
+          pix_qr_code: null,
+          pix_qr_base64: null,
+          pix_expira_em: null,
+          // Mantém o valor BASE na mensalidade; taxa e multa vão na cobrança.
+          valor: base,
+        })
+        .eq("id", mensalidade.id);
+      return { ...dados, status: "pending", pago: false, multa };
+    }
+
     const pix = await criarPagamentoPix({
-      valor,
-      descricao:
-        multa > 0
-          ? `Mensalidade + multa Fut Cajazeiras — ${mensalidade.referencia}`
-          : `Mensalidade Fut Cajazeiras — ${mensalidade.referencia}`,
-      email: emailPagador(perfil?.telefone, userId),
-      nome: perfil?.nome ?? "Associado",
-      externalReference: `mensalidade:${mensalidade.id}`,
+      valor: cobranca.total,
+      descricao,
+      email,
+      nome,
+      externalReference,
       idempotencyKey: `mensalidade-${mensalidade.id}-${Date.now()}`,
     });
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin
       .from("mensalidades")
       .update({
@@ -106,18 +115,15 @@ export const criarPixMensalidade = createServerFn({ method: "POST" })
         pix_qr_code: pix.qrCode,
         pix_qr_base64: pix.qrBase64,
         pix_expira_em: pix.expiraEm,
-        // Mantém o valor BASE na mensalidade; a multa é cobrada no PIX.
+        // Mantém o valor BASE na mensalidade; taxa e multa vão na cobrança.
         valor: base,
       })
       .eq("id", mensalidade.id);
 
     return {
+      ...dadosDoPix(pix, cobranca),
       status: pix.status,
       pago: pix.status === "approved",
-      qrCode: pix.qrCode,
-      qrBase64: pix.qrBase64,
-      expiraEm: pix.expiraEm,
-      valor,
       multa,
     };
   });
@@ -129,140 +135,16 @@ export const consultarPixMensalidade = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: mensalidade } = await supabase
       .from("mensalidades")
-      .select("id, usuario_id, status, mp_payment_id")
+      .select("id, usuario_id, status")
       .eq("id", data.mensalidadeId)
       .maybeSingle();
     if (!mensalidade || mensalidade.usuario_id !== userId)
       throw new Error("Mensalidade não encontrada");
     if (mensalidade.status === "pago") return { pago: true, status: "approved" };
-    if (!mensalidade.mp_payment_id) return { pago: false, status: "sem_cobranca" };
 
-    const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
-    const pagamento = await consultarPagamentoMp(mensalidade.mp_payment_id);
-
-    const { aplicarPagamento } = await import("@/lib/pagamentos.server");
-    await aplicarPagamento(`mensalidade:${mensalidade.id}`, pagamento.status);
-
-    return { pago: pagamento.status === "approved", status: pagamento.status };
-  });
-
-export const criarPixConvidado = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ babaId: z.string().uuid(), nome: z.string().trim().min(2).max(80) }).parse(d),
-  )
-  .handler(async ({ data, context }): Promise<PixResposta & { presencaId: string }> => {
-    const { supabase, userId } = context;
-
-    const { criarPagamentoPix, emailPagador, valorConvidadoAtual } =
-      await import("@/lib/mercadopago.server");
-    const valor = await valorConvidadoAtual();
-
-    const { data: existente } = await supabase
-      .from("presencas")
-      .select("id")
-      .eq("baba_id", data.babaId)
-      .eq("usuario_id", userId)
-      .not("nome_convidado", "is", null)
-      .maybeSingle();
-    if (existente) throw new Error("Você já tem um convidado nesse baba");
-
-    const { data: presenca, error } = await supabase
-      .from("presencas")
-      .insert({
-        baba_id: data.babaId,
-        usuario_id: userId,
-        nome_convidado: data.nome,
-        status_convidado: "pendente",
-        valor,
-      })
-      .select("id")
-      .single();
-    if (error) throw error;
-
-    const { data: perfil } = await supabase
-      .from("perfis")
-      .select("nome, telefone")
-      .eq("id", userId)
-      .maybeSingle();
-
-    const pix = await criarPagamentoPix({
-      valor,
-      descricao: `Taxa de convidado — ${data.nome}`,
-      email: emailPagador(perfil?.telefone, userId),
-      nome: perfil?.nome ?? "Associado",
-      externalReference: `convidado:${presenca.id}`,
-      idempotencyKey: `convidado-${presenca.id}`,
-    });
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("presencas").update({ mp_status: pix.status }).eq("id", presenca.id);
-    await supabaseAdmin.from("presencas_pagamento").upsert(
-      {
-        presenca_id: presenca.id,
-        mp_payment_id: pix.paymentId,
-        pix_qr_code: pix.qrCode,
-        pix_qr_base64: pix.qrBase64,
-        pix_expira_em: pix.expiraEm,
-      },
-      { onConflict: "presenca_id" },
-    );
-
-    return {
-      presencaId: presenca.id,
-      status: pix.status,
-      pago: pix.status === "approved",
-      qrCode: pix.qrCode,
-      qrBase64: pix.qrBase64,
-      expiraEm: pix.expiraEm,
-      valor,
-    };
-  });
-
-export const consultarPixConvidado = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ presencaId: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: presenca } = await supabase
-      .from("presencas")
-      .select("id, usuario_id, convidado_user_id, status_convidado")
-      .eq("id", data.presencaId)
-      .maybeSingle();
-    if (!presenca || (presenca.usuario_id !== userId && presenca.convidado_user_id !== userId)) {
-      throw new Error("Convidado não encontrado");
-    }
-
-    // O valor é lido no servidor: a coluna não é exposta a usuários logados.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: valorPresenca } = await supabaseAdmin
-      .from("presencas")
-      .select("valor")
-      .eq("id", presenca.id)
-      .maybeSingle();
-
-    const { data: cobranca } = await supabase
-      .from("presencas_pagamento")
-      .select("mp_payment_id, pix_qr_code, pix_qr_base64")
-      .eq("presenca_id", presenca.id)
-      .maybeSingle();
-
-    const pix = {
-      qrCode: cobranca?.pix_qr_code ?? null,
-      qrBase64: cobranca?.pix_qr_base64 ?? null,
-      valor: Number(valorPresenca?.valor) > 0 ? Number(valorPresenca?.valor) : VALOR_CONVIDADO,
-    };
-
-    if (presenca.status_convidado === "aprovado") return { pago: true, status: "approved", ...pix };
-    if (!cobranca?.mp_payment_id) return { pago: false, status: "sem_cobranca", ...pix };
-
-    const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
-    const pagamento = await consultarPagamentoMp(cobranca.mp_payment_id);
-
-    const { aplicarPagamento } = await import("@/lib/pagamentos.server");
-    await aplicarPagamento(`convidado:${presenca.id}`, pagamento.status);
-
-    return { pago: pagamento.status === "approved", status: pagamento.status, ...pix };
+    // Confirma na API do Mercado Pago (PIX ou cartão) e aplica no banco.
+    const { sincronizarPorReferencia } = await import("@/lib/pagamentos.server");
+    return await sincronizarPorReferencia(`mensalidade:${mensalidade.id}`);
   });
 
 /** Lista associados com mensalidade em aberto (para presentear). */
@@ -298,10 +180,12 @@ export const listarMensalidadesPendentes = createServerFn({ method: "POST" })
     },
   );
 
-/** Gera um PIX para pagar a mensalidade de outra pessoa. */
+/** Gera uma cobrança (PIX ou cartão) para pagar a mensalidade de outra pessoa. */
 export const criarPixPresente = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ mensalidadeId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ mensalidadeId: z.string().uuid(), metodo: metodoPagamento }).parse(d),
+  )
   .handler(async ({ data, context }): Promise<PixResposta & { nome: string }> => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -320,16 +204,13 @@ export const criarPixPresente = createServerFn({ method: "POST" })
     const nome = presenteado?.nome ?? "Associado";
     const base = Number(mensalidade.valor) > 0 ? Number(mensalidade.valor) : VALOR_MENSALIDADE;
     const multa = Number(mensalidade.multa_valor ?? 0);
-    const valor = base + multa;
+    const cobranca = await cobrancaDoMetodo(base + multa, data.metodo);
 
     if (mensalidade.status === "pago") {
       return {
+        ...dadosCalculados(cobranca, data.metodo),
         status: "approved",
         pago: true,
-        qrCode: null,
-        qrBase64: null,
-        expiraEm: null,
-        valor,
         multa,
         nome,
       };
@@ -342,12 +223,39 @@ export const criarPixPresente = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const { criarPagamentoPix, emailPagador } = await import("@/lib/mercadopago.server");
+    const email = emailPagador(pagador?.telefone, userId);
+    const descricao = `Presente de mensalidade para ${nome} — ${mensalidade.referencia}`;
+    const externalReference = `mensalidade:${mensalidade.id}`;
+
+    if (data.metodo !== "pix") {
+      const dados = await cobrarNoCartao({
+        metodo: data.metodo,
+        cobranca,
+        descricao,
+        email,
+        externalReference,
+        retorno: "/pagamentos",
+        idempotencyKey: `presente-${mensalidade.id}-${data.metodo}-${Date.now()}`,
+      });
+      await supabaseAdmin
+        .from("mensalidades")
+        .update({
+          mp_status: "pending",
+          pix_qr_code: null,
+          pix_qr_base64: null,
+          pix_expira_em: null,
+          valor: base,
+        })
+        .eq("id", mensalidade.id);
+      return { ...dados, status: "pending", pago: false, multa, nome };
+    }
+
     const pix = await criarPagamentoPix({
-      valor,
-      descricao: `Presente de mensalidade para ${nome} — ${mensalidade.referencia}`,
-      email: emailPagador(pagador?.telefone, userId),
+      valor: cobranca.total,
+      descricao,
+      email,
       nome: pagador?.nome ?? "Associado",
-      externalReference: `mensalidade:${mensalidade.id}`,
+      externalReference,
       idempotencyKey: `presente-${mensalidade.id}-${Date.now()}`,
     });
 
@@ -359,18 +267,15 @@ export const criarPixPresente = createServerFn({ method: "POST" })
         pix_qr_code: pix.qrCode,
         pix_qr_base64: pix.qrBase64,
         pix_expira_em: pix.expiraEm,
-        // Mantém o valor BASE; a multa é cobrada junto no PIX.
+        // Mantém o valor BASE; taxa e multa vão na cobrança.
         valor: base,
       })
       .eq("id", mensalidade.id);
 
     return {
+      ...dadosDoPix(pix, cobranca),
       status: pix.status,
       pago: pix.status === "approved",
-      qrCode: pix.qrCode,
-      qrBase64: pix.qrBase64,
-      expiraEm: pix.expiraEm,
-      valor,
       multa,
       nome,
     };
@@ -384,18 +289,14 @@ export const consultarPixPresente = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: mensalidade } = await supabaseAdmin
       .from("mensalidades")
-      .select("id, status, mp_payment_id")
+      .select("id, status")
       .eq("id", data.mensalidadeId)
       .maybeSingle();
     if (!mensalidade) throw new Error("Mensalidade não encontrada");
     if (mensalidade.status === "pago") return { pago: true, status: "approved" };
-    if (!mensalidade.mp_payment_id) return { pago: false, status: "sem_cobranca" };
 
-    const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
-    const pagamento = await consultarPagamentoMp(mensalidade.mp_payment_id);
-    const { aplicarPagamento } = await import("@/lib/pagamentos.server");
-    await aplicarPagamento(`mensalidade:${mensalidade.id}`, pagamento.status);
-    return { pago: pagamento.status === "approved", status: pagamento.status };
+    const { sincronizarPorReferencia } = await import("@/lib/pagamentos.server");
+    return await sincronizarPorReferencia(`mensalidade:${mensalidade.id}`);
   });
 
 // ============================================================================
@@ -410,7 +311,8 @@ export const consultarPixPresente = createServerFn({ method: "POST" })
  */
 export const criarPixRegularizacao = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<RegularizacaoResposta> => {
+  .inputValidator((d: unknown) => z.object({ metodo: metodoPagamento }).parse(d ?? {}))
+  .handler(async ({ data, context }): Promise<RegularizacaoResposta> => {
     const { supabase, userId } = context;
 
     const { data: regularizacaoId, error } = await supabase.rpc("criar_regularizacao", {
@@ -427,44 +329,17 @@ export const criarPixRegularizacao = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!reg || reg.usuario_id !== userId) throw new Error("Regularização não encontrada");
 
-    const valor = Number(reg.valor_total);
     const valorDebitos = Number(reg.valor_debitos);
     const taxaAssociacao = Number(reg.taxa_associacao);
+    // Base = débitos + multas + Taxa de Associação; depois a taxa da forma de pagamento.
+    const cobranca = await cobrancaDoMetodo(Number(reg.valor_total), data.metodo);
 
     if (reg.status === "pago") {
       return {
+        ...dadosCalculados(cobranca, data.metodo),
         regularizacaoId: reg.id,
         status: "approved",
         pago: true,
-        qrCode: null,
-        qrBase64: null,
-        expiraEm: null,
-        valor,
-        valorDebitos,
-        taxaAssociacao,
-      };
-    }
-
-    const { data: cobranca } = await supabaseAdmin
-      .from("regularizacoes_pagamento")
-      .select("*")
-      .eq("regularizacao_id", reg.id)
-      .maybeSingle();
-
-    const aindaValido =
-      cobranca?.pix_qr_code &&
-      cobranca?.mp_status === "pending" &&
-      (!cobranca.pix_expira_em || new Date(cobranca.pix_expira_em) > new Date());
-
-    if (aindaValido) {
-      return {
-        regularizacaoId: reg.id,
-        status: "pending",
-        pago: false,
-        qrCode: cobranca!.pix_qr_code,
-        qrBase64: cobranca!.pix_qr_base64,
-        expiraEm: cobranca!.pix_expira_em,
-        valor,
         valorDebitos,
         taxaAssociacao,
       };
@@ -477,12 +352,46 @@ export const criarPixRegularizacao = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const { criarPagamentoPix, emailPagador } = await import("@/lib/mercadopago.server");
+    const email = emailPagador(perfil?.telefone, userId);
+    const descricao = "Regularização de associação — Fut Cajazeiras";
+    const externalReference = `regularizacao:${reg.id}`;
+
+    if (data.metodo !== "pix") {
+      const dados = await cobrarNoCartao({
+        metodo: data.metodo,
+        cobranca,
+        descricao,
+        email,
+        externalReference,
+        retorno: "/pagamentos",
+        idempotencyKey: `regularizacao-${reg.id}-${data.metodo}-${Date.now()}`,
+      });
+      await supabaseAdmin.from("regularizacoes_pagamento").upsert(
+        {
+          regularizacao_id: reg.id,
+          mp_status: "pending",
+          pix_qr_code: null,
+          pix_qr_base64: null,
+          pix_expira_em: null,
+        },
+        { onConflict: "regularizacao_id" },
+      );
+      return {
+        ...dados,
+        regularizacaoId: reg.id,
+        status: "pending",
+        pago: false,
+        valorDebitos,
+        taxaAssociacao,
+      };
+    }
+
     const pix = await criarPagamentoPix({
-      valor,
-      descricao: "Regularização de associação — Fut Cajazeiras",
-      email: emailPagador(perfil?.telefone, userId),
+      valor: cobranca.total,
+      descricao,
+      email,
       nome: perfil?.nome ?? "Associado",
-      externalReference: `regularizacao:${reg.id}`,
+      externalReference,
       idempotencyKey: `regularizacao-${reg.id}-${Date.now()}`,
     });
 
@@ -499,13 +408,10 @@ export const criarPixRegularizacao = createServerFn({ method: "POST" })
     );
 
     return {
+      ...dadosDoPix(pix, cobranca),
       regularizacaoId: reg.id,
       status: pix.status,
       pago: pix.status === "approved",
-      qrCode: pix.qrCode,
-      qrBase64: pix.qrBase64,
-      expiraEm: pix.expiraEm,
-      valor,
       valorDebitos,
       taxaAssociacao,
     };
@@ -541,24 +447,33 @@ export const consultarPixRegularizacao = createServerFn({ method: "POST" })
     if (!reg || reg.usuario_id !== userId) throw new Error("Regularização não encontrada");
     if (reg.status === "pago") return { pago: true, status: "approved", regularizacaoId: reg.id };
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: cobranca } = await supabaseAdmin
-      .from("regularizacoes_pagamento")
-      .select("mp_payment_id")
-      .eq("regularizacao_id", reg.id)
-      .maybeSingle();
-    if (!cobranca?.mp_payment_id)
-      return { pago: false, status: "sem_cobranca", regularizacaoId: reg.id };
+    // Confirma na API do Mercado Pago (PIX ou cartão) e aplica no banco.
+    const { sincronizarPorReferencia } = await import("@/lib/pagamentos.server");
+    const resultado = await sincronizarPorReferencia(`regularizacao:${reg.id}`);
+    return { ...resultado, regularizacaoId: reg.id };
+  });
 
-    const { consultarPagamentoMp } = await import("@/lib/mercadopago.server");
-    const pagamento = await consultarPagamentoMp(cobranca.mp_payment_id);
-
-    const { aplicarPagamento } = await import("@/lib/pagamentos.server");
-    await aplicarPagamento(`regularizacao:${reg.id}`, pagamento.status);
-
-    return {
-      pago: pagamento.status === "approved",
-      status: pagamento.status,
-      regularizacaoId: reg.id,
-    };
+/**
+ * Confirma a cobrança quando o usuário volta do checkout do Mercado Pago.
+ * O Mercado Pago devolve `external_reference` na URL de retorno; reconsultamos
+ * o pagamento na API antes de aplicar qualquer coisa (nada é confiado da URL).
+ */
+export const confirmarPagamentoRetorno = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        externalReference: z
+          .string()
+          .trim()
+          .regex(
+            /^(mensalidade|convidado|meta|regularizacao):[0-9a-fA-F-]{36}$/,
+            "Referência inválida",
+          ),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { sincronizarPorReferencia } = await import("@/lib/pagamentos.server");
+    return await sincronizarPorReferencia(data.externalReference);
   });

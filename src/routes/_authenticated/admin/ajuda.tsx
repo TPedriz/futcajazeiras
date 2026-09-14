@@ -78,7 +78,11 @@ const secoes = [
       ],
       [
         "Como reajusto a diária do convidado?",
-        "No campo “Valor da diária de convidado”, defina o novo valor (mesmo esquema da mensalidade, com dupla confirmação). Os próximos PIX de convidado já saem com o novo valor.",
+        "No campo “Valor da diária de convidado”, defina o novo valor (mesmo esquema da mensalidade, com dupla confirmação). As próximas cobranças de convidado já saem com o novo valor.",
+      ],
+      [
+        "Como funcionam as taxas por forma de pagamento?",
+        "No card “Taxas por forma de pagamento” você define o percentual cobrado a mais em PIX, cartão de débito e crédito. A taxa é somada ao valor e arredondada para cima até o centavo, para o líquido cair no mesmo dia na conta do Mercado Pago. O valor com taxa aparece para o jogador antes de ele pagar — no PIX o padrão é 0%. Use 0 para não repassar taxa.",
       ],
       [
         "Como filtro pagos/pendentes?",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -13,16 +13,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PixDialog, type DadosPix } from "@/components/PixDialog";
+import { PagamentoDialog } from "@/components/PagamentoDialog";
+import type { DadosCobranca, MetodoPagamento } from "@/lib/taxasPagamento";
 import {
   convidadosDaCasaQuery,
   meusPedidosConvidadoQuery,
   valorConvidadoQuery,
   VALOR_CONVIDADO_PADRAO,
 } from "@/lib/babaQueries";
-import { criarPedidoConvidado, gerarPixPedido } from "@/lib/convidados.functions";
+import {
+  criarPedidoConvidado,
+  gerarPixPedido,
+  statusPagamentoPedido,
+} from "@/lib/convidados.functions";
 import { formataTelefone } from "@/lib/telefone";
-import { UserPlus, Sparkles, Home, QrCode, Clock } from "lucide-react";
+import { UserPlus, Sparkles, Home, CreditCard, Clock } from "lucide-react";
 
 type Modo = "escolha" | "novo" | "casa";
 
@@ -30,15 +35,16 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
   const qc = useQueryClient();
   const pedir = useServerFn(criarPedidoConvidado);
   const gerarPix = useServerFn(gerarPixPedido);
+  const conferir = useServerFn(statusPagamentoPedido);
 
   const [modo, setModo] = useState<Modo>("escolha");
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [daCasa, setDaCasa] = useState("");
   const [pixAberto, setPixAberto] = useState(false);
-  const [dadosPix, setDadosPix] = useState<DadosPix | null>(null);
+  const [dadosPix, setDadosPix] = useState<DadosCobranca | null>(null);
   const [pago, setPago] = useState(false);
-  const [carregandoPix, setCarregandoPix] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   const { data: convidadosCasa } = useQuery(convidadosDaCasaQuery());
   const { data: pedidos } = useQuery(meusPedidosConvidadoQuery(userId, babaId));
@@ -77,24 +83,56 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
     onError: (e: Error) => toast.error("Não deu certo", { description: e.message }),
   });
 
-  const abrirPix = async () => {
+  const abrirPagamento = () => {
     if (!pedidoAtivo) return;
-    setPixAberto(true);
-    setPago(false);
     setDadosPix(null);
-    setCarregandoPix(true);
-    try {
-      const r = await gerarPix({ data: { pedidoId: pedidoAtivo.id } });
-      if (r.pago) setPago(true);
-      else setDadosPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
-      invalidar();
-    } catch (e) {
-      setPixAberto(false);
-      toast.error("Erro", { description: (e as Error).message });
-    } finally {
-      setCarregandoPix(false);
-    }
+    setPago(false);
+    setErro(null);
+    setPixAberto(true);
   };
+
+  const cobrar = useMutation({
+    mutationFn: async (metodo: MetodoPagamento) => {
+      if (!pedidoAtivo) throw new Error("Pedido não encontrado");
+      setDadosPix(null);
+      setPago(false);
+      setErro(null);
+      return await gerarPix({ data: { pedidoId: pedidoAtivo.id, metodo } });
+    },
+    onSuccess: (r) => {
+      if (r.pago) {
+        setPago(true);
+        toast.success("Pagamento confirmado!");
+        invalidar();
+        return;
+      }
+      setDadosPix(r);
+      invalidar();
+    },
+    onError: (e: Error) => {
+      setErro(e.message);
+      toast.error("Erro", { description: e.message });
+    },
+  });
+
+  // Confirmação automática enquanto o diálogo de pagamento está aberto.
+  useEffect(() => {
+    if (!pixAberto || pago || !dadosPix || !pedidoAtivo) return;
+    const id = setInterval(async () => {
+      try {
+        const r = await conferir({ data: { pedidoId: pedidoAtivo.id } });
+        if (r.pago) {
+          setPago(true);
+          toast.success("Pagamento confirmado!");
+          invalidar();
+        }
+      } catch {
+        /* tenta de novo no próximo ciclo */
+      }
+    }, 5000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pixAberto, pago, dadosPix, pedidoAtivo, conferir]);
 
   const nomeConvidado = pedidoAtivo?.convidados_cadastro?.nome ?? "Convidado";
 
@@ -134,8 +172,8 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
                   sininho.
                 </p>
               ) : (
-                <Button variant="hero" size="lg" className="w-full" onClick={abrirPix}>
-                  <QrCode className="size-4" /> Gerar PIX
+                <Button variant="hero" size="lg" className="w-full" onClick={abrirPagamento}>
+                  <CreditCard className="size-4" /> Pagar diária do convidado
                 </Button>
               )}
             </div>
@@ -238,14 +276,17 @@ export function LevarConvidado({ babaId, userId }: { babaId: string; userId: str
         </div>
       </div>
 
-      <PixDialog
+      <PagamentoDialog
         open={pixAberto}
         onOpenChange={setPixAberto}
         titulo="Diária do convidado"
         descricao="Escaneie o QR Code ou copie o código no app do seu banco. A confirmação é automática."
+        valorBase={Number(valorConvidado ?? VALOR_CONVIDADO_PADRAO)}
         dados={dadosPix}
-        carregando={carregandoPix}
+        carregando={cobrar.isPending}
         pago={pago}
+        erro={erro}
+        onEscolherMetodo={(metodo) => cobrar.mutate(metodo)}
       />
     </div>
   );

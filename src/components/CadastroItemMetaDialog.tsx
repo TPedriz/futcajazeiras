@@ -268,11 +268,12 @@ export function CadastroItemMetaDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Etapa 2: pagamento via PIX */}
+      {/* Etapa 2: pagamento (PIX ou cartão) */}
       <PixMetaPagamento
         aberto={etapa === "pagamento" && !!meta}
         contribuicaoId={contribuicaoId}
         titulo={meta?.titulo ?? "Item"}
+        valorBase={valorItem}
         onAbertoChange={(v) => {
           if (!v) fechar();
         }}

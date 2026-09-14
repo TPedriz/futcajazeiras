@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { PixDialog, type DadosPix } from "@/components/PixDialog";
-import { criarPixMeta, consultarPixMeta, type PixMetaResposta } from "@/lib/metas.functions";
+import { PagamentoDialog } from "@/components/PagamentoDialog";
+import { criarPixMeta, consultarPixMeta } from "@/lib/metas.functions";
+import type { DadosCobranca, MetodoPagamento } from "@/lib/taxasPagamento";
 import { formatarReais } from "@/lib/redeSocial";
 import { HeartHandshake, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -37,15 +38,38 @@ export function ContribuicaoDialog({
   const [valor, setValor] = useState("20");
   const [anonima, setAnonima] = useState(false);
   const [gerando, setGerando] = useState(false);
-  const [pix, setPix] = useState<DadosPix | null>(null);
+  const [pix, setPix] = useState<DadosCobranca | null>(null);
   const [contribuicaoId, setContribuicaoId] = useState<string | null>(null);
+  const [valorBase, setValorBase] = useState(0);
   const [pixTitulo, setPixTitulo] = useState("");
   const [pago, setPago] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
   const [pixAberto, setPixAberto] = useState(false);
 
-  // Polling enquanto o PIX está aberto (mesmo padrão da mensalidade).
+  const cobrar = useMutation({
+    mutationFn: async (metodo: MetodoPagamento) => {
+      if (!contribuicaoId) throw new Error("Contribuição não encontrada");
+      setPix(null);
+      setPago(false);
+      setErro(null);
+      return await criarPixMeta({ data: { contribuicaoId, metodo } });
+    },
+    onSuccess: (r) => {
+      if (r.pago) {
+        setPago(true);
+        return;
+      }
+      setPix(r);
+    },
+    onError: (e: Error) => {
+      setErro(e.message);
+      toast.error("Não foi possível gerar a cobrança", { description: e.message });
+    },
+  });
+
+  // Polling enquanto há cobrança aberta (mesmo padrão da mensalidade).
   useEffect(() => {
-    if (!pixAberto || !contribuicaoId || pago) return;
+    if (!pixAberto || !contribuicaoId || pago || !pix) return;
     const id = setInterval(async () => {
       try {
         const r = await consultarPixMeta({ data: { contribuicaoId } });
@@ -64,7 +88,7 @@ export function ContribuicaoDialog({
       }
     }, 5000);
     return () => clearInterval(id);
-  }, [pixAberto, contribuicaoId, pago, qc]);
+  }, [pixAberto, contribuicaoId, pago, pix, qc]);
 
   const fechar = () => {
     setPixAberto(false);
@@ -72,6 +96,8 @@ export function ContribuicaoDialog({
     setContribuicaoId(null);
     setPago(false);
     setGerando(false);
+    setErro(null);
+    setValorBase(0);
     setValor("20");
     setAnonima(false);
     onAbertoChange(false);
@@ -104,16 +130,18 @@ export function ContribuicaoDialog({
         .single();
       if (error) throw error;
 
-      // 2. Gera o PIX para essa contribuição.
-      const r = await criarPixMeta({ data: { contribuicaoId: contribuicao.id } });
+      // 2. Abre o pagamento: a forma (PIX ou cartão) é escolhida antes da cobrança.
+      setContribuicaoId(contribuicao.id);
       setPixTitulo(`Contribuição — ${meta.titulo}`);
-      setPix({ qrCode: r.qrCode, qrBase64: r.qrBase64, valor: r.valor });
-      setContribuicaoId(r.contribuicaoId);
+      setValorBase(valorNumero);
+      setPix(null);
+      setPago(false);
+      setErro(null);
       setGerando(false);
       setPixAberto(true);
     } catch (e) {
       setGerando(false);
-      toast.error("Não foi possível gerar o PIX", {
+      toast.error("Não foi possível iniciar a contribuição", {
         description: e instanceof Error ? e.message : "Tente novamente.",
       });
     }
@@ -196,13 +224,13 @@ export function ContribuicaoDialog({
             </Button>
 
             <p className="text-center text-[11px] text-muted-foreground">
-              Pagamento via PIX. A contribuição só entra na arrecadação após a confirmação.
+              Pague com PIX ou cartão. A contribuição só entra na arrecadação após a confirmação.
             </p>
           </div>
         </DialogContent>
       </Dialog>
 
-      <PixDialog
+      <PagamentoDialog
         open={pixAberto}
         onOpenChange={(v) => {
           setPixAberto(v);
@@ -214,9 +242,12 @@ export function ContribuicaoDialog({
         }}
         titulo={pixTitulo}
         descricao="Escaneie o QR Code ou copie o código PIX para pagar."
+        valorBase={valorBase}
         dados={pix}
-        carregando={!pix}
+        carregando={cobrar.isPending}
         pago={pago}
+        erro={erro}
+        onEscolherMetodo={(metodo) => cobrar.mutate(metodo)}
       />
     </>
   );
