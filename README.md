@@ -56,6 +56,7 @@ Painel administrativo com tudo o que a gestão do baba precisa:
 - 🧮 **Resultados e estatísticas** — lança gols, assistências, pênaltis defendidos e cartões; ranking recalculado na hora.
 - 🚨 **Punições automáticas** — cartão vermelho e faltas (3 em 5 babas) geram suspensão com política configurável.
 - 🎚️ **Configurações** — valores de mensalidade/diária, política de suspensões e **atributos base das cartinhas** (pré-temporada).
+- 🧾 **Log de auditoria** — histórico interno de tudo que mudou: quem fez, em quem, o que mudou (de → para) e a forma de pagamento de cada cobrança (PIX, débito ou crédito).
 - 🏷️ **Cargos** — controle de papéis (diretoria, associado, convidado).
 
 ---
@@ -77,14 +78,15 @@ Uma visão rápida do que a plataforma já entrega:
 
 ## 🏗️ Stack
 
-| Camada           | Tecnologia                                       |
-| ---------------- | ------------------------------------------------ |
-| Frontend         | React 19 + TanStack Start (file-based routing)   |
-| Estilo           | Tailwind CSS v4 + shadcn/ui (dark theme)         |
-| Dados            | TanStack React Query                             |
-| Backend          | Supabase (PostgreSQL, Auth, Storage, Realtime)   |
-| Pagamentos       | Mercado Pago — PIX (API) + cartão (Checkout Pro) |
-| Export de imagem | html-to-image                                    |
+| Camada           | Tecnologia                                                                       |
+| ---------------- | -------------------------------------------------------------------------------- |
+| Frontend         | React 19 + TanStack Start (file-based routing)                                   |
+| Estilo           | Tailwind CSS v4 + shadcn/ui (dark theme)                                         |
+| Dados            | TanStack React Query                                                             |
+| Backend          | Supabase (PostgreSQL, Auth, Storage, Realtime)                                   |
+| Pagamentos       | Mercado Pago — PIX (API) + cartão (Checkout Pro)                                 |
+| Auditoria        | `logs_auditoria` (triggers no banco + server functions, leitura só da diretoria) |
+| Export de imagem | html-to-image                                                                    |
 
 ---
 
@@ -123,6 +125,8 @@ node _test_sorteio.ts        # sorteio (aleatório, chegada, BAxVI, substituiç�
 node _test_gamificacao.ts    # XP, níveis e conquistas
 node _test_cartinha.ts       # atributos, OVR e temas das cartinhas
 node _test_feed.ts           # feed social: raridade, eventos e idempotência
+node _test_taxas.ts          # taxas por forma de pagamento (arredondamento)
+node _valida_auditoria.mjs   # estrutura da migration do log de auditoria
 ```
 
 Após aplicar uma migration, valide a segurança no banco real:

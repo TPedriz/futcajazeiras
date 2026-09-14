@@ -65,7 +65,7 @@ async function criarCobrancaPresenca(opts: {
     });
     await supabaseAdmin
       .from("presencas")
-      .update({ mp_status: "pending" })
+      .update({ mp_status: "pending", metodo_pagamento: opts.metodo })
       .eq("id", opts.presencaId);
     await supabaseAdmin.from("presencas_pagamento").upsert(
       {
@@ -87,7 +87,10 @@ async function criarCobrancaPresenca(opts: {
     externalReference,
     idempotencyKey: `convidado-${opts.presencaId}-${Date.now()}`,
   });
-  await supabaseAdmin.from("presencas").update({ mp_status: pix.status }).eq("id", opts.presencaId);
+  await supabaseAdmin
+    .from("presencas")
+    .update({ mp_status: pix.status, metodo_pagamento: opts.metodo })
+    .eq("id", opts.presencaId);
   await supabaseAdmin.from("presencas_pagamento").upsert(
     {
       presenca_id: opts.presencaId,
@@ -296,7 +299,10 @@ export const responderSolicitacao = createServerFn({ method: "POST" })
       idempotencyKey: `convidado-${presenca.id}-${Date.now()}`,
     });
 
-    await supabaseAdmin.from("presencas").update({ mp_status: pix.status }).eq("id", presenca.id);
+    await supabaseAdmin
+      .from("presencas")
+      .update({ mp_status: pix.status, metodo_pagamento: "pix" })
+      .eq("id", presenca.id);
     await supabaseAdmin.from("presencas_pagamento").upsert(
       {
         presenca_id: presenca.id,

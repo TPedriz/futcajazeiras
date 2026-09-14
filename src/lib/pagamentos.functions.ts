@@ -88,6 +88,7 @@ export const criarPixMensalidade = createServerFn({ method: "POST" })
         .from("mensalidades")
         .update({
           mp_status: "pending",
+          metodo_pagamento: data.metodo,
           pix_qr_code: null,
           pix_qr_base64: null,
           pix_expira_em: null,
@@ -112,6 +113,7 @@ export const criarPixMensalidade = createServerFn({ method: "POST" })
       .update({
         mp_payment_id: pix.paymentId,
         mp_status: pix.status,
+        metodo_pagamento: data.metodo,
         pix_qr_code: pix.qrCode,
         pix_qr_base64: pix.qrBase64,
         pix_expira_em: pix.expiraEm,
@@ -241,6 +243,7 @@ export const criarPixPresente = createServerFn({ method: "POST" })
         .from("mensalidades")
         .update({
           mp_status: "pending",
+          metodo_pagamento: data.metodo,
           pix_qr_code: null,
           pix_qr_base64: null,
           pix_expira_em: null,
@@ -264,6 +267,7 @@ export const criarPixPresente = createServerFn({ method: "POST" })
       .update({
         mp_payment_id: pix.paymentId,
         mp_status: pix.status,
+        metodo_pagamento: data.metodo,
         pix_qr_code: pix.qrCode,
         pix_qr_base64: pix.qrBase64,
         pix_expira_em: pix.expiraEm,
@@ -376,6 +380,10 @@ export const criarPixRegularizacao = createServerFn({ method: "POST" })
         },
         { onConflict: "regularizacao_id" },
       );
+      await supabaseAdmin
+        .from("regularizacoes")
+        .update({ metodo_pagamento: data.metodo })
+        .eq("id", reg.id);
       return {
         ...dados,
         regularizacaoId: reg.id,
@@ -406,6 +414,10 @@ export const criarPixRegularizacao = createServerFn({ method: "POST" })
       },
       { onConflict: "regularizacao_id" },
     );
+    await supabaseAdmin
+      .from("regularizacoes")
+      .update({ metodo_pagamento: data.metodo })
+      .eq("id", reg.id);
 
     return {
       ...dadosDoPix(pix, cobranca),

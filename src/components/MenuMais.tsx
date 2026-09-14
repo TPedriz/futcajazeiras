@@ -54,6 +54,7 @@ const ADMIN: ItemMenu[] = [
   { to: "/admin/cargos", label: "Cargos", Icon: BadgeCheck },
   { to: "/admin/conquistas", label: "Conquistas", Icon: Trophy },
   { to: "/admin/resultados", label: "Resultados", Icon: ListChecks },
+  { to: "/admin/logs", label: "Logs", Icon: ClipboardList },
 ];
 
 /**

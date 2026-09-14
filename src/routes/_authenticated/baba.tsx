@@ -12,6 +12,7 @@ import {
   baviRelacionadosQuery,
 } from "@/lib/babaQueries";
 import { formatarReais } from "@/lib/redeSocial";
+import { rotuloMetodoPagamento } from "@/lib/logs";
 import { Link } from "@tanstack/react-router";
 import { MuralPunicoes } from "@/components/MuralPunicoes";
 import { BadgeBaxvi } from "@/components/BadgeBaxvi";
@@ -556,6 +557,7 @@ function BabaPage() {
                 tipo="convidado"
                 statusConvidado={p.status_convidado ?? undefined}
                 mpStatus={p.mp_status}
+                metodoPagamento={p.metodo_pagamento}
                 faltou={p.compareceu === false}
                 onApprove={
                   isAdmin && p.status_convidado === "pendente"
@@ -676,6 +678,7 @@ interface PresencaCardProps {
   tipo: "membro" | "convidado";
   statusConvidado?: string;
   mpStatus?: string | null;
+  metodoPagamento?: string | null;
   usuarioId?: string | null;
   faltou?: boolean;
   onApprove?: () => void;
@@ -693,6 +696,7 @@ function PresencaCard({
   tipo,
   statusConvidado,
   mpStatus,
+  metodoPagamento,
   usuarioId,
   faltou,
   onApprove,
@@ -749,6 +753,11 @@ function PresencaCard({
               </span>
               {aguardandoPix && (
                 <span className="text-[10px] text-gold">• aguardando pagamento</span>
+              )}
+              {!aguardandoPix && metodoPagamento && (
+                <span className="text-[10px] text-success">
+                  • pago: {rotuloMetodoPagamento(metodoPagamento)}
+                </span>
               )}
               {statusConvidado === "rejeitado" && (
                 <span className="text-[10px] text-destructive">• rejeitado</span>

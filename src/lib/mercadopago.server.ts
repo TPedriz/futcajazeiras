@@ -82,6 +82,10 @@ export interface PixCriado {
   qrCode: string | null;
   qrBase64: string | null;
   expiraEm: string | null;
+  /** Tipo informado pelo Mercado Pago (credit_card, debit_card, bank_transfer...). */
+  paymentTypeId?: string | null;
+  /** Meio específico (pix, visa, master...). */
+  paymentMethodId?: string | null;
 }
 
 interface MpPayment {
@@ -89,6 +93,8 @@ interface MpPayment {
   status: string;
   external_reference?: string | null;
   date_of_expiration?: string | null;
+  payment_type_id?: string | null;
+  payment_method_id?: string | null;
   point_of_interaction?: {
     transaction_data?: { qr_code?: string; qr_code_base64?: string };
   };
@@ -102,6 +108,8 @@ function mapear(p: MpPayment): PixCriado {
     qrCode: td?.qr_code ?? null,
     qrBase64: td?.qr_code_base64 ?? null,
     expiraEm: p.date_of_expiration ?? null,
+    paymentTypeId: p.payment_type_id ?? null,
+    paymentMethodId: p.payment_method_id ?? null,
   };
 }
 

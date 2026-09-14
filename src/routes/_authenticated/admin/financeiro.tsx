@@ -31,6 +31,7 @@ import {
   type InadimplenteCobranca,
 } from "@/lib/cobrancaInadimplentes";
 import { formatarReais } from "@/lib/redeSocial";
+import { rotuloMetodoPagamento } from "@/lib/logs";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -334,7 +335,9 @@ function FinanceiroPage() {
 
       <ul className="space-y-2">
         {visiveis.map((a) => {
-          const ok = porUsuario.get(a.id)?.status === "pago";
+          const mensalidadeMes = porUsuario.get(a.id);
+          const ok = mensalidadeMes?.status === "pago";
+          const metodoPagamento = rotuloMetodoPagamento(mensalidadeMes?.metodo_pagamento);
           const divida = dividas.get(a.id);
           const papel = papelDe(a.id);
           const ehDiretoriaLinha = papel === "administrador";
@@ -367,6 +370,14 @@ function FinanceiroPage() {
                   {manual && (
                     <span className="ml-2 rounded-full bg-muted px-2 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
                       Gestão manual
+                    </span>
+                  )}
+                  {ok && metodoPagamento && (
+                    <span
+                      className="ml-2 inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-widest text-success"
+                      title="Forma de pagamento usada na mensalidade deste mês"
+                    >
+                      <CreditCard className="size-2.5" /> {metodoPagamento}
                     </span>
                   )}
                 </p>

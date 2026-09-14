@@ -41,6 +41,7 @@ export function AppSidebar({ isAdmin, nome, rotulo, avatar }: AppSidebarProps) {
           { to: "/admin/sorteio", label: "Sorteio", Icon: Shuffle },
           { to: "/admin/estatisticas", label: "Estatísticas", Icon: ClipboardList },
           { to: "/admin/usuarios", label: "Usuários", Icon: Users },
+          { to: "/admin/logs", label: "Logs", Icon: ClipboardList },
         ]
       : []),
     { to: "/ajuda", label: "Ajuda", Icon: LifeBuoy },

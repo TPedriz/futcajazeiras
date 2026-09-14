@@ -62,6 +62,7 @@ function AdminLayout() {
         <AdminTab to="/admin/usuarios" label="Usuários" Icon={Users} />
         <AdminTab to="/admin/agenda" label="Agenda" Icon={CalendarDays} />
         <AdminTab to="/admin/metas" label="Metas" Icon={Target} />
+        <AdminTab to="/admin/logs" label="Logs" Icon={ClipboardList} />
         <AdminTab to="/admin/ajuda" label="Ajuda" Icon={BookOpen} />
       </nav>
 

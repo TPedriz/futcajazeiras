@@ -95,6 +95,10 @@ export const criarPixMeta = createServerFn({ method: "POST" })
         },
         { onConflict: "contribuicao_id" },
       );
+      await supabaseAdmin
+        .from("contribuicoes_meta")
+        .update({ metodo_pagamento: data.metodo })
+        .eq("id", contribuicao.id);
       return { ...dados, contribuicaoId: contribuicao.id, status: "pending", pago: false };
     }
 
@@ -117,6 +121,10 @@ export const criarPixMeta = createServerFn({ method: "POST" })
       },
       { onConflict: "contribuicao_id" },
     );
+    await supabaseAdmin
+      .from("contribuicoes_meta")
+      .update({ metodo_pagamento: data.metodo })
+      .eq("id", contribuicao.id);
 
     return {
       ...dadosDoPix(pix, cobranca),

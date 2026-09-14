@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { SocialEvento } from "@/lib/feed";
+import type { LogAuditoria } from "@/lib/logs";
 import { CHAVES_TAXA, TAXAS_PADRAO, type MetodoPagamento } from "@/lib/taxasPagamento";
 import {
   mensalidadeAtrasada,
@@ -132,13 +133,17 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
         .order("confirmado_em", { ascending: true });
       if (error) throw error;
 
-      // Status de pagamento é restrito: só o próprio jogador, o anfitrião do
-      // convidado e a diretoria recebem esse dado (função no banco).
+      // Status/forma de pagamento é restrito: só o próprio jogador, o anfitrião
+      // do convidado e a diretoria recebem esse dado (função no banco).
       const statusPix = new Map<string, string | null>();
+      const metodoPix = new Map<string, string | null>();
       const { data: pagamentos } = await supabase.rpc("status_pagamento_presencas", {
         _baba_id: babaId,
       });
-      for (const s of pagamentos ?? []) statusPix.set(s.presenca_id, s.mp_status);
+      for (const s of pagamentos ?? []) {
+        statusPix.set(s.presenca_id, s.mp_status);
+        metodoPix.set(s.presenca_id, s.metodo_pagamento);
+      }
 
       const ids = Array.from(
         new Set((presencas ?? []).map((p) => p.usuario_id).filter(Boolean)),
@@ -164,6 +169,7 @@ export const presencasDaSessaoQuery = (babaId: string | undefined) =>
       return (presencas ?? []).map((p) => ({
         ...p,
         mp_status: statusPix.get(p.id) ?? null,
+        metodo_pagamento: metodoPix.get(p.id) ?? null,
         perfis: p.usuario_id ? (mapa.get(p.usuario_id) ?? null) : null,
       }));
     },
@@ -1667,5 +1673,55 @@ export const minhasContribuicoesQuery = (userId: string | undefined) =>
         .limit(50);
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+/* ============================ Log de auditoria ============================ */
+
+/** Quantidade de registros por página do log. */
+export const LOGS_PAGE_SIZE = 40;
+
+/** Remove caracteres que quebrariam o filtro `or` do PostgREST. */
+function sanitizaBuscaLog(termo: string): string {
+  return termo
+    .replace(/[,()%:\\"]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Log de auditoria (somente diretoria, garantido por RLS no banco).
+ * Paginação por cursor (`antesDe`) + filtro por categoria e busca textual.
+ */
+export const logsAuditoriaQuery = (
+  opcoes: { categoria?: string | null; busca?: string | null; antesDe?: string | null } = {},
+) =>
+  queryOptions({
+    queryKey: [
+      "logs-auditoria",
+      opcoes.categoria ?? "todas",
+      opcoes.busca ?? "",
+      opcoes.antesDe ?? "topo",
+    ],
+    queryFn: async (): Promise<LogAuditoria[]> => {
+      let consulta = supabase
+        .from("logs_auditoria")
+        .select("*")
+        .order("criado_em", { ascending: false })
+        .limit(LOGS_PAGE_SIZE);
+
+      if (opcoes.categoria) consulta = consulta.eq("categoria", opcoes.categoria);
+
+      const busca = sanitizaBuscaLog(opcoes.busca ?? "");
+      if (busca.length >= 2) {
+        consulta = consulta.or(
+          `descricao.ilike.%${busca}%,ator_nome.ilike.%${busca}%,alvo_nome.ilike.%${busca}%`,
+        );
+      }
+      if (opcoes.antesDe) consulta = consulta.lt("criado_em", opcoes.antesDe);
+
+      const { data, error } = await consulta;
+      if (error) throw error;
+      return (data ?? []) as LogAuditoria[];
     },
   });

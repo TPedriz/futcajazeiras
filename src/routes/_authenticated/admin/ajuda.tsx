@@ -248,6 +248,36 @@ const secoes = [
       ],
     ],
   },
+  {
+    id: "logs",
+    titulo: "Log de auditoria (o que mudou e quem mudou)",
+    itens: [
+      [
+        "O que é o Log de auditoria?",
+        "É o histórico interno da diretoria (aba Logs). Cada linha mostra quem fez, quando, em quem e o que mudou, sempre no formato “de → para”. Ex.: “Atualizou o cadastro — João Silva: Nome: João → João Silva; WhatsApp: (71) 90000-0000 → (71) 98888-8888”.",
+      ],
+      [
+        "Quais ações entram no log?",
+        "Cadastro/perfil (nome, WhatsApp, e-mail, posição, time, Instagram, OVR, atributos, conta ativa/inativa), cargos, financeiro (valores, multas, reajustes, taxas), pagamentos (com a forma de pagamento), lista do baba quando a diretoria mexe, convidados e aprovações, punições, metas, agenda, sessões, associação e ações do sistema.",
+      ],
+      [
+        "Como vejo a forma de pagamento?",
+        "No log, cada pagamento aparece com o selo PIX, Débito ou Crédito (vem do próprio Mercado Pago na confirmação). No Financeiro, quem pagou a mensalidade do mês mostra o selo ao lado do nome; na lista do baba, a diária do convidado mostra “pago: PIX/Crédito/Débito”.",
+      ],
+      [
+        "Como filtro o log?",
+        "Use os atalhos de categoria (Perfil, Financeiro, Pagamentos, Lista do baba, Convidados, Punições, Metas, Agenda, Sessões, Associação) e a busca por nome do jogador, nome do admin ou texto da descrição. “Carregar mais” traz os registros anteriores.",
+      ],
+      [
+        "Quem consegue ver o log?",
+        "Somente a diretoria (papel administrador). O banco bloqueia a leitura para qualquer outro usuário, mesmo que tente acessar direto pela API. O log não pode ser editado nem apagado pelo app.",
+      ],
+      [
+        "As ações automáticas aparecem?",
+        "Sim, marcadas como “Sistema” (rotinas de multa, webhook do Mercado Pago, confirmação de pagamento). O que a diretoria faz aparece como “Diretoria” e o que o próprio jogador faz, como “Próprio jogador”.",
+      ],
+    ],
+  },
 ];
 
 function AdminAjudaPage() {

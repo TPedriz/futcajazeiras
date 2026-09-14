@@ -35,6 +35,7 @@ O **Fut Cajazeiras** é um app **mobile-first, dark-only** para gerenciar um bab
 - **Gamificação completa:** XP automático (+10 presença, +5 gol, +3 assistência), níveis com bônus no OVR, conquistas com destaque (até 3), badges de destaque mensal (top 3 em gols/assistências/pênaltis/cartões) e **cartinhas de jogador estilo EA FC** (OVR + RIT/FIN/PAS/DRI/DEF/FÍS) com temas Bronze/Prata/Ouro e especiais (TOTW, Lenda do Baba, Paredão), exportáveis como PNG.
 - **Feed social de gamificação:** um feed global de acontecimentos (conquistas desbloqueadas, raridade, níveis alcançados, marcas históricas e ranking do mês) gerado por funções/triggers seguras no banco — o jogador vê a carreira da galera virar conteúdo social em tempo real (`feed_eventos` + Realtime).
 - **Punições automáticas:** cartão vermelho e faltas (3 em 5 babas, tudo configurável) geram suspensão automática do próximo baba + notificação.
+- **Log de auditoria (diretoria):** toda alteração relevante é registrada em `logs_auditoria` com ator, alvo, origem (diretoria / próprio jogador / sistema) e o diff campo a campo (“de → para”), inclusive a **forma de pagamento** de cada cobrança (PIX, débito ou crédito). Ver `auditoria.md`.
 
 **Público:** associados e convidados usam a mesma UI; a diretoria tem um painel admin adicional.
 

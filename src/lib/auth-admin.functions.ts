@@ -7,6 +7,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizaTelefone } from "@/lib/telefone";
 import { emailReal, emailSintetico } from "@/lib/email";
 import { enviarEmail, htmlRecuperacaoSenha, htmlValidacaoEmail, urlBase } from "@/lib/email.server";
+import { nomeDoPerfil, registrarLog } from "@/lib/auditoria.server";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -165,6 +166,19 @@ export const gerarSenhaTemporaria = createServerFn({ method: "POST" })
       console.error("[auth-admin] falha ao gerar senha temporária", error);
       return { ok: false, motivo: "erro" };
     }
+
+    const nome = await nomeDoPerfil(data.usuarioId);
+    await registrarLog({
+      acao: "senha_temporaria",
+      categoria: "perfil",
+      descricao: `Gerou uma senha temporária para ${nome ?? "um usuário"}`,
+      entidade: "auth.users",
+      entidadeId: data.usuarioId,
+      alvoId: data.usuarioId,
+      alvoNome: nome,
+      atorId: context.userId,
+    });
+
     return { ok: true, senha };
   });
 
@@ -238,6 +252,18 @@ export const adminAtualizarEmail = createServerFn({ method: "POST" })
         .update({ usado_em: agora })
         .eq("usuario_id", data.usuarioId)
         .is("usado_em", null);
+      await registrarLog({
+        acao: "email_corrigido",
+        categoria: "perfil",
+        descricao: `Corrigiu e confirmou o e-mail de ${perfil.nome ?? "um usuário"}`,
+        entidade: "perfis",
+        entidadeId: data.usuarioId,
+        alvoId: data.usuarioId,
+        alvoNome: perfil.nome,
+        mudancas: [{ campo: "email", rotulo: "E-mail", de: null, para: email }],
+        detalhes: { confirmado: true, por: "diretoria" },
+        atorId: context.userId,
+      });
       return { ok: true, confirmado: true };
     }
 
@@ -266,6 +292,19 @@ export const adminAtualizarEmail = createServerFn({ method: "POST" })
       to: email,
       subject: "Confirme seu e-mail — Fut Cajazeiras",
       html: htmlValidacaoEmail({ nome: perfil.nome ?? "Jogador", link }),
+    });
+
+    await registrarLog({
+      acao: "email_corrigido",
+      categoria: "perfil",
+      descricao: `Corrigiu o e-mail de ${perfil.nome ?? "um usuário"} (novo link enviado)`,
+      entidade: "perfis",
+      entidadeId: data.usuarioId,
+      alvoId: data.usuarioId,
+      alvoNome: perfil.nome,
+      mudancas: [{ campo: "email", rotulo: "E-mail", de: null, para: email }],
+      detalhes: { confirmado: false, por: "diretoria" },
+      atorId: context.userId,
     });
 
     return { ok: true, confirmado: false };
@@ -306,6 +345,8 @@ export const excluirUsuarioPermanente = createServerFn({ method: "POST" })
     const { data: alvo } = await supabaseAdmin.auth.admin.getUserById(data.usuarioId);
     if (!alvo?.user) return { ok: false, motivo: "nao_encontrado" };
 
+    const nomeAlvo = await nomeDoPerfil(data.usuarioId);
+
     // 1) Limpa tabelas sem FK/cascade (não acompanhariam a exclusão do auth).
     const limpezas = [
       supabaseAdmin.from("notificacoes").delete().eq("usuario_id", data.usuarioId),
@@ -333,5 +374,18 @@ export const excluirUsuarioPermanente = createServerFn({ method: "POST" })
       console.error("[auth-admin] falha ao excluir usuário", error);
       return { ok: false, motivo: "erro" };
     }
+
+    await registrarLog({
+      acao: "usuario_excluido",
+      categoria: "perfil",
+      descricao: `Excluiu permanentemente a conta de ${nomeAlvo ?? "um usuário"}`,
+      entidade: "auth.users",
+      entidadeId: data.usuarioId,
+      alvoId: null,
+      alvoNome: nomeAlvo,
+      detalhes: { email: alvo.user.email ?? null },
+      atorId: context.userId,
+    });
+
     return { ok: true };
   });
